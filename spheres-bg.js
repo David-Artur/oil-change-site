@@ -125,17 +125,42 @@ function init(canvas) {
   spheres.forEach(s => { s.basePos.x = s.mesh.position.x; s.basePos.y = s.mesh.position.y; s.basePos.z = s.mesh.position.z; });
 
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
-  window.addEventListener('mousemove', (e) => {
+  const updateFromPoint = (clientX, clientY) => {
     const rect = canvas.getBoundingClientRect();
-    if (e.clientY >= rect.top && e.clientY <= rect.bottom && e.clientX >= rect.left && e.clientX <= rect.right) {
-      mouse.tx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-      mouse.ty = -((e.clientY - rect.top) / rect.height - 0.5) * 2;
-      mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    if (clientY >= rect.top && clientY <= rect.bottom && clientX >= rect.left && clientX <= rect.right) {
+      mouse.tx = ((clientX - rect.left) / rect.width - 0.5) * 2;
+      mouse.ty = -((clientY - rect.top) / rect.height - 0.5) * 2;
+      mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouseNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
       mouseActive = true;
     } else {
       mouseActive = false;
     }
+  };
+
+  window.addEventListener('mousemove', (e) => updateFromPoint(e.clientX, e.clientY), { passive: true });
+
+  // touch support — dragging a finger over the spheres pushes them, same as the mouse
+  window.addEventListener('touchstart', (e) => {
+    if (e.touches.length) updateFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (e.touches.length) updateFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener('touchend', () => { mouseActive = false; }, { passive: true });
+
+  // scroll support — scrolling the page (the main touch gesture on mobile) scatters the spheres
+  let lastScrollY = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const dy = window.scrollY - lastScrollY;
+    lastScrollY = window.scrollY;
+    const kick = Math.max(-1.2, Math.min(1.2, dy * 0.03));
+    if (!kick) return;
+    spheres.forEach(s => {
+      s.velocity.x += (Math.random() - 0.5) * Math.abs(kick) * 0.35;
+      s.velocity.y += -kick * 0.45;
+      s.velocity.z += (Math.random() - 0.5) * Math.abs(kick) * 0.25;
+    });
   }, { passive: true });
 
   const applyMouseForce = () => {
