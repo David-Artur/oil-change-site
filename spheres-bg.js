@@ -3,8 +3,10 @@ import { RoomEnvironment } from 'https://esm.sh/three@0.160.0/examples/jsm/envir
 window.__spheres = 'imported';
 
 function init(canvas) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const MOBILE = window.matchMedia('(max-width: 768px), (pointer: coarse)').matches;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !MOBILE, alpha: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, MOBILE ? 1.5 : 2));
   renderer.setClearAlpha(0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -41,6 +43,15 @@ function init(canvas) {
   ];
   const materials = palette.map((c, i) => {
     if (i % 2 === 0) {
+      // transmission (true glass refraction) is expensive — skip it on mobile GPUs
+      // and fake the glassy look with plain transparency instead.
+      if (MOBILE) {
+        return new THREE.MeshPhysicalMaterial({
+          color: c, roughness: 0.1, metalness: 0.0,
+          transparent: true, opacity: 0.82,
+          envMapIntensity: 1.1, specularIntensity: 0.6, specularColor: new THREE.Color(0xffffff),
+        });
+      }
       return new THREE.MeshPhysicalMaterial({
         color: c, roughness: 0.05, metalness: 0.0,
         transmission: 0.9, thickness: 1.5, ior: 1.45,
@@ -57,9 +68,10 @@ function init(canvas) {
   });
 
   const spheres = [];
-  const COUNT = 40;
+  const COUNT = MOBILE ? 20 : 40;
+  const SEGMENTS = MOBILE ? 16 : 32;
   const DAMPING = 0.96;
-  const SPRING = 0.007;
+  const SPRING = 0.0035;
   const MAX_SPEED = 0.16;
   const MOUSE_RADIUS = 4.0;
   const MOUSE_STRENGTH = 0.32;
@@ -85,7 +97,7 @@ function init(canvas) {
   for (let i = 0; i < COUNT; i++) {
     const radius = 0.4 + Math.random() * 0.85;
     const pos = randInSphere(4.5);
-    const geo = new THREE.SphereGeometry(radius, 32, 32);
+    const geo = new THREE.SphereGeometry(radius, SEGMENTS, SEGMENTS);
     const mesh = new THREE.Mesh(geo, materials[i % materials.length]);
     mesh.position.set(pos.x, pos.y, pos.z);
     group.add(mesh);

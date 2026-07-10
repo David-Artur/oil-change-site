@@ -29,6 +29,20 @@
   .reveal { opacity: 0; transform: translateY(30px); transition: opacity 1s cubic-bezier(.16,.8,.3,1), transform 1s cubic-bezier(.16,.8,.3,1); }
   .reveal.in { opacity: 1; transform: translateY(0); }
   ::selection { background: rgba(232,151,60,0.28); }
+
+  @media (max-width: 700px) {
+    .nav-links-text { display: none !important; }
+    .nav-right { gap: 0 !important; }
+  }
+  @media (max-width: 640px) {
+    .hero-sec { padding-top: 76px !important; padding-bottom: 36px !important; }
+    .final-cta-inner { padding: 52px 22px !important; }
+  }
+  @media (max-width: 480px) {
+    #hero-fade-marker { margin-top: 48px !important; padding-top: 26px !important; }
+    .stat-col { padding: 0 14px !important; }
+    .stat-num { font-size: 30px !important; }
+  }
 </style>
 </head>
 <body>
@@ -36,7 +50,7 @@
 
   <!-- glass spheres background — fixed so it stays visible behind the whole page while scrolling -->
   <canvas id="spheres-bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none;"></canvas>
-  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none; background: rgba(8,9,12,0.6);"></div>
+  <div id="spheres-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none; background: rgba(8,9,12,0);"></div>
 
   <!-- ambient warmth -->
   <div style="position: fixed; inset: 0; pointer-events: none; z-index: 0;">
@@ -52,16 +66,18 @@
       </div>
       <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 16px; letter-spacing: 0.16em; text-transform: uppercase; color: #ECE7DE;">Daviart</span>
     </div>
-    <div style="display: flex; align-items: center; gap: 40px;">
-      <a href="#how" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">How it works</a>
-      <a href="#pricing" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Pricing</a>
-      <a href="#why" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Why us</a>
+    <div class="nav-right" style="display: flex; align-items: center; gap: 40px;">
+      <div class="nav-links-text" style="display: flex; align-items: center; gap: 32px;">
+        <a href="#how" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">How it works</a>
+        <a href="#pricing" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Pricing</a>
+        <a href="#why" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Why us</a>
+      </div>
       <a href="request.html" target="_blank" style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color:#0C0A07; background: linear-gradient(180deg, #F2B368, #E0912F); padding: 11px 22px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); white-space: nowrap; transition: all .25s ease;" style-hover="filter: brightness(1.05); transform: translateY(-1px);">Book now</a>
     </div>
   </nav>
 
   <!-- HERO -->
-  <section style="position: relative; z-index: 1; padding: 120px 6vw 60px; text-align: center; max-width: 1080px; margin: 0 auto;">
+  <section class="hero-sec" style="position: relative; z-index: 1; padding: 120px 6vw 60px; text-align: center; max-width: 1080px; margin: 0 auto;">
     <div class="reveal" style="display: inline-flex; align-items:center; gap: 11px; font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 40px;">
       <span style="width:5px;height:5px;border-radius:50%;background:#6FCF97;box-shadow:0 0 8px #6FCF97;"></span>
       Mobile oil change &nbsp;&middot;&nbsp; Vancouver &nbsp;&middot;&nbsp; Calgary &nbsp;&middot;&nbsp; Toronto
@@ -85,17 +101,17 @@
       </a>
     </div>
 
-    <div class="reveal" style="display:flex; gap: 0; justify-content: center; flex-wrap: wrap; margin-top: 84px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 44px;">
-      <div style="padding: 0 44px; border-right: 1px solid rgba(255,255,255,0.07);">
-        <div style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">30<span style="font-size:20px; color:#9AA0AD;"> min</span></div>
+    <div id="hero-fade-marker" class="reveal" style="display:flex; gap: 0; justify-content: center; flex-wrap: wrap; margin-top: 84px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 44px;">
+      <div class="stat-col" style="padding: 0 44px; border-right: 1px solid rgba(255,255,255,0.07);">
+        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">30<span style="font-size:20px; color:#9AA0AD;"> min</span></div>
         <div style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:10px;">Average service</div>
       </div>
-      <div style="padding: 0 44px; border-right: 1px solid rgba(255,255,255,0.07);">
-        <div style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">$0</div>
+      <div class="stat-col" style="padding: 0 44px; border-right: 1px solid rgba(255,255,255,0.07);">
+        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">$0</div>
         <div style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:10px;">Trip fee</div>
       </div>
-      <div style="padding: 0 44px;">
-        <div style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">4.9<span style="font-size:20px; color:#E8973C;">&#9733;</span></div>
+      <div class="stat-col" style="padding: 0 44px;">
+        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">4.9<span style="font-size:20px; color:#E8973C;">&#9733;</span></div>
         <div style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:10px;">1,200+ reviews</div>
       </div>
     </div>
@@ -305,7 +321,7 @@
 
   <!-- FINAL CTA -->
   <section style="position: relative; z-index: 1; padding: 40px 6vw 120px; max-width: 1080px; margin: 0 auto;">
-    <div class="reveal" style="position: relative; overflow: hidden; text-align:center; padding: 90px 40px; border-radius: 28px; background: radial-gradient(120% 140% at 50% 0%, rgba(232,151,60,0.14), rgba(232,151,60,0.01) 55%, transparent 75%); border: 1px solid rgba(232,151,60,0.22);">
+    <div class="reveal final-cta-inner" style="position: relative; overflow: hidden; text-align:center; padding: 90px 40px; border-radius: 28px; background: radial-gradient(120% 140% at 50% 0%, rgba(232,151,60,0.14), rgba(232,151,60,0.01) 55%, transparent 75%); border: 1px solid rgba(232,151,60,0.22);">
       <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 26px;">Ready when you are</div>
       <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,5vw,64px); line-height: 1.05; letter-spacing: -0.02em; color:#FBF4E8; margin-bottom: 22px;">We change your oil<br><span style="font-style: italic; font-weight: 300; color: #E8CBA0;">while you sip your coffee.</span></h2>
       <p style="font-family:'Manrope',sans-serif; font-size: 17px; color:#A69E90; max-width: 460px; margin: 0 auto 40px;">Book in under a minute. We come to you in Vancouver, Calgary, or Toronto.</p>
@@ -397,6 +413,34 @@
       Object.keys(original).forEach(function (prop) { el.style[prop] = original[prop]; });
     });
   });
+})();
+
+(function () {
+  // No dimming while the very top of the hero is in view; a gentle darkening
+  // fades in once the "30 min" stats row scrolls up, so spheres stay clearly
+  // visible up top but don't wash out the text further down the page.
+  var overlay = document.getElementById('spheres-overlay');
+  var marker = document.getElementById('hero-fade-marker');
+  if (!overlay || !marker) return;
+  var MAX_DIM = 0.72;
+  var FADE_RANGE = 420;
+  var start = 0;
+
+  var measure = function () {
+    var rect = marker.getBoundingClientRect();
+    start = rect.top + window.scrollY - window.innerHeight * 0.6;
+  };
+
+  var update = function () {
+    var t = (window.scrollY - start) / FADE_RANGE;
+    t = Math.max(0, Math.min(1, t));
+    overlay.style.background = 'rgba(8,9,12,' + (t * MAX_DIM).toFixed(3) + ')';
+  };
+
+  measure();
+  update();
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', function () { measure(); update(); });
 })();
 </script>
 </body>
