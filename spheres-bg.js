@@ -59,7 +59,8 @@ function init(canvas) {
   const spheres = [];
   const COUNT = 40;
   const DAMPING = 0.96;
-  const SPRING = 0.002;
+  const SPRING = 0.014;
+  const MAX_SPEED = 0.16;
   const MOUSE_RADIUS = 4.0;
   const MOUSE_STRENGTH = 0.32;
 
@@ -149,17 +150,20 @@ function init(canvas) {
   }, { passive: true });
   window.addEventListener('touchend', () => { mouseActive = false; }, { passive: true });
 
-  // scroll support — scrolling the page (the main touch gesture on mobile) scatters the spheres
+  // scroll support — scrolling the page (the main touch gesture on mobile) gently nudges the spheres.
+  // Kept small on purpose: the spring force pulls everything back to center, this is just a light stir.
   let lastScrollY = window.scrollY;
   window.addEventListener('scroll', () => {
+    const rect = canvas.getBoundingClientRect();
     const dy = window.scrollY - lastScrollY;
     lastScrollY = window.scrollY;
-    const kick = Math.max(-1.2, Math.min(1.2, dy * 0.03));
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return; // header out of view — ignore
+    const kick = Math.max(-0.35, Math.min(0.35, dy * 0.008));
     if (!kick) return;
     spheres.forEach(s => {
-      s.velocity.x += (Math.random() - 0.5) * Math.abs(kick) * 0.35;
-      s.velocity.y += -kick * 0.45;
-      s.velocity.z += (Math.random() - 0.5) * Math.abs(kick) * 0.25;
+      s.velocity.x += (Math.random() - 0.5) * Math.abs(kick) * 0.05;
+      s.velocity.y += -kick * 0.06;
+      s.velocity.z += (Math.random() - 0.5) * Math.abs(kick) * 0.03;
     });
   }, { passive: true });
 
@@ -209,6 +213,11 @@ function init(canvas) {
       const floatY = Math.sin(t * s.floatSpeed + s.phase) * s.floatAmp;
       const floatX = Math.cos(t * s.floatSpeed * 0.7 + s.phase) * s.floatAmp * 0.5;
       s.velocity.x *= DAMPING; s.velocity.y *= DAMPING; s.velocity.z *= DAMPING;
+      const speed = Math.hypot(s.velocity.x, s.velocity.y, s.velocity.z);
+      if (speed > MAX_SPEED) {
+        const scale = MAX_SPEED / speed;
+        s.velocity.x *= scale; s.velocity.y *= scale; s.velocity.z *= scale;
+      }
       s.mesh.position.x += s.velocity.x + floatX * 0.05;
       s.mesh.position.y += s.velocity.y + floatY * 0.05;
       s.mesh.position.z += s.velocity.z;
