@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Замена масла в Toronto с выездом на дом | OilToYou Toronto</title>
+<meta name="description" content="Мобильная замена масла в Toronto с выездом на дом или в офис. Приезжаем в удобное время, цена от $95. Оставьте заявку онлайн.">
+<link rel="canonical" href="https://oiltoyou.example/toronto">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AutoRepair",
+  "name": "OilToYou Toronto",
+  "url": "https://oiltoyou.example/toronto",
+  "areaServed": "Toronto, ON",
+  "address": { "@type": "PostalAddress", "addressLocality": "Toronto", "addressRegion": "ON", "addressCountry": "CA" },
+  "email": "davidarturiva@gmail.com",
+  "openingHours": "Mo-Su 08:00-20:00"
+}
+</script>
+<noscript><style>.reveal{opacity:1!important;transform:none!important;}</style></noscript>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="logo" href="index.html"><span class="logo-badge">OTY</span> OilToYou Toronto</a>
+    <nav class="nav-links">
+      <a href="#how">Как это работает</a>
+      <a href="#pricing">Цены</a>
+      <a href="#why">Почему мы</a>
+      <a href="#faq">Вопросы</a>
+    </nav>
+    <a href="#book" class="btn btn-primary">Оставить заявку</a>
+  </div>
+</header>
+<div class="city-switch">
+  <div class="wrap">
+    <span>Другие города:</span>
+    <a href="vancouver.html">Vancouver</a>
+    <a href="calgary.html">Calgary</a>
+    <a class="active" href="toronto.html">Toronto</a>
+    <a href="index.html">Все города</a>
+  </div>
+</div>
+
+<main>
+  <section class="hero">
+    <div class="floaty floaty-drop">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z"/></svg>
+    </div>
+    <div class="floaty floaty-wrench">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8Z"/></svg>
+    </div>
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Выездная замена масла · Toronto и пригороды</div>
+        <h1>Заменим масло <span>у вас во дворе</span>, пока вы пьёте кофе</h1>
+        <p class="lead">Мобильный сервис замены моторного масла в Toronto. Приезжаем к вам домой или в офис в удобное время — без очередей и поездок в сервис.</p>
+        <div class="hero-ctas">
+          <a href="#book" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3.5v3M16 3.5v3"/></svg>
+            Записаться онлайн
+          </a>
+          <a href="#pricing" class="btn btn-ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 3.4 20 10.8a2 2 0 0 1 0 2.8l-6.4 6.4a2 2 0 0 1-2.8 0L3.4 12.6V3.4h9.2Z"/><circle cx="8" cy="8" r="1.4"/></svg>
+            Смотреть цены
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 3.4 20 10.8a2 2 0 0 1 0 2.8l-6.4 6.4a2 2 0 0 1-2.8 0L3.4 12.6V3.4h9.2Z"/><circle cx="8" cy="8" r="1.4"/></svg></div>
+            <div><b>от $95</b><span>цена за замену</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+            <div><b>45–60 мин</b><span>время на месте</span></div>
+          </div>
+          <div class="stat">
+            <div class="stat-ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3.5v3M16 3.5v3"/></svg></div>
+            <div><b>7 дней</b><span>в неделю, без выходных</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-card">
+        <h3>Быстрая заявка</h3>
+        <div class="price">
+          <svg class="drop-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z"/></svg>
+          от $95<small> CAD</small>
+        </div>
+        <ul>
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span> Приезд по указанному адресу или точке на карте</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span> До 5 л масла и фильтр включены в базовую цену</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span> Оплата после завершения работ</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span> Точную цену подтвердим по марке авто</li>
+        </ul>
+        <a href="#book" class="btn btn-primary" style="width:100%">Выбрать время</a>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="route-banner reveal">
+        <div class="route-ico route-shop" title="Наш выездной сервис">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8Z"/></svg>
+        </div>
+        <div class="route-track">
+          <div class="route-van">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l1.5-5A2 2 0 0 1 6.4 6.5h9.2a2 2 0 0 1 1.9 1.4L19 13"/><rect x="2" y="13" width="20" height="5" rx="1.5"/><circle cx="7" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></svg>
+          </div>
+        </div>
+        <div class="route-ico route-house" title="Ваш адрес">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/><path d="M10 20v-5h4v5"/></svg>
+        </div>
+      </div>
+      <p class="route-caption">Мы приезжаем к вам — домой, в офис или на парковку — в любую точку Toronto</p>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true">
+    <svg viewBox="0 0 1440 60" preserveAspectRatio="none"><path d="M0 30 C 240 60 480 0 720 20 C 960 40 1200 10 1440 30 L1440 60 L0 60 Z" style="fill:var(--bg-soft)"/></svg>
+  </div>
+
+  <section id="how" style="background:var(--bg-soft)">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Процесс</div>
+        <h2>Как это работает</h2>
+        <p>Четыре шага от заявки до чистого масла в двигателе — без визита в сервис.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-top">
+            <div class="num">1</div>
+            <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3.5v3M16 3.5v3"/></svg></div>
+          </div>
+          <h3>Оставляете заявку</h3>
+          <p>Заполняете форму ниже: авто, адрес или точка на карте, удобное время.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-top">
+            <div class="num">2</div>
+            <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z"/></svg></div>
+          </div>
+          <h3>Подтверждаем время</h3>
+          <p>Мы свяжемся с вами, уточним марку/модель масла и подтвердим итоговую цену.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-top">
+            <div class="num">3</div>
+            <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l1.5-5A2 2 0 0 1 6.4 6.5h9.2a2 2 0 0 1 1.9 1.4L19 13"/><rect x="2" y="13" width="20" height="5" rx="1.5"/><circle cx="7" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></svg></div>
+          </div>
+          <h3>Приезжаем к вам</h3>
+          <p>Техник приезжает на выбранный адрес и меняет масло прямо на парковке или во дворе.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-top">
+            <div class="num">4</div>
+            <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 3.4 20 10.8a2 2 0 0 1 0 2.8l-6.4 6.4a2 2 0 0 1-2.8 0L3.4 12.6V3.4h9.2Z"/><circle cx="8" cy="8" r="1.4"/></svg></div>
+          </div>
+          <h3>Оплата по факту</h3>
+          <p>Оплата картой или переводом после завершения работ. Чек и рекомендации — на месте.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="included">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Что входит</div>
+        <h2>В базовую замену масла входит</h2>
+        <p>Стандартный пакет обслуживания для большинства легковых авто и кроссоверов.</p>
+      </div>
+      <div class="included-grid">
+        <div class="incl reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z"/></svg></div>
+          <div><h4>Масло до 5 л</h4><p>Минеральное, полусинтетическое или синтетическое — на выбор.</p></div>
+        </div>
+        <div class="incl reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7.5V19l-4 2v-8.5L4 5Z"/></svg></div>
+          <div><h4>Новый масляный фильтр</h4><p>Оригинальный или аналог — уточняем при подтверждении заявки.</p></div>
+        </div>
+        <div class="incl reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6.5L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 9.5V3"/><path d="M7 15h10"/></svg></div>
+          <div><h4>Проверка жидкостей</h4><p>Уровень охлаждающей жидкости, омывателя и тормозной жидкости.</p></div>
+        </div>
+        <div class="incl reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="m9 13 2.2 2.2L15.5 11"/></svg></div>
+          <div><h4>Осмотр по 10 пунктам</h4><p>Ремни, шланги, состояние шин, тормозные колодки на глаз.</p></div>
+        </div>
+        <div class="incl reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.7M20 12a8 8 0 0 1-14.5 4.7"/><path d="M19 3v5h-5M5 21v-5h5"/></svg></div>
+          <div><h4>Сброс индикатора замены</h4><p>Обнуляем сервисный интервал на приборной панели.</p></div>
+        </div>
+        <div class="incl reveal">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l1.5-5A2 2 0 0 1 6.4 6.5h9.2a2 2 0 0 1 1.9 1.4L19 13"/><rect x="2" y="13" width="20" height="5" rx="1.5"/><circle cx="7" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></svg></div>
+          <div><h4>Выезд по Toronto</h4><p>Приезд техника на ваш адрес включён в стоимость, без доплат за выезд.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" style="background:var(--bg-soft)">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Тарифы</div>
+        <h2>Сколько стоит замена масла в Toronto</h2>
+        <p>Ориентировочные цены на легковые авто и кроссоверы. Итоговая стоимость зависит от марки, модели и типа масла — подтверждаем перед выездом.</p>
+      </div>
+      <div class="price-grid">
+        <div class="price-card reveal">
+          <div class="picon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z"/></svg></div>
+          <h3>Обычное масло</h3>
+          <div class="amount">$95<small> и выше</small></div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> Интервал ~6 000 км</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> До 5 л минерального масла</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> Фильтр и выезд включены</li>
+          </ul>
+        </div>
+        <div class="price-card popular reveal">
+          <span class="tag">Популярный выбор</span>
+          <div class="picon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z"/></svg></div>
+          <h3>Полусинтетика</h3>
+          <div class="amount">$110<small> и выше</small></div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> Интервал ~8 000 км</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> До 5 л полусинтетического масла</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> Фильтр, осмотр, выезд включены</li>
+          </ul>
+        </div>
+        <div class="price-card reveal">
+          <div class="picon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z"/></svg></div>
+          <h3>Полная синтетика</h3>
+          <div class="amount">$130<small> и выше</small></div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> Интервал ~10 000–12 000 км</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> До 5 л синтетического масла</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> Фильтр, осмотр, выезд включены</li>
+          </ul>
+        </div>
+      </div>
+      <p class="price-note">Для грузовиков, внедорожников и авто с большим объёмом двигателя возможна доплата $10–20. Точную цену пришлём после заявки.</p>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Преимущества</div>
+        <h2>Почему выбирают выездную замену масла</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why reveal">
+          <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+          <div><h4>Экономия времени</h4><p>Не нужно ехать в сервис и сидеть в зоне ожидания — мы приезжаем сами, пока вы занимаетесь своими делами.</p></div>
+        </div>
+        <div class="why reveal">
+          <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3.5v3M16 3.5v3"/></svg></div>
+          <div><h4>Без очередей и записи за неделю</h4><p>Работаем 7 дней в неделю, часто можем приехать в течение 1–2 дней после заявки.</p></div>
+        </div>
+        <div class="why reveal">
+          <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 3.4 20 10.8a2 2 0 0 1 0 2.8l-6.4 6.4a2 2 0 0 1-2.8 0L3.4 12.6V3.4h9.2Z"/><circle cx="8" cy="8" r="1.4"/></svg></div>
+          <div><h4>Прозрачная цена</h4><p>Стоимость подтверждается заранее по марке и модели авто — никаких сюрпризов на месте.</p></div>
+        </div>
+        <div class="why reveal">
+          <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/><path d="M10 20v-5h4v5"/></svg></div>
+          <div><h4>Работаем у дома или в офисе</h4><p>Укажите адрес или точку на карте — парковка во дворе, у офиса или в гараже подойдёт.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="book">
+    <div class="wrap book-grid">
+      <div class="book-side reveal">
+        <h2>Оставить заявку на выезд</h2>
+        <p>Заполните форму — укажите авто, адрес и удобное время. Отметьте точку на карте, если так проще объяснить, где вас найти. Мы свяжемся с вами для подтверждения.</p>
+        <div class="contact-list">
+          <div class="contact-item">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="m4 6.5 8 6.5 8-6.5"/></svg></div>
+            <div><b>Email</b><span>davidarturiva@gmail.com</span></div>
+          </div>
+          <div class="contact-item">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg></div>
+            <div><b>Зона обслуживания</b><span>Toronto и ближайшие пригороды (Mississauga, Scarborough, North York)</span></div>
+          </div>
+          <div class="contact-item">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+            <div><b>Часы работы</b><span>Ежедневно, 8:00 – 20:00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <form class="form-card reveal" id="booking-form">
+        <fieldset>
+          <legend><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l1.5-5A2 2 0 0 1 6.4 6.5h9.2a2 2 0 0 1 1.9 1.4L19 13"/><rect x="2" y="13" width="20" height="5" rx="1.5"/><circle cx="7" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></svg> Автомобиль</legend>
+          <div class="form-row two">
+            <div><label for="make">Марка</label><input id="make" name="make" placeholder="Toyota" required></div>
+            <div><label for="model">Модель</label><input id="model" name="model" placeholder="RAV4" required></div>
+          </div>
+          <div class="form-row two">
+            <div><label for="year">Год выпуска</label><input id="year" name="year" type="number" min="1980" max="2027" placeholder="2019" required></div>
+            <div>
+              <label for="oilType">Тип масла</label>
+              <select id="oilType" name="oilType">
+                <option value="Не уверен(а) / посоветуйте">Не уверен(а) / посоветуйте</option>
+                <option value="Обычное">Обычное (Conventional)</option>
+                <option value="Полусинтетика">Полусинтетика</option>
+                <option value="Синтетика">Полная синтетика</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg> Где встретимся</legend>
+          <div class="form-row">
+            <label for="address">Адрес обслуживания (улица, район, Toronto)</label>
+            <input id="address" name="address" placeholder="Например: 123 Yonge St, Toronto">
+          </div>
+          <div class="form-row">
+            <label>Точка на карте (необязательно, но помогает найти вас точнее)</label>
+            <div id="map"></div>
+            <p class="map-hint">Кликните на карту, чтобы поставить метку, или нажмите кнопку ниже, чтобы определить своё местоположение.</p>
+            <button type="button" class="btn btn-ghost locate-btn" id="locate-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+              Определить моё местоположение
+            </button>
+            <div class="coords" id="coords-out"></div>
+            <input type="hidden" id="lat" name="lat">
+            <input type="hidden" id="lng" name="lng">
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3.5v3M16 3.5v3"/></svg> Когда удобно</legend>
+          <div class="form-row two">
+            <div><label for="date">Желаемая дата</label><input id="date" name="date" type="date"></div>
+            <div>
+              <label for="time">Удобное время</label>
+              <select id="time" name="time">
+                <option value="Утро (8:00–11:00)">Утро (8:00–11:00)</option>
+                <option value="День (11:00–15:00)">День (11:00–15:00)</option>
+                <option value="Вечер (15:00–20:00)">Вечер (15:00–20:00)</option>
+                <option value="Любое время">Любое время</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z"/></svg> Контакты</legend>
+          <div class="form-row two">
+            <div><label for="name">Имя</label><input id="name" name="name" placeholder="Как к вам обращаться" required></div>
+            <div><label for="phone">Телефон</label><input id="phone" name="phone" type="tel" placeholder="+1 416 000 0000" required></div>
+          </div>
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com">
+          </div>
+          <div class="form-row">
+            <label>Как вам удобнее, чтобы мы связались? (можно выбрать несколько)</label>
+            <div class="contact-pref">
+              <div class="pref-chip">
+                <input type="checkbox" id="pref-call" name="contactPref" value="Звонок">
+                <label for="pref-call">
+                  <svg class="pref-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.2 2 2 0 0 1 6.5 3Z"/></svg>
+                  Звонок
+                  <svg class="pref-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                </label>
+              </div>
+              <div class="pref-chip">
+                <input type="checkbox" id="pref-msg" name="contactPref" value="Сообщение (SMS/WhatsApp)">
+                <label for="pref-msg">
+                  <svg class="pref-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4V5Z"/></svg>
+                  Сообщение
+                  <svg class="pref-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                </label>
+              </div>
+              <div class="pref-chip">
+                <input type="checkbox" id="pref-email" name="contactPref" value="Email">
+                <label for="pref-email">
+                  <svg class="pref-main" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="m4 6.5 8 6.5 8-6.5"/></svg>
+                  Email
+                  <svg class="pref-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="comment">Комментарий</label>
+            <textarea id="comment" name="comment" rows="3" placeholder="Дополнительная информация: где припарковаться, был ли слив масла недавно и т.д."></textarea>
+          </div>
+        </fieldset>
+
+        <div class="submit-row">
+          <button type="submit" class="btn btn-primary" style="width:100%">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 20 4l-4 16-4-7-8-1Z"/></svg>
+            Отправить заявку
+          </button>
+        </div>
+        <div class="form-status" id="form-status"></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="faq" style="background:var(--bg-soft)">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Вопросы и ответы</div>
+        <h2>Частые вопросы</h2>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>Сколько по времени занимает выездная замена масла? <span class="faq-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <p>Обычно 45–60 минут на месте, в зависимости от модели авто и объёма работ.</p>
+        </details>
+        <details>
+          <summary>Нужно ли готовить что-то заранее? <span class="faq-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <p>Достаточно оставить свободный доступ к моторному отсеку и немного места под днищем, чтобы слить отработанное масло.</p>
+        </details>
+        <details>
+          <summary>Что делать со старым маслом? <span class="faq-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <p>Мы забираем и утилизируем отработанное масло и фильтр самостоятельно — вам ничего делать не нужно.</p>
+        </details>
+        <details>
+          <summary>Можно ли заказать выезд в офис или на работу? <span class="faq-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <p>Да, укажите любой адрес в Toronto и пригородах — дом, офис, парковку у работы.</p>
+        </details>
+        <details>
+          <summary>Как оплатить услугу? <span class="faq-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <p>Оплата после завершения работ — картой или переводом. Точную сумму подтвердим до выезда.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z"/></svg>
+      OilToYou Toronto
+    </div>
+    <div>Выездная замена масла в Toronto и окрестностях · davidarturiva@gmail.com</div>
+    <div class="foot-cities">
+      <a href="index.html">Все города</a>·
+      <a href="vancouver.html">Vancouver</a>·
+      <a href="calgary.html">Calgary</a>
+    </div>
+    <p class="disclaimer">Указанные цены являются ориентировочными и могут отличаться в зависимости от марки, модели и объёма двигателя автомобиля. Итоговая стоимость подтверждается индивидуально после получения заявки. Сайт — демонстрационная версия без подключённого онлайн-приёма платежей.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  var CITY_NAME = 'Toronto';
+  var map = L.map('map', { scrollWheelZoom: false }).setView([43.6532, -79.3832], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  var marker = null;
+  function setMarker(lat, lng) {
+    if (marker) { marker.setLatLng([lat, lng]); }
+    else { marker = L.marker([lat, lng], { draggable: true }).addTo(map); marker.on('dragend', function () {
+      var p = marker.getLatLng(); updateCoords(p.lat, p.lng);
+    }); }
+    updateCoords(lat, lng);
+  }
+  function updateCoords(lat, lng) {
+    document.getElementById('lat').value = lat.toFixed(6);
+    document.getElementById('lng').value = lng.toFixed(6);
+    document.getElementById('coords-out').textContent = 'Метка: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+  }
+
+  map.on('click', function (e) { setMarker(e.latlng.lat, e.latlng.lng); });
+
+  document.getElementById('locate-btn').addEventListener('click', function () {
+    if (!navigator.geolocation) {
+      document.getElementById('coords-out').textContent = 'Геолокация не поддерживается вашим браузером.';
+      return;
+    }
+    document.getElementById('coords-out').textContent = 'Определяем местоположение…';
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      map.setView([lat, lng], 15);
+      setMarker(lat, lng);
+    }, function () {
+      document.getElementById('coords-out').textContent = 'Не удалось определить местоположение. Отметьте точку на карте вручную.';
+    });
+  });
+
+  var form = document.getElementById('booking-form');
+  var statusBox = document.getElementById('form-status');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var fd = new FormData(form);
+    var d = Object.fromEntries(fd.entries());
+    var prefs = fd.getAll('contactPref').join(', ') || 'Не указано';
+    var lines = [
+      'Новая заявка — OilToYou ' + CITY_NAME,
+      '',
+      'Авто: ' + d.year + ' ' + d.make + ' ' + d.model,
+      'Тип масла: ' + d.oilType,
+      'Адрес: ' + (d.address || '—'),
+      'Точка на карте: ' + (d.lat ? (d.lat + ', ' + d.lng) : '— не указана'),
+      'Дата: ' + (d.date || '— любая ближайшая'),
+      'Время: ' + d.time,
+      '',
+      'Имя: ' + d.name,
+      'Телефон: ' + d.phone,
+      'Email: ' + (d.email || '—'),
+      'Предпочтительный способ связи: ' + prefs,
+      'Комментарий: ' + (d.comment || '—')
+    ].join('\n');
+
+    var mailto = 'mailto:davidarturiva@gmail.com?subject=' + encodeURIComponent('Заявка на замену масла (' + CITY_NAME + ') — ' + d.name)
+      + '&body=' + encodeURIComponent(lines);
+    window.location.href = mailto;
+
+    statusBox.className = 'form-status ok';
+    statusBox.textContent = 'Открываем почтовый клиент с заполненной заявкой. Если он не открылся автоматически, скопируйте данные и отправьте на davidarturiva@gmail.com.';
+  });
+
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (el) { el.classList.add('in-view'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .15, rootMargin: '0px 0px -40px 0px' });
+    els.forEach(function (el) { io.observe(el); });
+  })();
+</script>
+</body>
+</html>
