@@ -59,7 +59,7 @@ function init(canvas) {
   const spheres = [];
   const COUNT = 40;
   const DAMPING = 0.96;
-  const SPRING = 0.014;
+  const SPRING = 0.007;
   const MAX_SPEED = 0.16;
   const MOUSE_RADIUS = 4.0;
   const MOUSE_STRENGTH = 0.32;
@@ -196,8 +196,8 @@ function init(canvas) {
     mouse.x += (mouse.tx - mouse.x) * 0.05;
     mouse.y += (mouse.ty - mouse.y) * 0.05;
 
-    targetTheta = t * 0.15 + mouse.x * 0.25;
-    targetPhi = Math.PI / 2 - (Math.sin(t * 0.08) * 0.1 + mouse.y * 0.12);
+    targetTheta = t * 0.2 + mouse.x * 0.25;
+    targetPhi = Math.PI / 2 - (Math.sin(t * 0.1) * 0.1 + mouse.y * 0.12);
     targetPhi = Math.max(0.3, Math.min(Math.PI - 0.3, targetPhi));
     theta += (targetTheta - theta) * 0.03;
     phi += (targetPhi - phi) * 0.03;

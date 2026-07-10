@@ -34,9 +34,9 @@
 <body>
 <div style="font-family: 'Manrope', sans-serif; overflow-x: hidden; background: #08090C; position: relative;">
 
-  <!-- glass spheres hero background -->
-  <canvas id="spheres-bg-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none;"></canvas>
-  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none; background: linear-gradient(180deg, rgba(8,9,12,0.28) 0%, rgba(8,9,12,0.05) 20%, rgba(8,9,12,0.42) 66%, rgba(8,9,12,0.98) 100%);"></div>
+  <!-- glass spheres background — fixed so it stays visible behind the whole page while scrolling -->
+  <canvas id="spheres-bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none;"></canvas>
+  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none; background: rgba(8,9,12,0.6);"></div>
 
   <!-- ambient warmth -->
   <div style="position: fixed; inset: 0; pointer-events: none; z-index: 0;">
