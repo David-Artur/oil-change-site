@@ -199,6 +199,27 @@ function init(canvas) {
     });
   };
 
+  // A permanent, gentle "keep clear" zone roughly where the hero headline sits
+  // (upper-center of the scene), so spheres drift and orbit around the text
+  // instead of piling up behind it.
+  const TEXT_ZONE = new THREE.Vector3(0, 1.4, 0.5);
+  const TEXT_RADIUS = 3.6;
+  const TEXT_STRENGTH = 0.05;
+  const applyTextAvoidance = () => {
+    spheres.forEach(s => {
+      const dx = s.mesh.position.x - TEXT_ZONE.x;
+      const dy = s.mesh.position.y - TEXT_ZONE.y;
+      const dz = s.mesh.position.z - TEXT_ZONE.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist < TEXT_RADIUS && dist > 0.01) {
+        const force = (1 - dist / TEXT_RADIUS) * TEXT_STRENGTH;
+        s.velocity.x += (dx / dist) * force;
+        s.velocity.y += (dy / dist) * force;
+        s.velocity.z += (dz / dist) * force;
+      }
+    });
+  };
+
   const clock = new THREE.Clock();
   let theta = 0, targetTheta = 0, phi = Math.PI / 2, targetPhi = Math.PI / 2;
 
@@ -215,6 +236,7 @@ function init(canvas) {
     phi += (targetPhi - phi) * 0.03;
 
     applyMouseForce();
+    applyTextAvoidance();
     spheres.forEach(s => {
       s.velocity.x += (s.basePos.x - s.mesh.position.x) * SPRING;
       s.velocity.y += (s.basePos.y - s.mesh.position.y) * SPRING;
