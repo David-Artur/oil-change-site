@@ -203,8 +203,8 @@ function init(canvas) {
   // (upper-center of the scene), so spheres drift and orbit around the text
   // instead of piling up behind it.
   const TEXT_ZONE = new THREE.Vector3(0, 1.4, 0.5);
-  const TEXT_RADIUS = 3.6;
-  const TEXT_STRENGTH = 0.05;
+  const TEXT_RADIUS = 4.2;
+  const TEXT_STRENGTH = 0.22;
   const applyTextAvoidance = () => {
     spheres.forEach(s => {
       const dx = s.mesh.position.x - TEXT_ZONE.x;
@@ -213,6 +213,43 @@ function init(canvas) {
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
       if (dist < TEXT_RADIUS && dist > 0.01) {
         const force = (1 - dist / TEXT_RADIUS) * TEXT_STRENGTH;
+        s.velocity.x += (dx / dist) * force;
+        s.velocity.y += (dy / dist) * force;
+        s.velocity.z += (dz / dist) * force;
+      }
+    });
+  };
+
+  // Spheres are gently drawn toward the "Book now" button in the sticky nav —
+  // it's the one CTA that's always on screen, so it's the natural magnet target.
+  let buttonZone = null;
+  const updateButtonZone = () => {
+    const btn = document.getElementById('nav-book-btn');
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    if (!r.width) return;
+    const ndc = new THREE.Vector2(
+      ((r.left + r.width / 2) / window.innerWidth) * 2 - 1,
+      -((r.top + r.height / 2) / window.innerHeight) * 2 + 1
+    );
+    raycaster.setFromCamera(ndc, camera);
+    const hit = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(plane, hit)) buttonZone = hit.clone();
+  };
+  updateButtonZone();
+  window.addEventListener('resize', updateButtonZone);
+
+  const BTN_RADIUS = 7.5;
+  const BTN_STRENGTH = 0.022;
+  const applyButtonAttraction = () => {
+    if (!buttonZone) return;
+    spheres.forEach(s => {
+      const dx = buttonZone.x - s.mesh.position.x;
+      const dy = buttonZone.y - s.mesh.position.y;
+      const dz = buttonZone.z - s.mesh.position.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist > 0.01 && dist < BTN_RADIUS) {
+        const force = (1 - dist / BTN_RADIUS) * BTN_STRENGTH;
         s.velocity.x += (dx / dist) * force;
         s.velocity.y += (dy / dist) * force;
         s.velocity.z += (dz / dist) * force;
@@ -237,6 +274,7 @@ function init(canvas) {
 
     applyMouseForce();
     applyTextAvoidance();
+    applyButtonAttraction();
     spheres.forEach(s => {
       s.velocity.x += (s.basePos.x - s.mesh.position.x) * SPRING;
       s.velocity.y += (s.basePos.y - s.mesh.position.y) * SPRING;
