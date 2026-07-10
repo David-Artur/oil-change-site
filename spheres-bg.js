@@ -203,7 +203,7 @@ function init(canvas) {
   // (upper-center of the scene), so spheres drift and orbit around the text
   // instead of piling up behind it.
   const TEXT_ZONE = new THREE.Vector3(0, 1.4, 0.5);
-  const TEXT_RADIUS = 4.2;
+  const TEXT_RADIUS = 7.5;
   const TEXT_STRENGTH = 0.22;
   const applyTextAvoidance = () => {
     spheres.forEach(s => {
