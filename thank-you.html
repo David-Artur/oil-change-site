@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thank You | Daviart</title>
+<meta name="description" content="Your Daviart mobile oil change request has been received.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #06080F; }
+  a { color: #FFB65C; text-decoration: none; }
+  a:hover { color: #FFCB8A; }
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px;
+    color: #1A1206; background: linear-gradient(180deg, #FFCB8A 0%, #F5A623 55%, #E8871A 100%);
+    padding: 14px 30px; border-radius: 100px; border: none; cursor: pointer;
+    box-shadow: 0 12px 34px rgba(245,166,35,0.3), inset 0 1px 0 rgba(255,255,255,0.5);
+    transition: filter .2s ease;
+  }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px;
+    color: #ECE7DE; background: none; border: 1px solid rgba(255,255,255,0.18);
+    padding: 13px 26px; border-radius: 100px; cursor: pointer; transition: border-color .2s ease, background .2s ease;
+  }
+  .btn-ghost:hover { border-color: #F5A623; background: rgba(245,166,35,0.08); }
+
+  .review-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; text-align: left; }
+  .review-summary { list-style: none; cursor: pointer; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; color: #ECE7DE; }
+  .review-summary::-webkit-details-marker { display: none; }
+  .review-chevron { transition: transform .2s ease; color: #9CA3B5; }
+  details[open] .review-chevron { transform: rotate(180deg); }
+  .review-body { padding: 0 22px 20px; display: grid; gap: 12px; }
+  .review-row { display: flex; justify-content: space-between; gap: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); font-family: 'Manrope', sans-serif; font-size: 14px; }
+  .review-row:first-child { border-top: none; padding-top: 0; }
+  .review-label { color: #8A8E99; }
+  .review-value { color: #ECE7DE; font-weight: 600; text-align: right; max-width: 60%; }
+
+  .share-msg { font-family: 'Manrope', sans-serif; font-size: 13px; color: #9FE6BE; margin-top: 10px; opacity: 0; transition: opacity .3s ease; }
+  .share-msg.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px; font-family: 'Manrope', sans-serif; position: relative; overflow: hidden; background: radial-gradient(120% 90% at 50% -10%, #142138 0%, #0A0F1C 45%, #06080F 100%);">
+
+  <div style="position: absolute; top: -180px; left: -120px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(111,207,151,0.18), rgba(111,207,151,0.05) 55%, transparent 70%); filter: blur(20px); animation: drift 9s ease-in-out infinite;"></div>
+  <div style="position: absolute; bottom: -220px; right: -160px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(circle at 60% 40%, rgba(60,110,200,0.18), transparent 65%); filter: blur(24px); animation: drift 11s ease-in-out infinite;"></div>
+
+  <div style="position: relative; z-index: 2; max-width: 560px; width: 100%; text-align: center; animation: rise 0.7s ease both; padding: 40px 0;">
+
+    <div style="width: 76px; height: 76px; margin: 0 auto 22px; border-radius: 50%; background: rgba(111,207,151,0.12); border: 1px solid rgba(111,207,151,0.3); display: flex; align-items: center; justify-content: center;">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#6FCF97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+
+    <div style="display: inline-block; font-family: 'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #FFB65C; border: 1px solid rgba(255,182,92,0.3); border-radius: 100px; padding: 7px 16px; margin-bottom: 20px;">Daviart &middot; Confirmation</div>
+
+    <h1 id="ty-heading" style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 36px; line-height: 1.1; color: #F4F1EA; letter-spacing: -1px; margin-bottom: 14px;">Thank you!</h1>
+
+    <p style="font-size: 16px; line-height: 1.6; color: #A7ADBC; max-width: 440px; margin: 0 auto 30px;">We've received your request. Our mechanic will call you shortly to confirm all the details before heading your way.</p>
+
+    <details class="review-card" style="margin-bottom: 26px;">
+      <summary class="review-summary">
+        <span>View your request</span>
+        <svg class="review-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </summary>
+      <div class="review-body" id="ty-details"></div>
+    </details>
+
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px;">
+      <a href="index.html" class="btn-primary">&larr; Back to homepage</a>
+      <button type="button" class="btn-ghost" id="ty-edit">Edit request</button>
+      <button type="button" class="btn-ghost" id="ty-share">Share</button>
+    </div>
+    <div class="share-msg" id="ty-share-msg">Link copied!</div>
+
+  </div>
+</div>
+<script>
+  var STORE_KEY = 'daviart_last_request';
+  var data = null;
+  try { data = JSON.parse(sessionStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
+
+  if (!data) {
+    // arrived here without ever submitting — send them somewhere useful
+    window.location.href = 'index.html';
+  } else {
+    var heading = document.getElementById('ty-heading');
+    if (data.name) heading.textContent = 'Thank you, ' + data.name + '!';
+
+    var fields = [
+      ['Vehicle', [data.year, data.make, data.model].filter(Boolean).join(' ')],
+      ['Oil type', data.oilType],
+      ['City', data.city],
+      ['Address', data.address],
+      ['Date', data.date || 'Any day soon'],
+      ['Time', data.time],
+      ['Phone', data.phone],
+      ['Email', data.email],
+      ['Contact preference', data.contactPref],
+      ['Comment', data.comment]
+    ];
+    var body = document.getElementById('ty-details');
+    fields.forEach(function (f) {
+      if (!f[1]) return;
+      var row = document.createElement('div');
+      row.className = 'review-row';
+      row.innerHTML = '<span class="review-label">' + f[0] + '</span><span class="review-value"></span>';
+      row.querySelector('.review-value').textContent = f[1];
+      body.appendChild(row);
+    });
+
+    document.getElementById('ty-edit').addEventListener('click', function () {
+      sessionStorage.setItem('daviart_edit_request', JSON.stringify(data));
+      window.location.href = 'request.html';
+    });
+  }
+
+  document.getElementById('ty-share').addEventListener('click', function () {
+    var shareUrl = window.location.origin + '/index.html';
+    var shareData = { title: 'Daviart — Mobile Oil Change', text: 'Fast mobile oil change in Vancouver, Calgary & Toronto — check it out:', url: shareUrl };
+    if (navigator.share) {
+      navigator.share(shareData).catch(function () {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl).then(function () {
+        var msg = document.getElementById('ty-share-msg');
+        msg.classList.add('show');
+        setTimeout(function () { msg.classList.remove('show'); }, 2200);
+      });
+    }
+  });
+</script>
+</body>
+</html>

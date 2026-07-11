@@ -5,8 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
   if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
-  window.scrollTo(0, 0);
-  window.addEventListener('load', function () { window.scrollTo(0, 0); });
+  if (location.hash) { history.replaceState(null, '', location.pathname + location.search); }
+  var forceTop = function () { window.scrollTo(0, 0); };
+  forceTop();
+  document.addEventListener('DOMContentLoaded', forceTop);
+  window.addEventListener('load', function () {
+    forceTop();
+    setTimeout(forceTop, 0);
+    setTimeout(forceTop, 150);
+  });
 </script>
 <title>Daviart — Mobile Oil Change in Vancouver, Calgary &amp; Toronto</title>
 <meta name="description" content="A certified technician comes to your home or office and changes your oil on the spot. Serving Vancouver, Calgary, and Toronto. Book in under a minute.">
@@ -27,31 +34,84 @@
 </script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { background: #08090C; color: #ECE7DE; }
+  html { scroll-behavior: smooth; overflow-anchor: none; }
+  body {
+    color: #ECE7DE; overflow-anchor: none;
+    background-color: #0C0805;
+    background-image:
+      radial-gradient(650px 520px at 15% 0px, rgba(232,151,60,0.2), transparent 60%),
+      radial-gradient(600px 480px at 90% 160px, rgba(139,74,22,0.26), transparent 62%),
+      repeating-linear-gradient(180deg,
+        #1B120A 0px, #281A09 110px, #120C08 220px,
+        #0C0805 340px, #241708 480px, #302008 600px,
+        #140E08 740px, #1E1409 860px, #0F0A05 980px, #0C0805 1100px);
+  }
   a { color: #E8973C; text-decoration: none; }
   a:hover { color: #F2B368; }
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 1s cubic-bezier(.16,.8,.3,1), transform 1s cubic-bezier(.16,.8,.3,1); }
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .5s cubic-bezier(.16,.8,.3,1), transform .5s cubic-bezier(.16,.8,.3,1); }
   .reveal.in { opacity: 1; transform: translateY(0); }
   ::selection { background: rgba(232,151,60,0.28); }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.75; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
 
   @media (max-width: 700px) {
     .nav-links-text { display: none !important; }
-    .nav-right { gap: 0 !important; }
+    .nav-right { gap: 14px !important; }
   }
   @media (max-width: 640px) {
-    .hero-sec { padding-top: 76px !important; padding-bottom: 36px !important; }
+    .hero-sec {
+      padding-top: 26px !important; padding-bottom: 26px !important;
+      justify-content: center !important;
+      gap: clamp(60px, 13vh, 150px) !important;
+    }
     .final-cta-inner { padding: 52px 22px !important; }
   }
   @media (max-width: 480px) {
-    #hero-fade-marker { margin-top: 48px !important; padding-top: 26px !important; }
-    .stat-col { padding: 0 14px !important; }
-    .stat-num { font-size: 30px !important; }
+    #hero-fade-marker { margin-top: 20px !important; padding-top: 18px !important; }
+    .stat-col { padding: 0 12px !important; }
+    .stat-num { font-size: 26px !important; }
+  }
+  @media (max-height: 700px) {
+    .hero-sec { min-height: auto !important; }
+  }
+
+  .testi-scroll {
+    display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: 4px 4px 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .testi-scroll::-webkit-scrollbar { display: none; }
+  .testi-card { flex: 0 0 auto; width: 320px; scroll-snap-align: start; }
+  @media (max-width: 640px) {
+    /* narrower than full-width on purpose — a sliver of the next/previous
+       card peeks in on each side so it's visually obvious there's more to scroll */
+    .testi-scroll { padding-left: 6vw; padding-right: 6vw; scroll-padding-left: 6vw; }
+    .testi-card { width: 76vw; opacity: 0.55; transition: opacity .25s ease; }
+    .testi-card.testi-active { opacity: 1; }
+  }
+  #testi-prev, #testi-next { transition: opacity .2s ease, background .2s ease; }
+  #testi-prev:hover, #testi-next:hover { background: rgba(232,151,60,0.18) !important; }
+  @media (max-width: 640px) {
+    #testi-prev { left: -2px !important; }
+    #testi-next { right: -2px !important; }
+  }
+
+  .btn-shine {
+    position: absolute; top: 0; left: 0; width: 40%; height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.65), transparent);
+    transform: translateX(-160%) skewX(-18deg);
+    animation: navShine 5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes navShine {
+    0%, 78% { transform: translateX(-160%) skewX(-18deg); }
+    92%, 100% { transform: translateX(260%) skewX(-18deg); }
   }
 </style>
 </head>
 <body>
-<div style="font-family: 'Manrope', sans-serif; overflow-x: hidden; background: #08090C; position: relative;">
+<div id="page-wrap" style="font-family: 'Manrope', sans-serif; overflow-x: hidden; background: #08090C; position: relative; padding-top: 90px;">
 
   <!-- glass spheres background — fixed so it stays visible behind the whole page while scrolling -->
   <canvas id="spheres-bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0; pointer-events: none;"></canvas>
@@ -59,108 +119,135 @@
 
   <!-- ambient warmth -->
   <div style="position: fixed; inset: 0; pointer-events: none; z-index: 0;">
-    <div style="position: absolute; top: -8%; left: 50%; transform: translateX(-50%); width: 800px; height: 600px; background: radial-gradient(60% 60% at 50% 40%, rgba(232,151,60,0.08), transparent 70%); filter: blur(40px);"></div>
+    <div style="position: absolute; top: -8%; left: 50%; transform: translateX(-50%); width: 900px; height: 700px; background: radial-gradient(60% 60% at 50% 40%, rgba(232,151,60,0.22), transparent 70%); filter: blur(40px); animation: glowPulse 9s ease-in-out infinite;"></div>
   </div>
 
   <!-- NAV -->
-  <nav style="position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 22px 6vw; backdrop-filter: blur(16px); background: rgba(8,9,12,0.5); border-bottom: 1px solid rgba(255,255,255,0.05);">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 18px; height: 23px; position: relative;">
-        <div style="width: 18px; height: 18px; position: absolute; bottom: 0; border-radius: 50% 50% 50% 50% / 62% 62% 40% 40%; background: linear-gradient(150deg, #F2B368, #E8973C 55%, #B5661C);"></div>
-        <div style="width: 0; height: 0; position: absolute; top: 0; left: 50%; transform: translateX(-50%); border-left: 4.5px solid transparent; border-right: 4.5px solid transparent; border-bottom: 9px solid #E8973C;"></div>
+  <nav id="site-nav" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 22px 6vw; backdrop-filter: blur(16px); background: rgba(8,9,12,0.5); border-bottom: 1px solid rgba(255,255,255,0.05); box-sizing: border-box;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <svg width="19" height="19" viewBox="0 0 24 24" style="flex: none;">
+        <defs>
+          <linearGradient id="navDropGrad" x1="0" y1="0" x2="0.8" y2="1">
+            <stop offset="0%" stop-color="#F2B368"/>
+            <stop offset="55%" stop-color="#E8973C"/>
+            <stop offset="100%" stop-color="#B5661C"/>
+          </linearGradient>
+        </defs>
+        <path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 1 1 6 14.2C6 10.9 9 7.2 12 3Z" fill="url(#navDropGrad)"/>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 16px; letter-spacing: 0.16em; text-transform: uppercase; color: #ECE7DE; line-height: 1;">Daviart</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #7E828F; line-height: 1;">Canadian Mobile Oil Change</span>
       </div>
-      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 16px; letter-spacing: 0.16em; text-transform: uppercase; color: #ECE7DE;">Daviart</span>
     </div>
-    <div class="nav-right" style="display: flex; align-items: center; gap: 40px;">
+    <div class="nav-right" style="display: flex; align-items: center; gap: 26px;">
       <div class="nav-links-text" style="display: flex; align-items: center; gap: 32px;">
-        <a href="#how" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">How it works</a>
-        <a href="#pricing" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Pricing</a>
-        <a href="#why" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Why us</a>
+        <a href="#how" data-i18n="nav_how" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">How it works</a>
+        <a href="#pricing" data-i18n="nav_pricing" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Pricing</a>
+        <a href="#why" data-i18n="nav_why" style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9AA0AD;" style-hover="color:#ECE7DE;">Why us</a>
       </div>
-      <a id="nav-book-btn" href="request.html" target="_blank" style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color:#0C0A07; background: linear-gradient(180deg, #F2B368, #E0912F); padding: 11px 22px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); white-space: nowrap; transition: all .25s ease;" style-hover="filter: brightness(1.05); transform: translateY(-1px);">Book now</a>
+      <div id="lang-switch" style="position: relative;">
+        <button type="button" id="lang-toggle" aria-haspopup="true" aria-expanded="false" style="background:none; border:1px solid rgba(255,255,255,0.14); cursor:pointer; display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; color:#9AA0AD; font-family:'Space Grotesk',sans-serif; font-size:10.5px; font-weight:600; letter-spacing:0.02em; transition: border-color .2s ease, color .2s ease;">
+          <span id="lang-toggle-label">EN</span>
+        </button>
+        <div id="lang-menu" style="display:none; position:absolute; top:calc(100% + 10px); right:0; background:#10141B; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; min-width:160px; box-shadow:0 16px 34px rgba(0,0,0,0.45); z-index:60;">
+          <button type="button" class="lang-option" data-lang="en" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127468;&#127463;</span><span style="flex:1;">English</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="uk" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127482;&#127462;</span><span style="flex:1;">Українська</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+        </div>
+      </div>
+      <a id="nav-book-btn" href="request.html" target="_blank" style="position: relative; overflow: hidden; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color:#0C0A07; background: linear-gradient(180deg, #F2B368, #E0912F); padding: 11px 22px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); white-space: nowrap; transition: all .25s ease;" style-hover="filter: brightness(1.05); transform: translateY(-1px);">
+        <span data-i18n="nav_book" style="position: relative; z-index: 1;">Book now</span>
+        <span class="btn-shine" aria-hidden="true"></span>
+      </a>
     </div>
   </nav>
-
   <!-- HERO -->
-  <section class="hero-sec" style="position: relative; z-index: 1; padding: 120px 6vw 60px; text-align: center; max-width: 1080px; margin: 0 auto;">
-    <div class="reveal" style="display: inline-flex; align-items:center; gap: 11px; font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 40px;">
-      <span style="width:5px;height:5px;border-radius:50%;background:#6FCF97;box-shadow:0 0 8px #6FCF97;"></span>
-      Mobile oil change &nbsp;&middot;&nbsp; Vancouver &nbsp;&middot;&nbsp; Calgary &nbsp;&middot;&nbsp; Toronto
+  <section class="hero-sec" style="position: relative; z-index: 1; padding: 28px 6vw 24px; text-align: center; max-width: 1080px; margin: 0 auto; min-height: calc(100vh - 90px); display: flex; flex-direction: column; justify-content: center; gap: clamp(28px, 7vh, 90px);">
+    <div class="hero-top">
+      <div class="reveal" style="display: inline-flex; flex-direction: column; align-items: center; gap: 7px; margin-bottom: 34px;">
+        <span style="display:inline-flex; align-items:center; gap:9px; font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E;">
+          <span style="width:5px;height:5px;border-radius:50%;background:#6FCF97;box-shadow:0 0 8px #6FCF97;"></span>
+          <span data-i18n="hero_eyebrow_line1">Mobile Oil Change</span>
+        </span>
+        <span data-i18n="hero_eyebrow_line2" style="font-family:'Space Grotesk',sans-serif; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: #7E828F;">Vancouver &middot; Calgary &middot; Toronto</span>
+      </div>
+
+      <h1 class="reveal" style="font-family:'Newsreader', serif; font-weight: 400; font-size: clamp(40px, 7vw, 96px); line-height: 1.05; letter-spacing: -0.02em; color: #F4EFE6; text-shadow: 0 4px 28px rgba(8,9,12,0.85), 0 1px 3px rgba(8,9,12,0.9);">
+        <span data-i18n="hero_line1">We change your oil</span><br><span data-i18n="hero_line2" style="font-style: italic; font-weight: 300; color: #E8CBA0;">while you sip your coffee.</span>
+      </h1>
     </div>
 
-    <h1 class="reveal" style="font-family:'Newsreader', serif; font-weight: 400; font-size: clamp(46px, 7vw, 96px); line-height: 1.03; letter-spacing: -0.02em; margin-bottom: 30px; color: #F4EFE6; text-shadow: 0 4px 28px rgba(8,9,12,0.85), 0 1px 3px rgba(8,9,12,0.9);">
-      We change your oil<br><span style="font-style: italic; font-weight: 300; color: #E8CBA0;">while you sip your coffee.</span>
-    </h1>
-
-    <div class="reveal" style="display:flex; gap: 20px; justify-content: center; flex-wrap: wrap; align-items: center; margin-top: 8px;">
-      <a href="request.html" target="_blank" style="font-family:'Space Grotesk',sans-serif; font-weight: 500; font-size: 14px; letter-spacing: 0.06em; color: #0C0A07; background: linear-gradient(180deg, #F2B368, #E0912F); padding: 16px 38px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); box-shadow: 0 10px 30px rgba(224,145,47,0.18); transition: all .28s ease;" style-hover="transform: translateY(-2px); box-shadow: 0 16px 40px rgba(224,145,47,0.3);">
-        Book a Mobile Oil Change
+    <div class="reveal" style="display:flex; gap: 20px; justify-content: center; flex-wrap: wrap; align-items: center;">
+      <a href="request.html" target="_blank" style="position: relative; overflow: hidden; font-family:'Space Grotesk',sans-serif; font-weight: 500; font-size: 14px; letter-spacing: 0.06em; color: #0C0A07; background: linear-gradient(180deg, #F2B368, #E0912F); padding: 16px 38px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); box-shadow: 0 10px 30px rgba(224,145,47,0.18); transition: all .28s ease;" style-hover="transform: translateY(-2px); box-shadow: 0 16px 40px rgba(224,145,47,0.3);">
+        <span data-i18n="cta_book" style="position: relative; z-index: 1;">Book a Mobile Oil Change</span>
+        <span class="btn-shine" aria-hidden="true"></span>
       </a>
       <a href="#how" style="font-family:'Space Grotesk',sans-serif; font-weight: 500; font-size: 14px; letter-spacing: 0.06em; color: #D6D2C9; display:inline-flex; align-items:center; gap:9px;" style-hover="color:#F2B368;">
-        See how it works
+        <span data-i18n="hero_secondary_cta">See how it works</span>
         <span style="font-size:15px;">&rarr;</span>
       </a>
     </div>
 
-    <div id="hero-fade-marker" class="reveal" style="display:flex; gap: 0; justify-content: center; flex-wrap: wrap; margin-top: 84px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 44px;">
+    <div id="hero-fade-marker" class="reveal" style="display:flex; gap: 0; justify-content: center; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 26px;">
       <div class="stat-col" style="padding: 0 44px; border-right: 1px solid rgba(255,255,255,0.07);">
-        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">30<span style="font-size:20px; color:#9AA0AD;"> min</span></div>
-        <div style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:10px;">Average service</div>
+        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 34px; color:#F4EFE6; line-height:1;">30<span style="font-size:18px; color:#9AA0AD;"> min</span></div>
+        <div data-i18n="stat_service" style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:9px;">Average service</div>
       </div>
       <div class="stat-col" style="padding: 0 44px; border-right: 1px solid rgba(255,255,255,0.07);">
-        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">$0</div>
-        <div style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:10px;">Trip fee</div>
+        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 34px; color:#F4EFE6; line-height:1;">$0</div>
+        <div data-i18n="stat_trip" style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:9px;">Trip fee</div>
       </div>
       <div class="stat-col" style="padding: 0 44px;">
-        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 40px; color:#F4EFE6; line-height:1;">4.9<span style="font-size:20px; color:#E8973C;">&#9733;</span></div>
-        <div style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:10px;">1,200+ reviews</div>
+        <div class="stat-num" style="font-family:'Newsreader',serif; font-weight:400; font-size: 34px; color:#F4EFE6; line-height:1;">4.9<span style="font-size:18px; color:#E8973C;">&#9733;</span></div>
+        <div data-i18n="stat_reviews" style="font-family:'Space Grotesk',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#7E828F; margin-top:9px;">1,200+ reviews</div>
       </div>
     </div>
   </section>
 
   <!-- HOW IT WORKS -->
   <section id="how" style="position: relative; z-index: 1; padding: 52px 6vw 100px; max-width: 1220px; margin: 0 auto;">
+    <div style="position:absolute; top:8%; left:-10%; width:520px; height:520px; border-radius:50%; background:radial-gradient(circle, rgba(214,150,70,0.22), transparent 70%); filter:blur(55px); pointer-events:none; z-index:-1; animation: glowPulse 10s ease-in-out infinite;"></div>
     <div class="reveal" style="text-align:center; margin-bottom: 72px;">
-      <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">How it works</div>
-      <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,4.5vw,58px); letter-spacing: -0.02em; color:#F4EFE6; margin-bottom: 18px;">Four steps. Zero detours.</h2>
-      <p style="font-family:'Manrope',sans-serif; font-size: 16px; line-height: 1.7; color: #9AA0AD; max-width: 520px; margin: 0 auto;">Skip the shop, the waiting room, the detour. A certified technician comes to your home or office and performs a complete oil change in your driveway.</p>
+      <div data-i18n="nav_how" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">How it works</div>
+      <h2 data-i18n="how_h2" style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,4.5vw,58px); letter-spacing: -0.02em; color:#F4EFE6; margin-bottom: 18px;">Four steps. Zero detours.</h2>
+      <p data-i18n="how_intro" style="font-family:'Manrope',sans-serif; font-size: 16px; line-height: 1.7; color: #9AA0AD; max-width: 520px; margin: 0 auto;">Skip the shop, the waiting room, the detour. A certified technician comes to your home or office and performs a complete oil change in your driveway.</p>
     </div>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; overflow: hidden;">
-      <div class="reveal" style="padding: 40px 32px; background: #0B0C10;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+      <div class="reveal" style="padding: 40px 32px; border-radius: 18px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); transition: border-color .3s ease, transform .3s ease;" style-hover="border-color: rgba(232,151,60,0.3); transform: translateY(-3px);">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#E8973C" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="12" height="22" rx="2.5"></rect><path d="M12.4 20.4l2 2 3.6-4.2"></path></svg>
           <span style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #7E828F;">01</span>
         </div>
         <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.07); margin: 20px 0 24px;"></div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">Book online</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Choose your vehicle, oil type, and a time slot that suits you. It takes about a minute.</p>
+        <h3 data-i18n="step1_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">Book online</h3>
+        <p data-i18n="step1_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Choose your vehicle, oil type, and a time slot that suits you. It takes about a minute.</p>
       </div>
-      <div class="reveal" style="padding: 40px 32px; background: #0B0C10;">
+      <div class="reveal" style="padding: 40px 32px; border-radius: 18px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); transition: border-color .3s ease, transform .3s ease;" style-hover="border-color: rgba(232,151,60,0.3); transform: translateY(-3px);">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#E8973C" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 26c0 0 7-6.4 7-12a7 7 0 1 0-14 0c0 5.6 7 12 7 12z"></path><circle cx="15" cy="14" r="2.6"></circle></svg>
           <span style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #7E828F;">02</span>
         </div>
         <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.07); margin: 20px 0 24px;"></div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">We come to you</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">A certified technician arrives at your home or office, fully equipped &mdash; no lift required.</p>
+        <h3 data-i18n="step2_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">We come to you</h3>
+        <p data-i18n="step2_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">A certified technician arrives at your home or office, fully equipped &mdash; no lift required.</p>
       </div>
-      <div class="reveal" style="padding: 40px 32px; background: #0B0C10;">
+      <div class="reveal" style="padding: 40px 32px; border-radius: 18px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); transition: border-color .3s ease, transform .3s ease;" style-hover="border-color: rgba(232,151,60,0.3); transform: translateY(-3px);">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#E8973C" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5c4.2 5.2 6.5 8.2 6.5 11.8a6.5 6.5 0 0 1-13 0C8.5 12.7 10.8 9.7 15 4.5z"></path></svg>
           <span style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #7E828F;">03</span>
         </div>
         <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.07); margin: 20px 0 24px;"></div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">Serviced on the spot</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Fresh oil, a new filter, and a full fluid check &mdash; completed while you carry on with your day.</p>
+        <h3 data-i18n="step3_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">Serviced on the spot</h3>
+        <p data-i18n="step3_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Fresh oil, a new filter, and a full fluid check &mdash; completed while you carry on with your day.</p>
       </div>
-      <div class="reveal" style="padding: 40px 32px; background: #0B0C10;">
+      <div class="reveal" style="padding: 40px 32px; border-radius: 18px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08); transition: border-color .3s ease, transform .3s ease;" style-hover="border-color: rgba(232,151,60,0.3); transform: translateY(-3px);">
         <div style="display:flex; align-items:center; justify-content:space-between;">
           <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#E8973C" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 18.5l1.8-5.3A3 3 0 0 1 9.1 11h11.8a3 3 0 0 1 2.8 2.2l1.8 5.3"></path><path d="M3.5 18.5h23v2.5a1 1 0 0 1-1 1h-1.5M8 22H5a1 1 0 0 1-1-1v-2.5"></path><circle cx="9.5" cy="21.5" r="2.1"></circle><circle cx="20.5" cy="21.5" r="2.1"></circle></svg>
           <span style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #7E828F;">04</span>
         </div>
         <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.07); margin: 20px 0 24px;"></div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">Drive away fresh</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">We recycle the old oil, reset your service indicator, and email your digital receipt.</p>
+        <h3 data-i18n="step4_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 23px; margin-bottom: 12px; color:#ECE7DE;">Drive away fresh</h3>
+        <p data-i18n="step4_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">We recycle the old oil, reset your service indicator, and email your digital receipt.</p>
       </div>
     </div>
   </section>
@@ -169,30 +256,30 @@
   <section style="position: relative; z-index: 1; padding: 80px 6vw 100px; max-width: 1160px; margin: 0 auto;">
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 60px; align-items: center;">
       <div class="reveal">
-        <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">What's included</div>
-        <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(30px,4vw,50px); letter-spacing: -0.02em; color:#F4EFE6; margin-bottom: 22px;">Every visit,<br>the full works.</h2>
-        <p style="font-family:'Manrope',sans-serif; font-size: 16px; line-height: 1.75; color:#8A8E99; max-width: 420px;">One transparent price covers everything below. No upsells, no surprise line items when the job is done.</p>
+        <div data-i18n="incl_eyebrow" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">What's included</div>
+        <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(30px,4vw,50px); letter-spacing: -0.02em; color:#F4EFE6; margin-bottom: 22px;"><span data-i18n="incl_line1">Every visit,</span><br><span data-i18n="incl_line2">the full works.</span></h2>
+        <p data-i18n="incl_intro" style="font-family:'Manrope',sans-serif; font-size: 16px; line-height: 1.75; color:#8A8E99; max-width: 420px;">One transparent price covers everything below. No upsells, no surprise line items when the job is done.</p>
       </div>
       <div class="reveal" style="display:flex; flex-direction: column;">
         <div style="display:flex; align-items:center; gap: 18px; padding: 20px 4px; border-bottom: 1px solid rgba(255,255,255,0.07);">
           <span style="flex:0 0 auto; width: 28px; height: 28px; border-radius: 50%; display:grid; place-items:center; border: 1px solid rgba(232,151,60,0.4); color:#E8973C; font-size:12px;">&#10003;</span>
-          <span style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Up to 5 L of quality motor oil</span>
+          <span data-i18n="incl_item1" style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Up to 5 L of quality motor oil</span>
         </div>
         <div style="display:flex; align-items:center; gap: 18px; padding: 20px 4px; border-bottom: 1px solid rgba(255,255,255,0.07);">
           <span style="flex:0 0 auto; width: 28px; height: 28px; border-radius: 50%; display:grid; place-items:center; border: 1px solid rgba(232,151,60,0.4); color:#E8973C; font-size:12px;">&#10003;</span>
-          <span style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Brand-new premium oil filter</span>
+          <span data-i18n="incl_item2" style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Brand-new premium oil filter</span>
         </div>
         <div style="display:flex; align-items:center; gap: 18px; padding: 20px 4px; border-bottom: 1px solid rgba(255,255,255,0.07);">
           <span style="flex:0 0 auto; width: 28px; height: 28px; border-radius: 50%; display:grid; place-items:center; border: 1px solid rgba(232,151,60,0.4); color:#E8973C; font-size:12px;">&#10003;</span>
-          <span style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Top-up &amp; check of all key fluids</span>
+          <span data-i18n="incl_item3" style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Top-up &amp; check of all key fluids</span>
         </div>
         <div style="display:flex; align-items:center; gap: 18px; padding: 20px 4px; border-bottom: 1px solid rgba(255,255,255,0.07);">
           <span style="flex:0 0 auto; width: 28px; height: 28px; border-radius: 50%; display:grid; place-items:center; border: 1px solid rgba(232,151,60,0.4); color:#E8973C; font-size:12px;">&#10003;</span>
-          <span style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Multi-point visual inspection</span>
+          <span data-i18n="incl_item4" style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Multi-point visual inspection</span>
         </div>
         <div style="display:flex; align-items:center; gap: 18px; padding: 20px 4px;">
           <span style="flex:0 0 auto; width: 28px; height: 28px; border-radius: 50%; display:grid; place-items:center; border: 1px solid rgba(232,151,60,0.4); color:#E8973C; font-size:12px;">&#10003;</span>
-          <span style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Service indicator reset</span>
+          <span data-i18n="incl_item5" style="font-family:'Manrope',sans-serif; font-size: 16px; color:#D6D2C9;">Service indicator reset</span>
         </div>
       </div>
     </div>
@@ -200,89 +287,92 @@
 
   <!-- PRICING -->
   <section id="pricing" style="position: relative; z-index: 1; padding: 90px 6vw 100px; max-width: 1160px; margin: 0 auto;">
+    <div style="position:absolute; top:2%; right:-12%; width:560px; height:560px; border-radius:50%; background:radial-gradient(circle, rgba(232,151,60,0.14), transparent 70%); filter:blur(60px); pointer-events:none; z-index:-1;"></div>
     <div class="reveal" style="text-align:center; margin-bottom: 68px;">
-      <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">Pricing</div>
-      <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,4.5vw,58px); letter-spacing: -0.02em; color:#F4EFE6;">Pick your oil. See the price.</h2>
+      <div data-i18n="nav_pricing" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">Pricing</div>
+      <h2 data-i18n="pricing_h2" style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,4.5vw,58px); letter-spacing: -0.02em; color:#F4EFE6;">Pick your oil. See the price.</h2>
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(270px,1fr)); gap: 20px; align-items: stretch;">
 
       <div class="reveal" style="display:flex; flex-direction: column; padding: 38px 34px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); transition: border-color .3s ease;" style-hover="border-color: rgba(255,255,255,0.16);">
-        <h3 style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing: 0.14em; text-transform:uppercase; color:#C9A97E;">Conventional</h3>
+        <h3 data-i18n="plan1_name" style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing: 0.14em; text-transform:uppercase; color:#C9A97E;">Conventional</h3>
         <div style="font-family:'Newsreader',serif; font-weight:400; font-size: 56px; color:#F4EFE6; letter-spacing:-0.02em; margin: 22px 0 4px;">$89</div>
-        <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.14em; text-transform:uppercase; color:#7E828F;">CAD &middot; per visit</div>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14px; color:#8A8E99; margin: 20px 0 0; line-height:1.6;">For older or high-mileage engines.</p>
+        <div data-i18n="cad_per_visit" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.14em; text-transform:uppercase; color:#7E828F;">CAD &middot; per visit</div>
+        <p data-i18n="plan1_desc" style="font-family:'Manrope',sans-serif; font-size: 14px; color:#8A8E99; margin: 20px 0 0; line-height:1.6;">For older or high-mileage engines.</p>
         <div style="height:1px; background: rgba(255,255,255,0.08); margin: 26px 0;"></div>
         <ul style="list-style:none; display:flex; flex-direction:column; gap: 13px; font-family:'Manrope',sans-serif; font-size: 14.5px; color:#B7B3AA; flex: 1;">
-          <li>Conventional motor oil</li>
-          <li>New filter included</li>
-          <li>Fluid check &amp; top-up</li>
-          <li>~5,000 km protection</li>
+          <li data-i18n="plan1_li1">Conventional motor oil</li>
+          <li data-i18n="plan1_li2">New filter included</li>
+          <li data-i18n="li_fluid_check">Fluid check &amp; top-up</li>
+          <li data-i18n="plan1_li4">~5,000 km protection</li>
         </ul>
-        <a href="request.html" target="_blank" style="margin-top: 30px; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing:0.08em; color:#ECE7DE; border: 1px solid rgba(255,255,255,0.16); padding: 14px; border-radius: 100px; transition: all .25s ease;" style-hover="border-color:#E8973C; color:#F2B368;">Choose plan</a>
+        <a href="request.html" target="_blank" data-i18n="pricing_cta" style="margin-top: 30px; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing:0.08em; color:#ECE7DE; border: 1px solid rgba(255,255,255,0.16); padding: 14px; border-radius: 100px; transition: all .25s ease;" style-hover="border-color:#E8973C; color:#F2B368;">Choose plan</a>
       </div>
 
       <div class="reveal" style="display:flex; flex-direction: column; padding: 44px 34px 38px; border-radius: 18px; position: relative; background: linear-gradient(180deg, rgba(232,151,60,0.09), rgba(232,151,60,0.02)); border: 1px solid rgba(232,151,60,0.4);">
-        <div style="position:absolute; top: -11px; left: 50%; transform: translateX(-50%); font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color:#0C0A07; background: linear-gradient(180deg,#F2B368,#E0912F); padding: 6px 16px; border-radius: 100px; white-space:nowrap;">Most popular</div>
-        <h3 style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing: 0.14em; text-transform:uppercase; color:#E8973C;">Synthetic Blend</h3>
+        <div data-i18n="most_popular" style="position:absolute; top: -11px; left: 50%; transform: translateX(-50%); font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color:#0C0A07; background: linear-gradient(180deg,#F2B368,#E0912F); padding: 6px 16px; border-radius: 100px; white-space:nowrap;">Most popular</div>
+        <h3 data-i18n="plan2_name" style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing: 0.14em; text-transform:uppercase; color:#E8973C;">Synthetic Blend</h3>
         <div style="font-family:'Newsreader',serif; font-weight:400; font-size: 56px; color:#FBF4E8; letter-spacing:-0.02em; margin: 22px 0 4px;">$119</div>
-        <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.14em; text-transform:uppercase; color:#C9A97E;">CAD &middot; per visit</div>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14px; color:#C4B79E; margin: 20px 0 0; line-height:1.6;">The balanced choice for most daily drivers.</p>
+        <div data-i18n="cad_per_visit" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.14em; text-transform:uppercase; color:#C9A97E;">CAD &middot; per visit</div>
+        <p data-i18n="plan2_desc" style="font-family:'Manrope',sans-serif; font-size: 14px; color:#C4B79E; margin: 20px 0 0; line-height:1.6;">The balanced choice for most daily drivers.</p>
         <div style="height:1px; background: rgba(232,151,60,0.22); margin: 26px 0;"></div>
         <ul style="list-style:none; display:flex; flex-direction:column; gap: 13px; font-family:'Manrope',sans-serif; font-size: 14.5px; color:#E4DAC7; flex: 1;">
-          <li>Semi-synthetic blend oil</li>
-          <li>New premium filter</li>
-          <li>Full fluid check &amp; top-up</li>
-          <li>~8,000 km protection</li>
-          <li>Priority booking</li>
+          <li data-i18n="plan2_li1">Semi-synthetic blend oil</li>
+          <li data-i18n="li_premium_filter">New premium filter</li>
+          <li data-i18n="li_full_fluid_check">Full fluid check &amp; top-up</li>
+          <li data-i18n="plan2_li4">~8,000 km protection</li>
+          <li data-i18n="li_priority">Priority booking</li>
         </ul>
-        <a href="request.html" target="_blank" style="margin-top: 30px; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 14px; letter-spacing:0.06em; color:#0C0A07; background: linear-gradient(180deg,#F2B368,#E0912F); border: 1px solid rgba(255,220,170,0.5); padding: 15px; border-radius: 100px; transition: all .25s ease;" style-hover="transform: translateY(-2px); box-shadow: 0 14px 34px rgba(224,145,47,0.3);">Choose plan</a>
+        <a href="request.html" target="_blank" data-i18n="pricing_cta" style="margin-top: 30px; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 14px; letter-spacing:0.06em; color:#0C0A07; background: linear-gradient(180deg,#F2B368,#E0912F); border: 1px solid rgba(255,220,170,0.5); padding: 15px; border-radius: 100px; transition: all .25s ease;" style-hover="transform: translateY(-2px); box-shadow: 0 14px 34px rgba(224,145,47,0.3);">Choose plan</a>
       </div>
 
       <div class="reveal" style="display:flex; flex-direction: column; padding: 38px 34px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); transition: border-color .3s ease;" style-hover="border-color: rgba(255,255,255,0.16);">
-        <h3 style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing: 0.14em; text-transform:uppercase; color:#C9A97E;">Full Synthetic</h3>
+        <h3 data-i18n="plan3_name" style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing: 0.14em; text-transform:uppercase; color:#C9A97E;">Full Synthetic</h3>
         <div style="font-family:'Newsreader',serif; font-weight:400; font-size: 56px; color:#F4EFE6; letter-spacing:-0.02em; margin: 22px 0 4px;">$149</div>
-        <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.14em; text-transform:uppercase; color:#7E828F;">CAD &middot; per visit</div>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14px; color:#8A8E99; margin: 20px 0 0; line-height:1.6;">Maximum protection for modern engines.</p>
+        <div data-i18n="cad_per_visit" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.14em; text-transform:uppercase; color:#7E828F;">CAD &middot; per visit</div>
+        <p data-i18n="plan3_desc" style="font-family:'Manrope',sans-serif; font-size: 14px; color:#8A8E99; margin: 20px 0 0; line-height:1.6;">Maximum protection for modern engines.</p>
         <div style="height:1px; background: rgba(255,255,255,0.08); margin: 26px 0;"></div>
         <ul style="list-style:none; display:flex; flex-direction:column; gap: 13px; font-family:'Manrope',sans-serif; font-size: 14.5px; color:#B7B3AA; flex: 1;">
-          <li>100% full synthetic oil</li>
-          <li>New premium filter</li>
-          <li>Full fluid check &amp; top-up</li>
-          <li>~12,000 km protection</li>
-          <li>Priority booking</li>
+          <li data-i18n="plan3_li1">100% full synthetic oil</li>
+          <li data-i18n="li_premium_filter">New premium filter</li>
+          <li data-i18n="li_full_fluid_check">Full fluid check &amp; top-up</li>
+          <li data-i18n="plan3_li4">~12,000 km protection</li>
+          <li data-i18n="li_priority">Priority booking</li>
         </ul>
-        <a href="request.html" target="_blank" style="margin-top: 30px; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing:0.08em; color:#ECE7DE; border: 1px solid rgba(255,255,255,0.16); padding: 14px; border-radius: 100px; transition: all .25s ease;" style-hover="border-color:#E8973C; color:#F2B368;">Choose plan</a>
+        <a href="request.html" target="_blank" data-i18n="pricing_cta" style="margin-top: 30px; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 13px; letter-spacing:0.08em; color:#ECE7DE; border: 1px solid rgba(255,255,255,0.16); padding: 14px; border-radius: 100px; transition: all .25s ease;" style-hover="border-color:#E8973C; color:#F2B368;">Choose plan</a>
       </div>
 
     </div>
+    <p data-i18n="pricing_note" style="text-align:center; max-width: 620px; margin: 34px auto 0; font-family:'Manrope',sans-serif; font-size: 13px; line-height: 1.6; color:#6E7280;">Prices shown are estimates and may vary depending on your vehicle's make, model, and engine size. Your service manager will confirm the final price with you before starting any work.</p>
   </section>
 
   <!-- WHY US -->
   <section id="why" style="position: relative; z-index: 1; padding: 90px 6vw 100px; max-width: 1220px; margin: 0 auto;">
+    <div style="position:absolute; bottom:-4%; left:-9%; width:460px; height:460px; border-radius:50%; background:radial-gradient(circle, rgba(110,130,225,0.11), transparent 70%); filter:blur(55px); pointer-events:none; z-index:-1;"></div>
     <div class="reveal" style="text-align:center; margin-bottom: 68px;">
-      <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">Why Daviart</div>
-      <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,4.5vw,58px); letter-spacing: -0.02em; color:#F4EFE6;">Built around your time.</h2>
+      <div data-i18n="why_eyebrow" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">Why Daviart</div>
+      <h2 data-i18n="why_h2" style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,4.5vw,58px); letter-spacing: -0.02em; color:#F4EFE6;">Built around your time.</h2>
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px,1fr)); gap: 24px;">
       <div class="reveal" style="padding: 36px 30px; border-top: 1px solid rgba(232,151,60,0.35);">
         <div style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #E8973C; margin-bottom: 22px;">01</div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">Save your time</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Reclaim the hour you would lose driving to a shop and waiting around.</p>
+        <h3 data-i18n="why1_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">Save your time</h3>
+        <p data-i18n="why1_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Reclaim the hour you would lose driving to a shop and waiting around.</p>
       </div>
       <div class="reveal" style="padding: 36px 30px; border-top: 1px solid rgba(232,151,60,0.35);">
         <div style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #E8973C; margin-bottom: 22px;">02</div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">No lines, ever</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">No waiting rooms, no queue &mdash; we work on your schedule, not ours.</p>
+        <h3 data-i18n="why2_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">No lines, ever</h3>
+        <p data-i18n="why2_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">No waiting rooms, no queue &mdash; we work on your schedule, not ours.</p>
       </div>
       <div class="reveal" style="padding: 36px 30px; border-top: 1px solid rgba(232,151,60,0.35);">
         <div style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #E8973C; margin-bottom: 22px;">03</div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">Transparent price</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">The price you see at booking is the price you pay. No surprises.</p>
+        <h3 data-i18n="why3_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">Transparent price</h3>
+        <p data-i18n="why3_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">The price you see at booking is the price you pay. No surprises.</p>
       </div>
       <div class="reveal" style="padding: 36px 30px; border-top: 1px solid rgba(232,151,60,0.35);">
         <div style="font-family:'Space Grotesk',sans-serif; font-size: 12px; letter-spacing: 0.2em; color: #E8973C; margin-bottom: 22px;">04</div>
-        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">Home or office</h3>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Driveway, parking lot, or office garage &mdash; wherever your car sits.</p>
+        <h3 data-i18n="why4_title" style="font-family:'Newsreader',serif; font-weight:400; font-size: 21px; color:#ECE7DE; margin-bottom: 12px;">Home or office</h3>
+        <p data-i18n="why4_desc" style="font-family:'Manrope',sans-serif; font-size: 14.5px; line-height: 1.7; color:#8A8E99;">Driveway, parking lot, or office garage &mdash; wherever your car sits.</p>
       </div>
     </div>
   </section>
@@ -290,51 +380,151 @@
   <!-- TESTIMONIALS -->
   <section style="position: relative; z-index: 1; padding: 70px 6vw 100px; max-width: 1160px; margin: 0 auto;">
     <div class="reveal" style="text-align:center; margin-bottom: 64px;">
-      <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">Reviews</div>
-      <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(30px,4vw,50px); letter-spacing: -0.02em; color:#F4EFE6;">Drivers across Canada love it.</h2>
+      <div data-i18n="rev_eyebrow" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 20px;">Reviews</div>
+      <h2 data-i18n="rev_h2" style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(30px,4vw,50px); letter-spacing: -0.02em; color:#F4EFE6;">Drivers across Canada love it.</h2>
     </div>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(290px,1fr)); gap: 24px;">
-      <div class="reveal" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+    <div style="position: relative;">
+    <button type="button" id="testi-prev" aria-label="Previous review" style="position:absolute; left:-6px; top:50%; transform:translateY(-50%); z-index:5; width:40px; height:40px; border-radius:50%; background:rgba(18,20,27,0.85); border:1px solid rgba(255,255,255,0.14); color:#ECE7DE; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button type="button" id="testi-next" aria-label="Next review" style="position:absolute; right:-6px; top:50%; transform:translateY(-50%); z-index:5; width:40px; height:40px; border-radius:50%; background:rgba(18,20,27,0.85); border:1px solid rgba(255,255,255,0.14); color:#ECE7DE; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div class="testi-scroll reveal">
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
         <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Booked at 9, done by 9:40 in my own driveway. I didn't even put my coffee down. This is the future of car maintenance.&rdquo;</p>
+        <p data-i18n="quote1" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Booked at 9, done by 9:40 in my own driveway. I didn't even put my coffee down. This is the future of car maintenance.&rdquo;</p>
         <div style="display:flex; align-items:center; gap: 13px;">
           <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">M</div>
-          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Marcus L.</div><div style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Vancouver, BC</div></div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Marcus L.</div><div data-i18n="city1" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Vancouver, BC</div></div>
         </div>
       </div>
-      <div class="reveal" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
         <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;They came to my office parking lot while I was in meetings. Clean, professional, and the price was exactly what the site quoted.&rdquo;</p>
+        <p data-i18n="quote2" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;They came to my office parking lot while I was in meetings. Clean, professional, and the price was exactly what the site quoted.&rdquo;</p>
         <div style="display:flex; align-items:center; gap: 13px;">
           <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">S</div>
-          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Sarah T.</div><div style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Calgary, AB</div></div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Sarah T.</div><div data-i18n="city2" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Calgary, AB</div></div>
         </div>
       </div>
-      <div class="reveal" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
         <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;No more Saturday mornings wasted at the shop. Daviart texts when they're on the way and handles everything. Worth every dollar.&rdquo;</p>
+        <p data-i18n="quote3" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;No more Saturday mornings wasted at the shop. Daviart texts when they're on the way and handles everything. Worth every dollar.&rdquo;</p>
         <div style="display:flex; align-items:center; gap: 13px;">
           <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">A</div>
-          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Aisha K.</div><div style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Toronto, ON</div></div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Aisha K.</div><div data-i18n="city3" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Toronto, ON</div></div>
+        </div>
+      </div>
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+        <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p data-i18n="quote4" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Had a slow leak I didn't even know about &mdash; caught during the multi-point check. Saved me a much bigger repair down the road.&rdquo;</p>
+        <div style="display:flex; align-items:center; gap: 13px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">D</div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Daniel R.</div><div data-i18n="city1" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Vancouver, BC</div></div>
+        </div>
+      </div>
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+        <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p data-i18n="quote5" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Booked on my phone during lunch, service was done before I finished work. Ridiculously convenient.&rdquo;</p>
+        <div style="display:flex; align-items:center; gap: 13px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">P</div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Priya N.</div><div data-i18n="city2" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Calgary, AB</div></div>
+        </div>
+      </div>
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+        <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p data-i18n="quote6" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Skeptical at first about a driveway oil change, but the tech was fully equipped and left the spot cleaner than he found it.&rdquo;</p>
+        <div style="display:flex; align-items:center; gap: 13px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">J</div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">James O.</div><div data-i18n="city3" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Toronto, ON</div></div>
+        </div>
+      </div>
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+        <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p data-i18n="quote7" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Friendly, fast, and my car runs noticeably smoother. I've already told my whole office about Daviart.&rdquo;</p>
+        <div style="display:flex; align-items:center; gap: 13px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">E</div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Elena V.</div><div data-i18n="city1" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Vancouver, BC</div></div>
+        </div>
+      </div>
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+        <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p data-i18n="quote8" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Winter mornings are brutal here &mdash; having someone come to me instead of standing in a cold garage is a game changer.&rdquo;</p>
+        <div style="display:flex; align-items:center; gap: 13px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">T</div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Tom H.</div><div data-i18n="city2" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Calgary, AB</div></div>
+        </div>
+      </div>
+      <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+        <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p data-i18n="quote9" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;The digital receipt and reminder for my next service is such a nice touch. Feels like a modern, trustworthy company.&rdquo;</p>
+        <div style="display:flex; align-items:center; gap: 13px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">F</div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Fatima Z.</div><div data-i18n="city3" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Toronto, ON</div></div>
         </div>
       </div>
     </div>
+    </div>
+    <div style="text-align:center; margin-top: 26px;">
+      <button type="button" id="add-review-btn" style="background:none; border:1px solid rgba(232,151,60,0.35); color:#E8CBA0; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; letter-spacing:0.04em; padding:11px 24px; border-radius:100px; cursor:pointer;">
+        <span data-i18n="add_review_btn">+ Leave a review</span>
+      </button>
+    </div>
   </section>
+
+  <!-- LEAVE A REVIEW MODAL -->
+  <div id="review-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; padding:20px; background:rgba(5,6,10,0.72); backdrop-filter:blur(4px);">
+    <div style="background:#12161F; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:30px; max-width:440px; width:100%; text-align:left; font-family:'Manrope',sans-serif;">
+      <h3 data-i18n="review_modal_title" style="font-family:'Newsreader',serif; font-weight:400; font-size:26px; color:#F4EFE6; margin-bottom:18px;">Leave a review</h3>
+      <div style="display:grid; gap:6px; margin-bottom:14px;">
+        <label data-i18n="review_name_label" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9CA3B5;">Your name</label>
+        <input id="rev-name" type="text" placeholder="Your name" style="background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:11px 13px; color:#F4F1EA; font-size:16px; font-family:'Manrope',sans-serif;">
+      </div>
+      <div style="display:grid; gap:6px; margin-bottom:14px;">
+        <label data-i18n="review_city_label" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9CA3B5;">City</label>
+        <select id="rev-city" style="background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:11px 13px; color:#F4F1EA; font-size:16px; font-family:'Manrope',sans-serif;">
+          <option value="Vancouver, BC">Vancouver, BC</option>
+          <option value="Calgary, AB">Calgary, AB</option>
+          <option value="Toronto, ON">Toronto, ON</option>
+        </select>
+      </div>
+      <div style="display:grid; gap:6px; margin-bottom:14px;">
+        <label data-i18n="review_rating_label" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9CA3B5;">Rating</label>
+        <div id="rev-stars" style="display:flex; gap:6px; font-size:26px; line-height:1;">
+          <span class="rev-star" data-val="1" style="cursor:pointer; color:#4B5060;">&#9733;</span>
+          <span class="rev-star" data-val="2" style="cursor:pointer; color:#4B5060;">&#9733;</span>
+          <span class="rev-star" data-val="3" style="cursor:pointer; color:#4B5060;">&#9733;</span>
+          <span class="rev-star" data-val="4" style="cursor:pointer; color:#4B5060;">&#9733;</span>
+          <span class="rev-star" data-val="5" style="cursor:pointer; color:#4B5060;">&#9733;</span>
+        </div>
+      </div>
+      <div style="display:grid; gap:6px; margin-bottom:20px;">
+        <label data-i18n="review_text_label" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9CA3B5;">Your review</label>
+        <textarea id="rev-text" rows="3" placeholder="How was your experience?" style="background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:11px 13px; color:#F4F1EA; font-size:16px; font-family:'Manrope',sans-serif; resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button type="button" id="rev-cancel" data-i18n="review_cancel" style="flex:1; background:none; border:1px solid rgba(255,255,255,0.16); color:#ECE7DE; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; padding:13px; border-radius:100px; cursor:pointer;">Cancel</button>
+        <button type="button" id="rev-submit" data-i18n="review_submit" style="flex:1; background:linear-gradient(180deg,#F2B368,#E0912F); border:none; color:#0C0A07; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; padding:13px; border-radius:100px; cursor:pointer;">Post review</button>
+      </div>
+    </div>
+  </div>
 
   <!-- FINAL CTA -->
   <section style="position: relative; z-index: 1; padding: 40px 6vw 120px; max-width: 1080px; margin: 0 auto;">
     <div class="reveal final-cta-inner" style="position: relative; overflow: hidden; text-align:center; padding: 90px 40px; border-radius: 28px; background: radial-gradient(120% 140% at 50% 0%, rgba(232,151,60,0.14), rgba(232,151,60,0.01) 55%, transparent 75%); border: 1px solid rgba(232,151,60,0.22);">
-      <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 26px;">Ready when you are</div>
-      <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,5vw,64px); line-height: 1.05; letter-spacing: -0.02em; color:#FBF4E8; margin-bottom: 22px;">We change your oil<br><span style="font-style: italic; font-weight: 300; color: #E8CBA0;">while you sip your coffee.</span></h2>
-      <p style="font-family:'Manrope',sans-serif; font-size: 17px; color:#A69E90; max-width: 460px; margin: 0 auto 40px;">Book in under a minute. We come to you in Vancouver, Calgary, or Toronto.</p>
-      <a href="request.html" target="_blank" style="display:inline-block; font-family:'Space Grotesk',sans-serif; font-weight: 500; font-size: 15px; letter-spacing: 0.06em; color: #0C0A07; background: linear-gradient(180deg,#F2B368,#E0912F); padding: 17px 46px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); box-shadow: 0 12px 34px rgba(224,145,47,0.22); transition: all .28s ease;" style-hover="transform: translateY(-2px); box-shadow: 0 18px 46px rgba(224,145,47,0.34);">
-        Book a Mobile Oil Change
+      <div data-i18n="cta_eyebrow" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: #C9A97E; margin-bottom: 26px;">Ready when you are</div>
+      <h2 style="font-family:'Newsreader',serif; font-weight: 400; font-size: clamp(34px,5vw,64px); line-height: 1.05; letter-spacing: -0.02em; color:#FBF4E8; margin-bottom: 22px;"><span data-i18n="cta_line1">Your oil, handled</span><br><span data-i18n="cta_line2" style="font-style: italic; font-weight: 300; color: #E8CBA0;">without leaving your driveway.</span></h2>
+      <p data-i18n="cta_p" style="font-family:'Manrope',sans-serif; font-size: 17px; color:#A69E90; max-width: 460px; margin: 0 auto 40px;">Book in under a minute. We come to you in Vancouver, Calgary, or Toronto.</p>
+      <a href="request.html" target="_blank" style="position: relative; overflow: hidden; display:inline-block; font-family:'Space Grotesk',sans-serif; font-weight: 500; font-size: 15px; letter-spacing: 0.06em; color: #0C0A07; background: linear-gradient(180deg,#F2B368,#E0912F); padding: 17px 46px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); box-shadow: 0 12px 34px rgba(224,145,47,0.22); transition: all .28s ease;" style-hover="transform: translateY(-2px); box-shadow: 0 18px 46px rgba(224,145,47,0.34);">
+        <span data-i18n="cta_book" style="position: relative; z-index: 1;">Book a Mobile Oil Change</span>
+        <span class="btn-shine" aria-hidden="true"></span>
       </a>
     </div>
   </section>
 
   <!-- FOOTER -->
-  <footer style="position: relative; z-index: 1; border-top: 1px solid rgba(255,255,255,0.07); padding: 56px 6vw 44px;">
+  <footer style="position: relative; z-index: 1; border-top: 1px solid rgba(255,255,255,0.07); padding: 56px 6vw 44px; overflow: hidden;">
+    <div style="position:absolute; bottom:-30%; left:50%; transform:translateX(-50%); width:700px; height:400px; border-radius:50%; background:radial-gradient(circle, rgba(232,151,60,0.1), transparent 70%); filter:blur(60px); pointer-events:none; z-index:-1;"></div>
     <div style="max-width: 1160px; margin: 0 auto; display:flex; flex-wrap: wrap; gap: 40px; justify-content: space-between; align-items: flex-start;">
       <div style="max-width: 300px;">
         <div style="display:flex; align-items:center; gap: 11px; margin-bottom: 18px;">
@@ -343,27 +533,27 @@
           </div>
           <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 15px; letter-spacing: 0.16em; text-transform:uppercase; color: #ECE7DE;">Daviart</span>
         </div>
-        <p style="font-family:'Manrope',sans-serif; font-size: 14px; color:#7E828F; line-height: 1.7;">Mobile oil changes that come to your home or office. Serving Vancouver, Calgary, and Toronto.</p>
+        <p data-i18n="foot_tagline" style="font-family:'Manrope',sans-serif; font-size: 14px; color:#7E828F; line-height: 1.7;">Mobile oil changes that come to your home or office. Serving Vancouver, Calgary, and Toronto.</p>
       </div>
       <div style="display:flex; gap: 70px; flex-wrap: wrap;">
         <div>
-          <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color:#7E828F; margin-bottom: 18px;">Contact</div>
+          <div data-i18n="foot_contact" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color:#7E828F; margin-bottom: 18px;">Contact</div>
           <div style="display:flex; flex-direction:column; gap: 12px; font-family:'Manrope',sans-serif; font-size: 14.5px;">
             <a href="tel:+18005550123" style="color:#B7B3AA;" style-hover="color:#F2B368;">1-800-555-0123</a>
             <a href="mailto:hello@daviart.ca" style="color:#B7B3AA;" style-hover="color:#F2B368;">hello@daviart.ca</a>
           </div>
         </div>
         <div>
-          <div style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color:#7E828F; margin-bottom: 18px;">Company</div>
+          <div data-i18n="foot_company" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color:#7E828F; margin-bottom: 18px;">Company</div>
           <div style="display:flex; flex-direction:column; gap: 12px; font-family:'Manrope',sans-serif; font-size: 14.5px;">
-            <a href="#how" style="color:#B7B3AA;" style-hover="color:#F2B368;">How it works</a>
-            <a href="#pricing" style="color:#B7B3AA;" style-hover="color:#F2B368;">Pricing</a>
-            <a href="request.html" target="_blank" style="color:#B7B3AA;" style-hover="color:#F2B368;">Book now</a>
+            <a href="#how" data-i18n="nav_how" style="color:#B7B3AA;" style-hover="color:#F2B368;">How it works</a>
+            <a href="#pricing" data-i18n="nav_pricing" style="color:#B7B3AA;" style-hover="color:#F2B368;">Pricing</a>
+            <a href="request.html" target="_blank" data-i18n="nav_book" style="color:#B7B3AA;" style-hover="color:#F2B368;">Book now</a>
           </div>
         </div>
       </div>
     </div>
-    <div style="max-width: 1160px; margin: 44px auto 0; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.05); font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.08em; color:#6E7280;">
+    <div data-i18n="foot_copyright" style="max-width: 1160px; margin: 44px auto 0; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.05); font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing:0.08em; color:#6E7280;">
       &copy; 2026 Daviart Oil Change. All rights reserved.
     </div>
   </footer>
@@ -372,25 +562,18 @@
 
 <script>
 (function () {
-  var run = function () {
-    var els = document.querySelectorAll('.reveal');
-    if (!els.length) { requestAnimationFrame(run); return; }
-    var reveal = function (e) { e.classList.add('in'); };
-    els.forEach(function (e) {
-      var r = e.getBoundingClientRect();
-      if (r.top < window.innerHeight * 0.95) reveal(e);
-    });
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) { if (en.isIntersecting) { reveal(en.target); io.unobserve(en.target); } });
-      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
-      els.forEach(function (e) { if (!e.classList.contains('in')) io.observe(e); });
-    } else {
-      els.forEach(reveal);
-    }
-    setTimeout(function () { document.querySelectorAll('.reveal').forEach(reveal); }, 1500);
-  };
-  run();
+  // Content visibility no longer depends on scroll position at all — iOS Safari
+  // has a known bug where elements can fail to repaint mid-scroll (especially
+  // with position:fixed layers like our canvas/overlay in the mix), which made
+  // scroll-triggered reveals occasionally get stuck invisible until the user
+  // touched the screen again. Simplest reliable fix: just fade everything in
+  // shortly after load, in document order, independent of where the user has
+  // scrolled to. Below-the-fold content is already visible by the time it's
+  // scrolled into view, so there's nothing left to "pop in".
+  var els = document.querySelectorAll('.reveal');
+  els.forEach(function (e, i) {
+    setTimeout(function () { e.classList.add('in'); }, Math.min(i * 18, 260));
+  });
 })();
 
 (function () {
@@ -439,10 +622,309 @@
     overlay.style.background = 'rgba(8,9,12,' + (t * MAX_DIM).toFixed(3) + ')';
   };
 
+  // Throttle to one style write per animation frame — writing to a
+  // position:fixed element's style directly inside the raw scroll handler
+  // (which can fire many times per frame) is a known trigger for iOS Safari's
+  // "doesn't repaint until you touch the screen again" bug.
+  var queued = false;
+  var requestUpdate = function () {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () { update(); queued = false; });
+  };
+
   measure();
   update();
-  window.addEventListener('scroll', update, { passive: true });
-  window.addEventListener('resize', function () { measure(); update(); });
+  window.addEventListener('scroll', requestUpdate, { passive: true });
+  window.addEventListener('resize', function () { measure(); requestUpdate(); });
+})();
+</script>
+
+<script>
+(function () {
+  var I18N = {
+    en: {
+      nav_how: "How it works", nav_pricing: "Pricing", nav_why: "Why us", nav_book: "Book now",
+      hero_eyebrow_line1: "Mobile Oil Change", hero_eyebrow_line2: "Vancouver &middot; Calgary &middot; Toronto",
+      hero_line1: "We change your oil", hero_line2: "while you sip your coffee.",
+      cta_book: "Book a Mobile Oil Change", hero_secondary_cta: "See how it works",
+      stat_service: "Average service", stat_trip: "Trip fee", stat_reviews: "1,200+ reviews",
+      how_h2: "Four steps. Zero detours.",
+      how_intro: "Skip the shop, the waiting room, the detour. A certified technician comes to your home or office and performs a complete oil change in your driveway.",
+      step1_title: "Book online", step1_desc: "Choose your vehicle, oil type, and a time slot that suits you. It takes about a minute.",
+      step2_title: "We come to you", step2_desc: "A certified technician arrives at your home or office, fully equipped &mdash; no lift required.",
+      step3_title: "Serviced on the spot", step3_desc: "Fresh oil, a new filter, and a full fluid check &mdash; completed while you carry on with your day.",
+      step4_title: "Drive away fresh", step4_desc: "We recycle the old oil, reset your service indicator, and email your digital receipt.",
+      incl_eyebrow: "What's included", incl_line1: "Every visit,", incl_line2: "the full works.",
+      incl_intro: "One transparent price covers everything below. No upsells, no surprise line items when the job is done.",
+      incl_item1: "Up to 5 L of quality motor oil", incl_item2: "Brand-new premium oil filter",
+      incl_item3: "Top-up &amp; check of all key fluids", incl_item4: "Multi-point visual inspection", incl_item5: "Service indicator reset",
+      pricing_h2: "Pick your oil. See the price.", cad_per_visit: "CAD &middot; per visit", pricing_cta: "Choose plan", most_popular: "Most popular",
+      plan1_name: "Conventional", plan1_desc: "For older or high-mileage engines.",
+      plan1_li1: "Conventional motor oil", plan1_li2: "New filter included", li_fluid_check: "Fluid check &amp; top-up", plan1_li4: "~5,000 km protection",
+      plan2_name: "Synthetic Blend", plan2_desc: "The balanced choice for most daily drivers.",
+      plan2_li1: "Semi-synthetic blend oil", li_premium_filter: "New premium filter", li_full_fluid_check: "Full fluid check &amp; top-up", plan2_li4: "~8,000 km protection", li_priority: "Priority booking",
+      plan3_name: "Full Synthetic", plan3_desc: "Maximum protection for modern engines.",
+      plan3_li1: "100% full synthetic oil", plan3_li4: "~12,000 km protection",
+      pricing_note: "Prices shown are estimates and may vary depending on your vehicle's make, model, and engine size. Your service manager will confirm the final price with you before starting any work.",
+      why_eyebrow: "Why Daviart", why_h2: "Built around your time.",
+      why1_title: "Save your time", why1_desc: "Reclaim the hour you would lose driving to a shop and waiting around.",
+      why2_title: "No lines, ever", why2_desc: "No waiting rooms, no queue &mdash; we work on your schedule, not ours.",
+      why3_title: "Transparent price", why3_desc: "The price you see at booking is the price you pay. No surprises.",
+      why4_title: "Home or office", why4_desc: "Driveway, parking lot, or office garage &mdash; wherever your car sits.",
+      rev_eyebrow: "Reviews", rev_h2: "Drivers across Canada love it.",
+      quote1: "&ldquo;Booked at 9, done by 9:40 in my own driveway. I didn't even put my coffee down. This is the future of car maintenance.&rdquo;",
+      quote2: "&ldquo;They came to my office parking lot while I was in meetings. Clean, professional, and the price was exactly what the site quoted.&rdquo;",
+      quote3: "&ldquo;No more Saturday mornings wasted at the shop. Daviart texts when they're on the way and handles everything. Worth every dollar.&rdquo;",
+      quote4: "&ldquo;Had a slow leak I didn't even know about &mdash; caught during the multi-point check. Saved me a much bigger repair down the road.&rdquo;",
+      quote5: "&ldquo;Booked on my phone during lunch, service was done before I finished work. Ridiculously convenient.&rdquo;",
+      quote6: "&ldquo;Skeptical at first about a driveway oil change, but the tech was fully equipped and left the spot cleaner than he found it.&rdquo;",
+      quote7: "&ldquo;Friendly, fast, and my car runs noticeably smoother. I've already told my whole office about Daviart.&rdquo;",
+      quote8: "&ldquo;Winter mornings are brutal here &mdash; having someone come to me instead of standing in a cold garage is a game changer.&rdquo;",
+      quote9: "&ldquo;The digital receipt and reminder for my next service is such a nice touch. Feels like a modern, trustworthy company.&rdquo;",
+      city1: "Vancouver, BC", city2: "Calgary, AB", city3: "Toronto, ON",
+      cta_eyebrow: "Ready when you are", cta_line1: "Your oil, handled", cta_line2: "without leaving your driveway.",
+      cta_p: "Book in under a minute. Our mechanic will call you beforehand to confirm all the details. We come to you in Vancouver, Calgary, or Toronto.",
+      foot_tagline: "Mobile oil changes that come to your home or office. Serving Vancouver, Calgary, and Toronto.",
+      foot_contact: "Contact", foot_company: "Company", foot_copyright: "&copy; 2026 Daviart Oil Change. All rights reserved.",
+      add_review_btn: "+ Leave a review", review_modal_title: "Leave a review",
+      review_name_label: "Your name", review_city_label: "City", review_rating_label: "Rating", review_text_label: "Your review",
+      review_cancel: "Cancel", review_submit: "Post review"
+    },
+    uk: {
+      nav_how: "Як це працює", nav_pricing: "Ціни", nav_why: "Чому ми", nav_book: "Записатися",
+      hero_eyebrow_line1: "Виїзна заміна оливи", hero_eyebrow_line2: "Ванкувер &middot; Калгарі &middot; Торонто",
+      hero_line1: "Ми замінимо оливу", hero_line2: "поки ви п'єте каву.",
+      cta_book: "Замовити виїзну заміну оливи", hero_secondary_cta: "Дивитися, як це працює",
+      stat_service: "Середній час візиту", stat_trip: "Виїзд", stat_reviews: "1200+ відгуків",
+      how_h2: "Чотири кроки. Без зайвих поїздок.",
+      how_intro: "Забудьте про автосервіс, чергу й гайки часу. Сертифікований технік приїде додому чи в офіс і повністю замінить оливу просто на під'їзній доріжці.",
+      step1_title: "Забронюйте онлайн", step1_desc: "Оберіть авто, тип оливи та зручний час. Це займає близько хвилини.",
+      step2_title: "Ми приїдемо до вас", step2_desc: "Сертифікований технік приїде додому чи в офіс з повним обладнанням &mdash; підйомник не потрібен.",
+      step3_title: "Обслуговування на місці", step3_desc: "Свіжа олива, новий фільтр і повна перевірка рідин &mdash; поки ви займаєтесь своїми справами.",
+      step4_title: "Їдьте далі з новою оливою", step4_desc: "Ми утилізуємо стару оливу, скидаємо індикатор обслуговування та надсилаємо електронний чек.",
+      incl_eyebrow: "Що входить", incl_line1: "Кожен візит &mdash;", incl_line2: "повний комплекс.",
+      incl_intro: "Одна прозора ціна включає все нижче. Без накруток і несподіваних доплат після роботи.",
+      incl_item1: "До 5 л якісної моторної оливи", incl_item2: "Новий преміальний масляний фільтр",
+      incl_item3: "Доливка й перевірка всіх ключових рідин", incl_item4: "Багатопунктовий візуальний огляд", incl_item5: "Скидання індикатора обслуговування",
+      pricing_h2: "Оберіть оливу. Дізнайтесь ціну.", cad_per_visit: "CAD &middot; за візит", pricing_cta: "Обрати план", most_popular: "Популярний вибір",
+      plan1_name: "Мінеральна", plan1_desc: "Для старіших двигунів або з великим пробігом.",
+      plan1_li1: "Мінеральна моторна олива", plan1_li2: "Новий фільтр у комплекті", li_fluid_check: "Перевірка та доливка рідин", plan1_li4: "~5 000 км захисту",
+      plan2_name: "Напівсинтетика", plan2_desc: "Збалансований вибір для щоденних поїздок.",
+      plan2_li1: "Напівсинтетична олива", li_premium_filter: "Новий преміальний фільтр", li_full_fluid_check: "Повна перевірка та доливка рідин", plan2_li4: "~8 000 км захисту", li_priority: "Пріоритетна бронь",
+      plan3_name: "Синтетика", plan3_desc: "Максимальний захист для сучасних двигунів.",
+      plan3_li1: "100% синтетична олива", plan3_li4: "~12 000 км захисту",
+      why_eyebrow: "Чому Daviart", why_h2: "Створено заради вашого часу.",
+      why1_title: "Заощаджуйте час", why1_desc: "Поверніть собі годину, яку витратили б на дорогу в сервіс і очікування.",
+      why2_title: "Жодних черг", why2_desc: "Без залу очікування, без черги &mdash; ми працюємо за вашим графіком, а не своїм.",
+      why3_title: "Прозора ціна", why3_desc: "Ціна під час бронювання &mdash; це ціна, яку ви заплатите. Без сюрпризів.",
+      why4_title: "Вдома чи в офісі", why4_desc: "Під'їзна доріжка, парковка чи гараж офісу &mdash; будь-де, де стоїть ваше авто.",
+      rev_eyebrow: "Відгуки", rev_h2: "Водії по всій Канаді обирають нас.",
+      quote1: "&laquo;Забронював о 9:00, все готово вже о 9:40 просто на моїй під'їзній доріжці. Я навіть каву не встиг поставити. Це майбутнє обслуговування авто.&raquo;",
+      quote2: "&laquo;Приїхали на паркінг офісу, поки я був на нарадах. Чисто, професійно, і ціна точно збіглася з сайтом.&raquo;",
+      quote3: "&laquo;Більше жодних суботніх ранків в автосервісі. Daviart пише, коли вже в дорозі, і робить усе сама. Варте кожного долара.&raquo;",
+      quote4: "&laquo;Виявилась повільна протічка, про яку я навіть не знав &mdash; технік помітив її під час багатопунктового огляду. Це врятувало мене від набагато серйознішого ремонту.&raquo;",
+      quote5: "&laquo;Забронював з телефону в обідню перерву &mdash; усе було готово ще до кінця робочого дня. Неймовірно зручно.&raquo;",
+      quote6: "&laquo;Спочатку сумнівався щодо заміни оливи просто на під'їзній доріжці, але технік мав усе обладнання і залишив місце чистішим, ніж було.&raquo;",
+      quote7: "&laquo;Дружньо, швидко, і машина явно їде плавніше. Я вже розповів усьому офісу про Daviart.&raquo;",
+      quote8: "&laquo;Зимові ранки тут суворі &mdash; коли хтось приїжджає до тебе замість того, щоб стояти в холодному гаражі, це справжній порятунок.&raquo;",
+      quote9: "&laquo;Електронний чек і нагадування про наступне обслуговування &mdash; приємна дрібниця. Відчувається як сучасна, надійна компанія.&raquo;",
+      city1: "Ванкувер, БК", city2: "Калгарі, АБ", city3: "Торонто, ОН",
+      cta_eyebrow: "Готові, коли зручно вам", cta_line1: "Ваша олива готова", cta_line2: "без візиту в сервіс.",
+      cta_p: "Забронюйте менш ніж за хвилину. Наш механік зателефонує заздалегідь, щоб уточнити всі деталі. Ми приїдемо до вас у Ванкувері, Калгарі чи Торонто.",
+      foot_tagline: "Виїзна заміна оливи прямо вдома чи в офісі. Працюємо у Ванкувері, Калгарі та Торонто.",
+      foot_contact: "Контакти", foot_company: "Компанія", foot_copyright: "&copy; 2026 Daviart Oil Change. Усі права захищено.",
+      add_review_btn: "+ Залишити відгук", review_modal_title: "Залишити відгук",
+      review_name_label: "Ваше ім'я", review_city_label: "Місто", review_rating_label: "Оцінка", review_text_label: "Ваш відгук",
+      review_cancel: "Скасувати", review_submit: "Опублікувати"
+    }
+  };
+  var LABELS = { en: "EN", uk: "UA" };
+
+  var toggle = document.getElementById('lang-toggle');
+  var toggleLabel = document.getElementById('lang-toggle-label');
+  var menu = document.getElementById('lang-menu');
+  if (!toggle || !menu) return;
+
+  var setLang = function (lang) {
+    if (!I18N[lang]) lang = 'en';
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var val = I18N[lang][el.getAttribute('data-i18n')];
+      if (val != null) el.innerHTML = val;
+    });
+    document.querySelectorAll('.lang-option').forEach(function (opt) {
+      var check = opt.querySelector('.lang-check');
+      if (check) check.style.opacity = (opt.getAttribute('data-lang') === lang) ? '1' : '0';
+    });
+    toggleLabel.textContent = LABELS[lang] || 'EN';
+    document.documentElement.setAttribute('lang', lang === 'uk' ? 'uk' : 'en');
+    try { localStorage.setItem('daviart_lang', lang); } catch (e) {}
+  };
+
+  var openMenu = function () { menu.style.display = 'block'; toggle.setAttribute('aria-expanded', 'true'); };
+  var closeMenu = function () { menu.style.display = 'none'; toggle.setAttribute('aria-expanded', 'false'); };
+
+  toggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (menu.style.display === 'block') { closeMenu(); } else { openMenu(); }
+  });
+  document.querySelectorAll('.lang-option').forEach(function (opt) {
+    opt.addEventListener('click', function () { setLang(opt.getAttribute('data-lang')); closeMenu(); });
+    opt.addEventListener('mouseenter', function () { opt.style.background = 'rgba(255,255,255,0.06)'; });
+    opt.addEventListener('mouseleave', function () { opt.style.background = 'none'; });
+  });
+  document.addEventListener('click', function (e) {
+    if (!document.getElementById('lang-switch').contains(e.target)) closeMenu();
+  });
+
+  var saved = 'en';
+  try { saved = localStorage.getItem('daviart_lang') || 'en'; } catch (e) {}
+  setLang(saved);
+})();
+</script>
+
+<script>
+(function () {
+  // Auto-advance the testimonials carousel every 4s; pauses while the user
+  // is interacting with it so it doesn't fight manual swipes/drags/arrows.
+  var scroller = document.querySelector('.testi-scroll');
+  var prevBtn = document.getElementById('testi-prev');
+  var nextBtn = document.getElementById('testi-next');
+  if (!scroller) return;
+
+  var step = function () {
+    var card = scroller.querySelector('.testi-card');
+    if (!card) return 320;
+    var style = getComputedStyle(scroller);
+    var gap = parseFloat(style.columnGap || style.gap || '20') || 20;
+    return card.getBoundingClientRect().width + gap;
+  };
+
+  // Advancing always moves forward and, on reaching the end, jumps straight
+  // back to the start with no animation — never an animated scroll back
+  // through the cards, which read as "going in reverse".
+  var advance = function () {
+    var maxScroll = scroller.scrollWidth - scroller.clientWidth;
+    if (scroller.scrollLeft >= maxScroll - 4) {
+      scroller.scrollTo({ left: 0, behavior: 'auto' });
+    } else {
+      scroller.scrollBy({ left: step(), behavior: 'smooth' });
+    }
+  };
+  var retreat = function () {
+    if (scroller.scrollLeft <= 4) {
+      scroller.scrollTo({ left: scroller.scrollWidth - scroller.clientWidth, behavior: 'auto' });
+    } else {
+      scroller.scrollBy({ left: -step(), behavior: 'smooth' });
+    }
+  };
+
+  var timer = null;
+  var stop = function () { if (timer) { clearInterval(timer); timer = null; } };
+  var start = function () { stop(); timer = setInterval(advance, 4000); };
+
+  if (nextBtn) nextBtn.addEventListener('click', function () { stop(); advance(); start(); });
+  if (prevBtn) prevBtn.addEventListener('click', function () { stop(); retreat(); start(); });
+  scroller.addEventListener('mouseenter', stop);
+  scroller.addEventListener('mouseleave', start);
+  scroller.addEventListener('touchstart', stop, { passive: true });
+  scroller.addEventListener('touchend', function () { setTimeout(start, 4000); }, { passive: true });
+  start();
+
+  // Mobile "peek" effect — dim every card except whichever one is currently
+  // most centered in view, so the neighbours read as translucent hints that
+  // there's more to scroll to rather than full-strength duplicate content.
+  var updateActiveCard = function () {
+    var cards = scroller.querySelectorAll('.testi-card');
+    var center = scroller.getBoundingClientRect().left + scroller.clientWidth / 2;
+    var closest = null, closestDist = Infinity;
+    cards.forEach(function (c) {
+      var r = c.getBoundingClientRect();
+      var d = Math.abs((r.left + r.width / 2) - center);
+      if (d < closestDist) { closestDist = d; closest = c; }
+      c.classList.remove('testi-active');
+    });
+    if (closest) closest.classList.add('testi-active');
+  };
+  updateActiveCard();
+  scroller.addEventListener('scroll', function () {
+    requestAnimationFrame(updateActiveCard);
+  }, { passive: true });
+})();
+
+(function () {
+  // "Leave a review" — purely cosmetic and client-side: the card is inserted
+  // into the DOM only, nothing is sent anywhere or saved, so a page reload
+  // makes it disappear again exactly as intended.
+  var openBtn = document.getElementById('add-review-btn');
+  var modal = document.getElementById('review-modal');
+  var cancelBtn = document.getElementById('rev-cancel');
+  var submitBtn = document.getElementById('rev-submit');
+  var nameInput = document.getElementById('rev-name');
+  var cityInput = document.getElementById('rev-city');
+  var textInput = document.getElementById('rev-text');
+  var starEls = document.querySelectorAll('#rev-stars .rev-star');
+  var scroller = document.querySelector('.testi-scroll');
+  if (!openBtn || !modal || !scroller) return;
+
+  var rating = 5;
+  var paintStars = function () {
+    starEls.forEach(function (s) {
+      s.style.color = (parseInt(s.getAttribute('data-val'), 10) <= rating) ? '#E8973C' : '#4B5060';
+    });
+  };
+  starEls.forEach(function (s) {
+    s.addEventListener('click', function () { rating = parseInt(s.getAttribute('data-val'), 10); paintStars(); });
+    s.addEventListener('mouseenter', function () {
+      var hover = parseInt(s.getAttribute('data-val'), 10);
+      starEls.forEach(function (o) { o.style.color = (parseInt(o.getAttribute('data-val'), 10) <= hover) ? '#F2B368' : '#4B5060'; });
+    });
+    s.addEventListener('mouseleave', paintStars);
+  });
+  paintStars();
+
+  var escapeHtml = function (s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  };
+
+  var open = function () { modal.style.display = 'flex'; };
+  var close = function () { modal.style.display = 'none'; };
+
+  openBtn.addEventListener('click', open);
+  cancelBtn.addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+
+  submitBtn.addEventListener('click', function () {
+    var name = (nameInput.value || '').trim() || 'Anonymous';
+    var city = cityInput.value;
+    var text = (textInput.value || '').trim();
+    if (!text) { textInput.focus(); return; }
+    var initial = name.charAt(0).toUpperCase();
+    var starsHtml = '';
+    for (var i = 1; i <= 5; i++) starsHtml += (i <= rating) ? '&#9733;' : '&#9734;';
+
+    var card = document.createElement('div');
+    card.className = 'testi-card';
+    card.style.cssText = 'padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(232,151,60,0.4);';
+    card.innerHTML =
+      '<div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">' + starsHtml + '</div>' +
+      '<p style="font-family:\'Newsreader\',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;' + escapeHtml(text) + '&rdquo;</p>' +
+      '<div style="display:flex; align-items:center; gap: 13px;">' +
+        '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:\'Space Grotesk\',sans-serif;font-weight:500;color:#0C0A07;">' + escapeHtml(initial) + '</div>' +
+        '<div><div style="font-family:\'Manrope\',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">' + escapeHtml(name) + '</div><div style="font-family:\'Space Grotesk\',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">' + escapeHtml(city) + '</div></div>' +
+      '</div>';
+
+    scroller.insertBefore(card, scroller.firstChild);
+    scroller.scrollTo({ left: 0, behavior: 'smooth' });
+
+    nameInput.value = '';
+    textInput.value = '';
+    rating = 5;
+    paintStars();
+    close();
+  });
 })();
 </script>
 </body>
