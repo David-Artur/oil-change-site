@@ -10,9 +10,6 @@
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'AW-970809033');
-  // Conversion event snippet goes here once we have the conversion Label
-  // from the "Submit lead form" action's Tag setup screen, e.g.:
-  // gtag('event', 'conversion', {'send_to': 'AW-970809033/XXXXXXXXXXXXXXXXXXXXX'});
 </script>
 <title>Thank You | Daviart</title>
 <meta name="description" content="Your Daviart mobile oil change request has been received.">
@@ -104,6 +101,18 @@
     // arrived here without ever submitting — send them somewhere useful
     window.location.href = 'index.html';
   } else {
+    // Google Ads conversion — fires exactly once, only on a real confirmed
+    // submission (this page is only ever reached that way). Enhanced
+    // conversions: pass the email/phone the user entered so Google can match
+    // this lead even without third-party cookies; gtag.js hashes them itself.
+    if (window.gtag) {
+      gtag('set', 'user_data', {
+        email: data.email || undefined,
+        phone_number: data.phone || undefined
+      });
+      gtag('event', 'conversion', { send_to: 'AW-970809033/9FAUCISr684cEMm99c4D' });
+    }
+
     var heading = document.getElementById('ty-heading');
     if (data.name) heading.textContent = 'Thank you, ' + data.name + '!';
 
