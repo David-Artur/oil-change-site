@@ -16,7 +16,9 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap"></noscript>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #06080F; }
@@ -26,8 +28,9 @@
   @keyframes drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
 
   .form-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; text-align: left; backdrop-filter: blur(6px); }
-  .form-row { display: grid; gap: 6px; margin-bottom: 16px; }
+  .form-row { display: grid; gap: 6px; margin-bottom: 16px; position: relative; }
   .form-row.two { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row.addr-postal { grid-template-columns: 2.3fr 1fr; gap: 14px; }
   .form-row label { font-family: 'Space Grotesk', sans-serif; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #9CA3B5; font-weight: 500; }
   .form-row input, .form-row select, .form-row textarea {
     width: 100%; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
@@ -36,7 +39,8 @@
   .form-row input::placeholder, .form-row textarea::placeholder { color: #6B7280; }
   .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: none; border-color: #F5A623; }
   fieldset { border: none; padding: 0; margin: 0 0 22px; }
-  legend { font-family: 'Space Grotesk', sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #FFB65C; font-weight: 600; margin-bottom: 14px; padding: 0; }
+  legend { display: flex; align-items: center; gap: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #FFB65C; font-weight: 600; margin-bottom: 14px; padding: 0; }
+  legend svg { flex: none; }
   .pref-row { display: flex; flex-wrap: wrap; gap: 10px; }
   .pref-chip { position: relative; }
   .pref-chip input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
@@ -57,9 +61,128 @@
   .form-status { margin-top: 16px; font-family: 'Manrope', sans-serif; font-size: 14px; padding: 12px 14px; border-radius: 10px; display: none; }
   .form-status.ok { display: block; background: rgba(111,207,151,0.1); border: 1px solid rgba(111,207,151,0.3); color: #9FE6BE; }
   .form-status.err { display: block; background: rgba(255,110,110,0.1); border: 1px solid rgba(255,110,110,0.3); color: #FFAFAF; }
+
+  /* Custom dropdown ("oil type", "time") — styled like the rest of the site
+     instead of the browser/OS native <select> popup. */
+  .dd { position: relative; }
+  .dd-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; padding: 12px 14px; color: #F4F1EA;
+    font-size: 15px; font-family: 'Manrope', sans-serif; cursor: pointer; text-align: left;
+  }
+  .dd-toggle:hover { border-color: rgba(245,166,35,0.4); }
+  .dd-chev { flex: none; margin-left: 8px; color: #6B7280; transition: transform .15s ease; }
+  .dd-toggle.open .dd-chev { transform: rotate(180deg); }
+  .dd-menu {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 45;
+    background: #0E1420; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 6px;
+    box-shadow: 0 16px 34px rgba(0,0,0,0.45); max-height: 220px; overflow-y: auto;
+  }
+  .dd-menu.open { display: block; }
+  .dd-item { padding: 10px 12px; border-radius: 8px; font-family: 'Manrope', sans-serif; font-size: 14.5px; color: #D6D2C9; cursor: pointer; }
+  .dd-item:hover { background: rgba(255,255,255,0.06); }
+  .dd-item.active { color: #FFDDA8; background: rgba(245,166,35,0.1); }
+
+  /* Make/model autocomplete suggestions */
+  .ac-list {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 45;
+    background: #0E1420; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 6px;
+    max-height: 220px; overflow-y: auto; box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+  }
+  .ac-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-family: 'Manrope', sans-serif; font-size: 14.5px; color: #F4F1EA; cursor: pointer; }
+  .ac-item:hover, .ac-item.ac-active { background: rgba(245,166,35,0.14); }
+  .ac-badge { flex: none; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#F5A623,#B85A18); color: #1A1206; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 11px; }
+
+  .req { color: #FF9E9E; margin-left: 2px; }
+
+  /* Year "wheel" picker — scroll (mouse wheel / touch) or arrow keys */
+  .year-picker { position: relative; height: 132px; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(255,255,255,0.045); overflow: hidden; cursor: ns-resize; }
+  .year-picker:focus { outline: none; border-color: #F5A623; }
+  .year-picker-highlight { position: absolute; top: 44px; left: 0; right: 0; height: 44px; border-top: 1px solid rgba(245,166,35,0.4); border-bottom: 1px solid rgba(245,166,35,0.4); background: rgba(245,166,35,0.07); pointer-events: none; z-index: 1; }
+  .year-picker-input {
+    position: absolute; top: 44px; left: 0; right: 0; height: 44px; z-index: 3;
+    background: transparent; border: none; outline: none; text-align: center; padding: 0;
+    font-family: 'Manrope', sans-serif; font-size: 19px; font-weight: 700; color: #F4F1EA;
+    opacity: 0; cursor: pointer;
+  }
+  .year-picker-input:focus { opacity: 1; cursor: text; background: rgba(245,166,35,0.1); }
+  .year-picker-input:focus ~ .year-picker-scroll .year-option.active { opacity: 0; }
+  .year-picker-scroll { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .year-picker-scroll::-webkit-scrollbar { display: none; }
+  .year-pad { height: 44px; }
+  .year-option { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-family: 'Manrope', sans-serif; font-size: 15px; color: #6B7280; cursor: pointer; transition: color .15s ease, font-size .15s ease, font-weight .15s ease; }
+  .year-option.active { color: #F4F1EA; font-weight: 700; font-size: 19px; }
+  .year-arrow {
+    position: absolute; right: 6px; width: 24px; height: 24px; z-index: 4;
+    display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); color: #A7ADBC; cursor: pointer;
+  }
+  .year-arrow:hover { border-color: #F5A623; color: #FFDDA8; background: rgba(245,166,35,0.12); }
+  .year-arrow-up { top: 8px; }
+  .year-arrow-down { bottom: 8px; }
+
+  .vehicle-block:last-child { margin-bottom: 0 !important; padding-bottom: 0 !important; border-bottom: none !important; }
+  .add-vehicle-btn {
+    display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px dashed rgba(255,255,255,0.22);
+    color: #A7ADBC; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; padding: 10px 18px;
+    border-radius: 100px; cursor: pointer; transition: border-color .15s ease, color .15s ease;
+  }
+  .add-vehicle-btn:hover { border-color: #F5A623; color: #FFDDA8; }
+  .remove-vehicle-btn { background: none; border: none; color: #FF9E9E; font-family: 'Manrope', sans-serif; font-size: 12.5px; cursor: pointer; text-decoration: underline; }
+
+  .extra-services-list { display: none; margin-top: 14px; flex-wrap: wrap; gap: 10px; }
+  .extra-services-list.open { display: flex; }
+
+  /* Pin-on-map modal — near-fullscreen on phones, a large centered panel on
+     wider screens (map itself should feel roomy, not a tiny square). */
+  .map-modal-overlay { display: none; position: fixed; inset: 0; z-index: 220; background: rgba(4,6,12,0.85); }
+  .map-modal-overlay.open { display: block; }
+  .map-modal-card { height: 100%; width: 100%; display: flex; flex-direction: column; background: #0E1420; }
+  @media (min-width: 640px) {
+    .map-modal-overlay.open { display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .map-modal-card { max-width: 640px; height: 85vh; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+  }
+  @keyframes locatePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,166,35,0.45); }
+    50% { box-shadow: 0 0 0 14px rgba(245,166,35,0); }
+  }
+  .locate-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 9px;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #1A1206;
+    background: linear-gradient(180deg, #FFCB8A 0%, #F5A623 55%, #E8871A 100%); border: none;
+    padding: 15px; border-radius: 100px; cursor: pointer; animation: locatePulse 1.8s ease-in-out infinite;
+  }
+  .locate-btn:hover { filter: brightness(1.05); }
+  .map-city-choice {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; color: #F4F1EA;
+    background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.16); padding: 12px 22px;
+    border-radius: 100px; cursor: pointer; transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .map-city-choice:hover { border-color: #F5A623; color: #FFDDA8; background: rgba(245,166,35,0.1); }
 </style>
 </head>
 <body>
+<!-- Language switcher — UI scaffold only for now (per request: don't wire up
+     translations yet, just the icon/menu so a dictionary can be plugged in
+     later). Shares the same localStorage key as index.html's switcher. -->
+<div id="lang-switch" style="position: fixed; top: 18px; right: 18px; z-index: 90;">
+  <button type="button" id="lang-toggle" aria-haspopup="true" aria-expanded="false" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); cursor:pointer; display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; color:#A7ADBC; font-family:'Space Grotesk',sans-serif; font-size:10.5px; font-weight:600; letter-spacing:0.02em; backdrop-filter: blur(6px);">
+    <span id="lang-toggle-label">EN</span>
+  </button>
+  <div id="lang-menu" style="display:none; position:absolute; top:calc(100% + 10px); right:0; background:#0E1420; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; min-width:170px; max-height:340px; overflow-y:auto; box-shadow:0 16px 34px rgba(0,0,0,0.45); z-index:91;">
+    <button type="button" class="lang-option" data-lang="en" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127468;&#127463;</span><span style="flex:1;">English</span><span class="lang-check" style="color:#FFB65C; opacity:1;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="uk" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127482;&#127462;</span><span style="flex:1;">Українська</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="fr" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127467;&#127479;</span><span style="flex:1;">Français</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="it" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127470;&#127481;</span><span style="flex:1;">Italiano</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="ru" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127479;&#127482;</span><span style="flex:1;">Русский</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="hi" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127470;&#127475;</span><span style="flex:1;">हिन्दी</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="pa" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127470;&#127475;</span><span style="flex:1;">ਪੰਜਾਬੀ</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="zh" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127469;&#127472;</span><span style="flex:1;">繁體中文</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="es" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127466;&#127480;</span><span style="flex:1;">Español</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+    <button type="button" class="lang-option" data-lang="tl" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#F4F1EA; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127477;&#127469;</span><span style="flex:1;">Filipino</span><span class="lang-check" style="color:#FFB65C; opacity:0;">&#10003;</span></button>
+  </div>
+</div>
+
 <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px; font-family: 'Manrope', sans-serif; position: relative; overflow: hidden; background: radial-gradient(120% 90% at 50% -10%, #142138 0%, #0A0F1C 45%, #06080F 100%);">
 
   <div style="position: absolute; top: -180px; left: -120px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,182,92,0.22), rgba(255,140,50,0.06) 55%, transparent 70%); filter: blur(20px); animation: drift 9s ease-in-out infinite;"></div>
@@ -67,82 +190,112 @@
 
   <div style="position: relative; z-index: 2; max-width: 560px; width: 100%; text-align: center; animation: rise 0.7s ease both; padding: 40px 0;">
 
-    <div style="width: 64px; height: 82px; margin: 0 auto 22px; position: relative; filter: drop-shadow(0 14px 30px rgba(255,150,60,0.35));">
-      <div style="width: 64px; height: 64px; position: absolute; bottom: 0; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: radial-gradient(circle at 32% 28%, #FFDDA8 0%, #FFB65C 30%, #F1852E 62%, #B85A18 100%);"></div>
-      <div style="width: 22px; height: 33px; position: absolute; top: 4px; left: 50%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.85), rgba(255,255,255,0.1) 60%, transparent 75%);"></div>
-      <div style="width: 0; height: 0; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 26px solid #F1852E;"></div>
+    <div style="display: inline-block; font-family: 'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #FFB65C; border: 1px solid rgba(255,182,92,0.3); border-radius: 100px; padding: 7px 16px; margin-bottom: 20px;" data-i18n="req_eyebrow">Daviart &middot; Booking</div>
+
+    <h1 style="font-family: 'Newsreader', serif; font-weight: 400; font-size: 42px; line-height: 1.1; color: #F4F1EA; letter-spacing: -0.5px; margin-bottom: 14px;" data-i18n="req_h1">Request an Oil Change</h1>
+
+    <p style="font-size: 16px; line-height: 1.6; color: #A7ADBC; max-width: 440px; margin: 0 auto 16px;" data-i18n="req_subtitle">Fill in a few details below and we'll take it from there.</p>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:9px; max-width: 460px; margin: 0 auto 12px; padding: 12px 18px; border-radius: 100px; background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.2);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFB65C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span style="font-size: 13px; line-height: 1.5; color: #FFDDA8; font-family: 'Manrope', sans-serif; text-align: left;" data-i18n="req_callback_note">After you submit, our service manager will call or text you to confirm the details before anything is booked in.</span>
     </div>
 
-    <div style="display: inline-block; font-family: 'Space Grotesk', sans-serif; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #FFB65C; border: 1px solid rgba(255,182,92,0.3); border-radius: 100px; padding: 7px 16px; margin-bottom: 20px;">Daviart &middot; Booking</div>
-
-    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 38px; line-height: 1.1; color: #F4F1EA; letter-spacing: -1px; margin-bottom: 14px;">Request an Oil Change</h1>
-
-    <p style="font-size: 16px; line-height: 1.6; color: #A7ADBC; max-width: 440px; margin: 0 auto 32px;">Fill in a few details and we'll confirm your appointment shortly.</p>
+    <p style="font-size: 12px; line-height: 1.5; color: #6E7280; max-width: 460px; margin: 0 auto 32px;" data-i18n="req_english_notice">Please fill in your answers in English — only the labels on this page are translated.</p>
 
     <form class="form-card" id="booking-form">
+      <p style="font-size: 11.5px; color: #6B7280; margin-bottom: 14px; text-align: right;"><span class="req">*</span> <span data-i18n="req_required_note">Required</span></p>
       <fieldset>
-        <legend>Vehicle</legend>
-        <div class="form-row two">
-          <div><label for="make">Make</label><input id="make" name="make" placeholder="Toyota" required></div>
-          <div><label for="model">Model</label><input id="model" name="model" placeholder="RAV4" required></div>
+        <legend><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFB65C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l1.5-5A2 2 0 0 1 6.4 6.5h11.2A2 2 0 0 1 19.5 8l1.5 5"/><path d="M2 13h20v4a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1v-1H5.5v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-4z"/><circle cx="6.5" cy="17.5" r="1.5"/><circle cx="17.5" cy="17.5" r="1.5"/></svg><span data-i18n="leg_vehicles">Vehicle(s)</span></legend>
+        <div id="vehicles-container"></div>
+        <button type="button" class="add-vehicle-btn" id="add-vehicle-btn" data-i18n="btn_add_vehicle">+ Add another vehicle</button>
+      </fieldset>
+
+      <fieldset>
+        <legend><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFB65C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span data-i18n="leg_where">Where to meet</span></legend>
+        <div class="form-row">
+          <label><span data-i18n="lbl_city">City</span> <span class="req">*</span></label>
+          <div class="pref-row">
+            <label class="pref-chip"><input type="radio" name="city" value="Vancouver" required><span>Vancouver</span></label>
+            <label class="pref-chip"><input type="radio" name="city" value="Calgary"><span>Calgary</span></label>
+            <label class="pref-chip"><input type="radio" name="city" value="Toronto"><span>Toronto</span></label>
+          </div>
         </div>
-        <div class="form-row two">
-          <div><label for="year">Year</label><input id="year" name="year" type="number" min="1980" max="2027" placeholder="2019" required></div>
+        <div class="form-row addr-postal">
+          <div style="position:relative;">
+            <label for="address"><span data-i18n="lbl_address">Address</span> <span class="req">*</span></label>
+            <input id="address" name="address" placeholder="Street, neighbourhood" required autocomplete="off">
+            <div class="ac-list" id="address-list"></div>
+          </div>
           <div>
-            <label for="oilType">Oil type</label>
-            <select id="oilType" name="oilType">
-              <option value="Not sure / advise me">Not sure / advise me</option>
-              <option value="Conventional">Conventional</option>
-              <option value="Synthetic Blend">Synthetic Blend</option>
-              <option value="Full Synthetic">Full Synthetic</option>
-            </select>
+            <label for="postal" data-i18n="lbl_postal">Postal code</label>
+            <input id="postal" name="postal" placeholder="A1A 1A1" style="text-transform:uppercase;" autocomplete="off" maxlength="7">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom: 0;">
+          <button type="button" id="map-open-btn" style="display:inline-flex; align-items:center; gap:6px; background:none; border:1px solid rgba(255,255,255,0.16); color:#A7ADBC; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:12.5px; padding:9px 16px; border-radius:100px; cursor:pointer;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.42 4.58a1.4 1.4 0 0 0-1.5-.32L4.65 9.63a1.4 1.4 0 0 0 .04 2.62l5.15 1.9 1.9 5.15a1.4 1.4 0 0 0 2.62.04L19.74 6.08a1.4 1.4 0 0 0-.32-1.5z"/></svg>
+            <span data-i18n="btn_pin_map">Pin on map</span>
+          </button>
+          <span id="pin-status" style="display:none; align-items:center; gap:6px; margin-top:10px; font-family:'Manrope',sans-serif; font-size:12.5px; color:#9FE6BE;">
+            &#128205; <span id="pin-coords"></span>
+            <a href="#" id="pin-clear" data-i18n="pin_clear" style="color:#FF9E9E; text-decoration:underline; margin-left:4px;">clear</a>
+          </span>
+          <input type="hidden" id="lat" name="lat">
+          <input type="hidden" id="lng" name="lng">
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFB65C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span data-i18n="leg_when">When works</span></legend>
+        <div class="form-row two">
+          <div><label for="date" data-i18n="lbl_pref_date">Preferred date</label><input id="date" name="date" type="date"></div>
+          <div>
+            <label data-i18n="lbl_pref_time">Preferred time</label>
+            <div class="dd" id="time-dd">
+              <button type="button" class="dd-toggle"><span class="dd-label">Morning (8&ndash;11am)</span><svg class="dd-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+              <div class="dd-menu">
+                <div class="dd-item" data-value="Morning (8&ndash;11am)">Morning (8&ndash;11am)</div>
+                <div class="dd-item" data-value="Midday (11am&ndash;3pm)">Midday (11am&ndash;3pm)</div>
+                <div class="dd-item" data-value="Afternoon (3&ndash;8pm)">Afternoon (3&ndash;8pm)</div>
+                <div class="dd-item" data-value="Any time">Any time</div>
+              </div>
+            </div>
+            <input type="hidden" id="time" name="time" value="Morning (8&ndash;11am)">
           </div>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>Where to meet</legend>
-        <div class="form-row two">
-          <div>
-            <label for="city">City</label>
-            <select id="city" name="city">
-              <option value="Vancouver">Vancouver</option>
-              <option value="Calgary">Calgary</option>
-              <option value="Toronto">Toronto</option>
-            </select>
-          </div>
-          <div><label for="address">Address</label><input id="address" name="address" placeholder="Street, neighbourhood" required></div>
+        <legend><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFB65C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 1 0-5.66 5.66L4 17l3 3 5.03-5.03a4 4 0 0 0 5.67-5.67l-2.83 2.83-2-2 2.83-2.83z"/></svg><span data-i18n="leg_extra">Additional services</span></legend>
+        <button type="button" class="add-vehicle-btn" id="extra-toggle-btn" data-i18n="btn_add_extra">+ Add additional service</button>
+        <div class="extra-services-list" id="extra-services-list">
+          <label class="pref-chip"><input type="checkbox" class="extra-service-cb" value="Engine air filter replacement"><span>Engine air filter</span></label>
+          <label class="pref-chip"><input type="checkbox" class="extra-service-cb" value="Cabin air filter replacement"><span>Cabin air filter</span></label>
+          <label class="pref-chip"><input type="checkbox" class="extra-service-cb" value="Wiper blade replacement"><span>Wiper blades</span></label>
+          <label class="pref-chip"><input type="checkbox" class="extra-service-cb" value="Tire pressure check &amp; top-up"><span>Tire pressure check</span></label>
+          <label class="pref-chip"><input type="checkbox" class="extra-service-cb" value="Battery test"><span>Battery test</span></label>
+          <label class="pref-chip"><input type="checkbox" class="extra-service-cb" value="Brake pad visual inspection"><span>Brake pad inspection</span></label>
+          <label class="pref-chip"><input type="checkbox" class="extra-service-cb" value="Headlight/taillight bulb check"><span>Bulb check</span></label>
+        </div>
+        <div id="extra-other-wrap" style="display:none; margin-top:12px;">
+          <label for="extra-other-text" data-i18n="lbl_extra_other" style="display:block; margin-bottom:6px; font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9CA3B5; font-weight:500;">Anything else not on the list?</label>
+          <input type="text" id="extra-other-text" placeholder="Tell us what you need..." style="width:100%; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; padding: 10px 14px; color: #F4F1EA; font-size: 16px; font-family: 'Manrope', sans-serif;">
         </div>
       </fieldset>
 
       <fieldset>
-        <legend>When works</legend>
+        <legend><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFB65C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span data-i18n="leg_contact">Contact</span></legend>
         <div class="form-row two">
-          <div><label for="date">Preferred date</label><input id="date" name="date" type="date"></div>
-          <div>
-            <label for="time">Preferred time</label>
-            <select id="time" name="time">
-              <option value="Morning (8–11am)">Morning (8–11am)</option>
-              <option value="Midday (11am–3pm)">Midday (11am–3pm)</option>
-              <option value="Afternoon (3–8pm)">Afternoon (3–8pm)</option>
-              <option value="Any time">Any time</option>
-            </select>
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Contact</legend>
-        <div class="form-row two">
-          <div><label for="name">Name</label><input id="name" name="name" placeholder="Your name" required></div>
-          <div><label for="phone">Phone</label><input id="phone" name="phone" type="tel" placeholder="+1 000 000 0000" required></div>
+          <div><label for="name"><span data-i18n="lbl_name">Name</span> <span class="req">*</span></label><input id="name" name="name" placeholder="Your name" required></div>
+          <div><label for="phone"><span data-i18n="lbl_phone">Phone</span> <span class="req">*</span></label><input id="phone" name="phone" type="tel" placeholder="000 000 0000" value="+1 " required></div>
         </div>
         <div class="form-row">
-          <label for="email">Email</label>
+          <label for="email" data-i18n="lbl_email">Email</label>
           <input id="email" name="email" type="email" placeholder="you@example.com">
         </div>
         <div class="form-row">
-          <label>Preferred contact method</label>
+          <label data-i18n="lbl_contact_pref">Preferred contact method</label>
           <div class="pref-row">
             <label class="pref-chip"><input type="checkbox" name="contactPref" value="Call"><span>Call</span></label>
             <label class="pref-chip"><input type="checkbox" name="contactPref" value="Text"><span>Text</span></label>
@@ -150,21 +303,374 @@
           </div>
         </div>
         <div class="form-row" style="margin-bottom: 0;">
-          <label for="comment">Comment (optional)</label>
+          <label for="comment" data-i18n="lbl_comment">Comment (optional)</label>
           <textarea id="comment" name="comment" rows="3" placeholder="Anything else we should know?"></textarea>
         </div>
       </fieldset>
 
-      <button type="submit" class="submit-btn" id="submit-btn">Send request</button>
-      <p style="margin-top: 14px; font-size: 12.5px; line-height: 1.6; color: #6B7280; text-align: center;">Prices on this site are estimates. Our service manager will contact you to confirm the final price based on your vehicle before any work begins.</p>
+      <div class="form-row" style="margin-bottom: 14px;">
+        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; text-transform:none; letter-spacing:normal; font-family:'Manrope',sans-serif; font-size:13.5px; line-height:1.55; color:#A7ADBC; font-weight:400;">
+          <input type="checkbox" id="terms-checkbox" required style="margin-top:3px; flex:none; width:16px; height:16px; accent-color:#F5A623;">
+          <span><span data-i18n="terms_text_before">I have read and agree to the </span><a href="#" id="terms-open-link" data-i18n="terms_link_text" style="color:#FFB65C; text-decoration:underline;">Terms of Service &amp; Privacy Notice</a><span data-i18n="terms_text_after">, and I consent to my information being shared with the independent service provider assigned to complete my request.</span></span>
+        </label>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn" data-i18n="btn_submit">Send request</button>
+      <p style="margin-top: 14px; font-size: 12.5px; line-height: 1.6; color: #6B7280; text-align: center;" data-i18n="note_price">Prices shown are estimates. Final pricing is confirmed based on your vehicle before any work begins.</p>
       <div class="form-status" id="form-status"></div>
     </form>
 
-    <p style="margin-top: 26px;"><a href="index.html">&larr; Back to homepage</a></p>
+    <p style="margin-top: 26px;"><a href="index.html" data-i18n="link_back_home">&larr; Back to homepage</a></p>
 
   </div>
 </div>
+
+<!-- PIN-ON-MAP MODAL — uses Leaflet + OpenStreetMap (no API key needed).
+     Nearly fullscreen on phones; a large centered panel on wider screens. -->
+<div id="map-modal" class="map-modal-overlay">
+  <div class="map-modal-card">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.08); flex:none;">
+      <div>
+        <h3 style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:18px; color:#F4F1EA; margin:0 0 4px;" data-i18n="map_title">Pin your location</h3>
+        <p id="map-subtitle" style="font-size:12.5px; color:#6B7280; margin:0;" data-i18n="map_subtitle_choose">Which city — or should we find you?</p>
+      </div>
+      <button type="button" id="map-close-x" aria-label="Close" style="background:none; border:none; color:#A7ADBC; font-size:26px; line-height:1; cursor:pointer; flex:none;">&times;</button>
+    </div>
+
+    <!-- Step 1: pick a city, or jump straight to your current location -->
+    <div id="map-step-choose" style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:18px; padding:20px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <button type="button" class="map-city-choice" data-city="Vancouver">Vancouver</button>
+        <button type="button" class="map-city-choice" data-city="Calgary">Calgary</button>
+        <button type="button" class="map-city-choice" data-city="Toronto">Toronto</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; color:#4B5060; font-family:'Manrope',sans-serif; font-size:12px;">
+        <div style="flex:1; height:1px; background:rgba(255,255,255,0.08);"></div><span data-i18n="map_or">or</span><div style="flex:1; height:1px; background:rgba(255,255,255,0.08);"></div>
+      </div>
+      <button type="button" id="map-locate-btn-initial" class="locate-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span data-i18n="map_use_location">Use my current location</span>
+      </button>
+    </div>
+
+    <!-- Step 2: interactive map -->
+    <div id="map-step-map" style="display:none; flex-direction:column; flex:1; min-height:0;">
+      <div id="leaflet-map" style="flex:1; min-height:0;"></div>
+      <div style="padding:16px 20px 4px; flex:none;">
+        <button type="button" id="map-locate-btn" class="locate-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          <span data-i18n="map_use_location">Use my current location</span>
+        </button>
+        <p id="map-hint" style="font-size:12px; color:#6B7280; margin-top:10px; text-align:center;" data-i18n="map_no_pin_hint">No pin yet — tap the map to place one.</p>
+      </div>
+      <div style="display:flex; gap:10px; padding:8px 20px 20px; flex:none;">
+        <button type="button" id="map-cancel-btn" data-i18n="map_cancel" style="flex:1; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#A7ADBC; background:none; border:1px solid rgba(255,255,255,0.16); padding:11px; border-radius:100px; cursor:pointer;">Cancel</button>
+        <button type="button" id="map-confirm-btn" data-i18n="map_confirm" style="flex:1; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#1A1206; background:linear-gradient(180deg,#FFCB8A,#F5A623); border:none; padding:11px; border-radius:100px; cursor:pointer;">Confirm location</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TERMS & PRIVACY MODAL — content is fetched live from terms.txt (single
+     source of truth shared with the homepage footer's modal and the Download
+     button), never hardcoded here. -->
+<div id="terms-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; padding:20px; background:rgba(4,6,12,0.72); backdrop-filter:blur(4px);">
+  <div style="background:#0E1420; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:28px 30px; max-width:600px; width:100%; max-height:82vh; display:flex; flex-direction:column; text-align:left; font-family:'Manrope',sans-serif;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;">
+      <h3 style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:20px; color:#F4F1EA; margin:0;" data-i18n="terms_link_text">Terms of Service &amp; Privacy Notice</h3>
+      <button type="button" id="terms-close-x" aria-label="Close" style="background:none; border:none; color:#A7ADBC; font-size:24px; line-height:1; cursor:pointer; padding:2px 4px; flex:none;">&times;</button>
+    </div>
+    <div id="terms-content" style="overflow-y:auto; padding-right:8px; font-size:13.5px; line-height:1.7; color:#C3C8D4; white-space:pre-wrap;">Loading&hellip;</div>
+    <div style="display:flex; gap:10px; margin-top:20px; flex:none;">
+      <a href="terms.txt" download data-i18n="btn_download" style="flex:1; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#FFDDA8; border:1px solid rgba(255,182,92,0.35); padding:11px; border-radius:100px;">Download</a>
+      <button type="button" id="terms-close-btn" data-i18n="btn_close" style="flex:1; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#1A1206; background:linear-gradient(180deg,#FFCB8A,#F5A623); border:none; padding:11px; border-radius:100px; cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- COOKIE CONSENT BANNER -->
+<div id="cookie-banner" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:250; background:rgba(9,11,18,0.97); border-top:1px solid rgba(255,255,255,0.1); padding:16px 20px; backdrop-filter:blur(6px);">
+  <div style="max-width:960px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:14px; justify-content:space-between;">
+    <p style="flex:1; min-width:240px; font-family:'Manrope',sans-serif; font-size:13.5px; line-height:1.55; color:#C3C8D4; margin:0;"><span data-i18n="cookie_text_before">We use cookies for site analytics and to measure ad performance. See our </span><a href="#" id="cookie-terms-link" data-i18n="cookie_terms_link" style="color:#FFB65C; text-decoration:underline;">Terms of Service &amp; Privacy Notice</a><span data-i18n="cookie_text_after"> for details.</span></p>
+    <div style="display:flex; align-items:center; gap:8px; flex:none;">
+      <button type="button" id="cookie-accept-btn" data-i18n="cookie_accept" style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#1A1206; background:linear-gradient(180deg,#FFCB8A,#F5A623); border:none; padding:10px 22px; border-radius:100px; cursor:pointer;">Accept</button>
+      <button type="button" id="cookie-dismiss-btn" aria-label="Dismiss" style="background:none; border:none; color:#6B7280; font-size:20px; line-height:1; cursor:pointer; padding:4px 8px;">&times;</button>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+  // Labels/chrome only — actual answers (address, name, comments, etc.) are
+  // still expected in English, per req_english_notice below. Data values that
+  // travel to the Google Sheet (oil type, time slot, city, service names)
+  // stay English on purpose and are NOT translated here.
+  var I18N_REQ = {
+    en: {
+      req_eyebrow: "Daviart &middot; Booking", req_h1: "Request an Oil Change",
+      req_subtitle: "Fill in a few details below and we'll take it from there.",
+      req_callback_note: "After you submit, our service manager will call or text you to confirm the details before anything is booked in.",
+      req_english_notice: "Please fill in your answers in English &mdash; only the labels on this page are translated.",
+      req_required_note: "Required",
+      leg_vehicles: "Vehicle(s)", btn_add_vehicle: "+ Add another vehicle", vehicle_label_prefix: "Vehicle", remove_btn: "Remove",
+      make_label: "Make", model_label: "Model", year_label: "Year", oiltype_label: "Oil type",
+      leg_where: "Where to meet", lbl_city: "City", lbl_address: "Address", lbl_postal: "Postal code",
+      btn_pin_map: "Pin on map", pin_clear: "clear",
+      leg_when: "When works", lbl_pref_date: "Preferred date", lbl_pref_time: "Preferred time",
+      leg_extra: "Additional services", btn_add_extra: "+ Add additional service", lbl_extra_other: "Anything else not on the list?",
+      leg_contact: "Contact", lbl_name: "Name", lbl_phone: "Phone", lbl_email: "Email",
+      lbl_contact_pref: "Preferred contact method", lbl_comment: "Comment (optional)",
+      terms_text_before: "I have read and agree to the ", terms_link_text: "Terms of Service &amp; Privacy Notice",
+      terms_text_after: ", and I consent to my information being shared with the independent service provider assigned to complete my request.",
+      btn_submit: "Send request", btn_update: "Update request", sending_label: "Sending&hellip;",
+      note_price: "Prices shown are estimates. Final pricing is confirmed based on your vehicle before any work begins.",
+      link_back_home: "&larr; Back to homepage",
+      err_submit_fail: "Something went wrong sending your request. Please try again, or email dav.art.iva@gmail.com directly.",
+      map_title: "Pin your location", map_subtitle_choose: "Which city &mdash; or should we find you?", map_or: "or",
+      map_use_location: "Use my current location", map_no_pin_hint: "No pin yet &mdash; tap the map to place one.",
+      map_cancel: "Cancel", map_confirm: "Confirm location",
+      btn_download: "Download", btn_close: "Close", pin_pinned_label: "Location pinned",
+      cookie_text_before: "We use cookies for site analytics and to measure ad performance. See our ", cookie_terms_link: "Terms of Service &amp; Privacy Notice", cookie_text_after: " for details.", cookie_accept: "Accept"
+    },
+    uk: {
+      req_eyebrow: "Daviart &middot; Бронювання", req_h1: "Заявка на заміну оливи",
+      req_subtitle: "Заповніть кілька деталей нижче — і ми зробимо все інше.",
+      req_callback_note: "Після відправлення заявки наш менеджер зателефонує або напише, щоб уточнити деталі, перш ніж усе буде заброньовано.",
+      req_english_notice: "Будь ласка, заповнюйте відповіді англійською &mdash; перекладені лише підписи на цій сторінці.",
+      req_required_note: "Обов'язково",
+      leg_vehicles: "Автомобіль(і)", btn_add_vehicle: "+ Додати ще один автомобіль", vehicle_label_prefix: "Автомобіль", remove_btn: "Видалити",
+      make_label: "Марка", model_label: "Модель", year_label: "Рік", oiltype_label: "Тип оливи",
+      leg_where: "Де зустрітися", lbl_city: "Місто", lbl_address: "Адреса", lbl_postal: "Поштовий індекс",
+      btn_pin_map: "Позначити на карті", pin_clear: "прибрати",
+      leg_when: "Коли зручно", lbl_pref_date: "Бажана дата", lbl_pref_time: "Бажаний час",
+      leg_extra: "Додаткові послуги", btn_add_extra: "+ Додати додаткову послугу", lbl_extra_other: "Щось інше, чого немає в списку?",
+      leg_contact: "Контакти", lbl_name: "Ім'я", lbl_phone: "Телефон", lbl_email: "Email",
+      lbl_contact_pref: "Бажаний спосіб зв'язку", lbl_comment: "Коментар (необов'язково)",
+      terms_text_before: "Я прочитав(ла) і погоджуюсь з ", terms_link_text: "Умовами надання послуг і Політикою конфіденційності",
+      terms_text_after: ", а також даю згоду на передачу моїх даних незалежному підряднику, призначеному для виконання мого замовлення.",
+      btn_submit: "Надіслати заявку", btn_update: "Оновити заявку", sending_label: "Надсилання&hellip;",
+      note_price: "Ціни на сайті є орієнтовними. Остаточну вартість підтвердять з урахуванням вашого автомобіля перед початком робіт.",
+      link_back_home: "&larr; На головну",
+      err_submit_fail: "Щось пішло не так під час надсилання заявки. Спробуйте ще раз або напишіть на dav.art.iva@gmail.com.",
+      map_title: "Позначте своє місце", map_subtitle_choose: "Яке місто &mdash; чи визначити вас автоматично?", map_or: "або",
+      map_use_location: "Визначити моє місцезнаходження", map_no_pin_hint: "Поки що немає позначки &mdash; торкніться карти, щоб її поставити.",
+      map_cancel: "Скасувати", map_confirm: "Підтвердити місце",
+      btn_download: "Завантажити", btn_close: "Закрити", pin_pinned_label: "Місце позначено",
+      cookie_text_before: "Ми використовуємо cookie для аналітики сайту та оцінки ефективності реклами. Детальніше — в наших ", cookie_terms_link: "Умовах надання послуг і Політиці конфіденційності", cookie_text_after: ".", cookie_accept: "Прийняти"
+    },
+    fr: {
+      req_eyebrow: "Daviart &middot; Réservation", req_h1: "Demande de vidange d'huile",
+      req_subtitle: "Remplissez quelques détails ci-dessous et nous nous occupons du reste.",
+      req_callback_note: "Après l'envoi, notre responsable de service vous appellera ou vous enverra un texto pour confirmer les détails avant toute réservation définitive.",
+      req_english_notice: "Veuillez remplir vos réponses en anglais &mdash; seules les étiquettes de cette page sont traduites.",
+      req_required_note: "Obligatoire",
+      leg_vehicles: "Véhicule(s)", btn_add_vehicle: "+ Ajouter un autre véhicule", vehicle_label_prefix: "Véhicule", remove_btn: "Retirer",
+      make_label: "Marque", model_label: "Modèle", year_label: "Année", oiltype_label: "Type d'huile",
+      leg_where: "Où nous rencontrer", lbl_city: "Ville", lbl_address: "Adresse", lbl_postal: "Code postal",
+      btn_pin_map: "Épingler sur la carte", pin_clear: "effacer",
+      leg_when: "Quand ça vous convient", lbl_pref_date: "Date préférée", lbl_pref_time: "Heure préférée",
+      leg_extra: "Services supplémentaires", btn_add_extra: "+ Ajouter un service supplémentaire", lbl_extra_other: "Autre chose qui n'est pas dans la liste ?",
+      leg_contact: "Contact", lbl_name: "Nom", lbl_phone: "Téléphone", lbl_email: "Courriel",
+      lbl_contact_pref: "Moyen de contact préféré", lbl_comment: "Commentaire (facultatif)",
+      terms_text_before: "J'ai lu et j'accepte les ", terms_link_text: "Conditions d'utilisation et politique de confidentialité",
+      terms_text_after: ", et je consens à ce que mes informations soient partagées avec le prestataire indépendant chargé de ma demande.",
+      btn_submit: "Envoyer la demande", btn_update: "Mettre à jour la demande", sending_label: "Envoi&hellip;",
+      note_price: "Les prix affichés sont des estimations. Le prix final est confirmé selon votre véhicule avant le début des travaux.",
+      link_back_home: "&larr; Retour à l'accueil",
+      err_submit_fail: "Un problème est survenu lors de l'envoi de votre demande. Réessayez, ou écrivez directement à dav.art.iva@gmail.com.",
+      map_title: "Épinglez votre emplacement", map_subtitle_choose: "Quelle ville &mdash; ou faut-il vous localiser ?", map_or: "ou",
+      map_use_location: "Utiliser ma position actuelle", map_no_pin_hint: "Pas encore d'épingle &mdash; touchez la carte pour en placer une.",
+      map_cancel: "Annuler", map_confirm: "Confirmer l'emplacement",
+      btn_download: "Télécharger", btn_close: "Fermer", pin_pinned_label: "Emplacement épinglé",
+      cookie_text_before: "Nous utilisons des cookies pour l'analyse du site et pour mesurer la performance publicitaire. Voir nos ", cookie_terms_link: "Conditions d'utilisation et politique de confidentialité", cookie_text_after: " pour plus de détails.", cookie_accept: "Accepter"
+    },
+    it: {
+      req_eyebrow: "Daviart &middot; Prenotazione", req_h1: "Richiedi un cambio olio",
+      req_subtitle: "Compila alcuni dettagli qui sotto e penseremo al resto.",
+      req_callback_note: "Dopo l'invio, il nostro responsabile del servizio ti chiamerà o scriverà per confermare i dettagli prima di finalizzare la prenotazione.",
+      req_english_notice: "Compila le tue risposte in inglese &mdash; solo le etichette di questa pagina sono tradotte.",
+      req_required_note: "Obbligatorio",
+      leg_vehicles: "Veicolo/i", btn_add_vehicle: "+ Aggiungi un altro veicolo", vehicle_label_prefix: "Veicolo", remove_btn: "Rimuovi",
+      make_label: "Marca", model_label: "Modello", year_label: "Anno", oiltype_label: "Tipo di olio",
+      leg_where: "Dove incontrarci", lbl_city: "Città", lbl_address: "Indirizzo", lbl_postal: "Codice postale",
+      btn_pin_map: "Segna sulla mappa", pin_clear: "rimuovi",
+      leg_when: "Quando ti va bene", lbl_pref_date: "Data preferita", lbl_pref_time: "Orario preferito",
+      leg_extra: "Servizi aggiuntivi", btn_add_extra: "+ Aggiungi un servizio aggiuntivo", lbl_extra_other: "Altro che non è in elenco?",
+      leg_contact: "Contatti", lbl_name: "Nome", lbl_phone: "Telefono", lbl_email: "Email",
+      lbl_contact_pref: "Metodo di contatto preferito", lbl_comment: "Commento (facoltativo)",
+      terms_text_before: "Ho letto e accetto i ", terms_link_text: "Termini di servizio e l'informativa sulla privacy",
+      terms_text_after: ", e acconsento alla condivisione dei miei dati con il fornitore di servizi indipendente incaricato della mia richiesta.",
+      btn_submit: "Invia richiesta", btn_update: "Aggiorna richiesta", sending_label: "Invio&hellip;",
+      note_price: "I prezzi indicati sono stime. Il prezzo finale viene confermato in base al tuo veicolo prima dell'inizio dei lavori.",
+      link_back_home: "&larr; Torna alla home",
+      err_submit_fail: "Qualcosa è andato storto durante l'invio della richiesta. Riprova, oppure scrivi direttamente a dav.art.iva@gmail.com.",
+      map_title: "Segna la tua posizione", map_subtitle_choose: "Quale città &mdash; o preferisci localizzarti?", map_or: "oppure",
+      map_use_location: "Usa la mia posizione attuale", map_no_pin_hint: "Nessun segnaposto ancora &mdash; tocca la mappa per posizionarne uno.",
+      map_cancel: "Annulla", map_confirm: "Conferma posizione",
+      btn_download: "Scarica", btn_close: "Chiudi", pin_pinned_label: "Posizione segnata",
+      cookie_text_before: "Utilizziamo i cookie per l'analisi del sito e per misurare le prestazioni pubblicitarie. Consulta la nostra ", cookie_terms_link: "Informativa sui Termini di servizio e sulla privacy", cookie_text_after: " per maggiori dettagli.", cookie_accept: "Accetta"
+    },
+    ru: {
+      req_eyebrow: "Daviart &middot; Бронирование", req_h1: "Заявка на замену масла",
+      req_subtitle: "Заполните несколько деталей ниже — остальное сделаем мы.",
+      req_callback_note: "После отправки заявки наш менеджер позвонит или напишет, чтобы уточнить детали, прежде чем всё будет забронировано.",
+      req_english_notice: "Пожалуйста, заполняйте ответы на английском языке &mdash; переведены только подписи на этой странице.",
+      req_required_note: "Обязательно",
+      leg_vehicles: "Автомобиль(и)", btn_add_vehicle: "+ Добавить ещё один автомобиль", vehicle_label_prefix: "Автомобиль", remove_btn: "Удалить",
+      make_label: "Марка", model_label: "Модель", year_label: "Год", oiltype_label: "Тип масла",
+      leg_where: "Где встретимся", lbl_city: "Город", lbl_address: "Адрес", lbl_postal: "Почтовый индекс",
+      btn_pin_map: "Отметить на карте", pin_clear: "убрать",
+      leg_when: "Когда удобно", lbl_pref_date: "Желаемая дата", lbl_pref_time: "Желаемое время",
+      leg_extra: "Дополнительные услуги", btn_add_extra: "+ Добавить доп. услугу", lbl_extra_other: "Что-то ещё, чего нет в списке?",
+      leg_contact: "Контакты", lbl_name: "Имя", lbl_phone: "Телефон", lbl_email: "Email",
+      lbl_contact_pref: "Предпочтительный способ связи", lbl_comment: "Комментарий (необязательно)",
+      terms_text_before: "Я прочитал(а) и согласен(на) с ", terms_link_text: "Условиями предоставления услуг и Политикой конфиденциальности",
+      terms_text_after: ", а также даю согласие на передачу моих данных независимому подрядчику, назначенному для выполнения моего заказа.",
+      btn_submit: "Отправить заявку", btn_update: "Обновить заявку", sending_label: "Отправка&hellip;",
+      note_price: "Цены на сайте являются приблизительными. Окончательная стоимость подтверждается с учётом вашего автомобиля перед началом работ.",
+      link_back_home: "&larr; На главную",
+      err_submit_fail: "Что-то пошло не так при отправке заявки. Попробуйте ещё раз или напишите на dav.art.iva@gmail.com.",
+      map_title: "Отметьте своё местоположение", map_subtitle_choose: "Какой город &mdash; или определить вас автоматически?", map_or: "или",
+      map_use_location: "Определить моё местоположение", map_no_pin_hint: "Пока нет метки &mdash; коснитесь карты, чтобы поставить её.",
+      map_cancel: "Отмена", map_confirm: "Подтвердить местоположение",
+      btn_download: "Скачать", btn_close: "Закрыть", pin_pinned_label: "Местоположение отмечено",
+      cookie_text_before: "Мы используем cookie для аналитики сайта и оценки эффективности рекламы. Подробнее — в наших ", cookie_terms_link: "Условиях предоставления услуг и политике конфиденциальности", cookie_text_after: ".", cookie_accept: "Принять"
+    },
+    hi: {
+      req_eyebrow: "Daviart &middot; बुकिंग", req_h1: "तेल बदलाव का अनुरोध करें",
+      req_subtitle: "नीचे कुछ जानकारी भरें, बाकी हम संभाल लेंगे।",
+      req_callback_note: "सबमिट करने के बाद, हमारा सर्विस मैनेजर बुकिंग पक्की होने से पहले विवरण की पुष्टि के लिए आपको कॉल या टेक्स्ट करेगा।",
+      req_english_notice: "कृपया अपने उत्तर अंग्रेज़ी में भरें &mdash; इस पेज पर केवल लेबल अनुवादित हैं।",
+      req_required_note: "आवश्यक",
+      leg_vehicles: "वाहन", btn_add_vehicle: "+ एक और वाहन जोड़ें", vehicle_label_prefix: "वाहन", remove_btn: "हटाएं",
+      make_label: "मेक", model_label: "मॉडल", year_label: "वर्ष", oiltype_label: "तेल का प्रकार",
+      leg_where: "कहां मिलें", lbl_city: "शहर", lbl_address: "पता", lbl_postal: "पिन कोड",
+      btn_pin_map: "मानचित्र पर पिन करें", pin_clear: "हटाएं",
+      leg_when: "कब सुविधाजनक है", lbl_pref_date: "पसंदीदा तारीख", lbl_pref_time: "पसंदीदा समय",
+      leg_extra: "अतिरिक्त सेवाएं", btn_add_extra: "+ अतिरिक्त सेवा जोड़ें", lbl_extra_other: "सूची में न हो ऐसा कुछ और चाहिए?",
+      leg_contact: "संपर्क", lbl_name: "नाम", lbl_phone: "फ़ोन", lbl_email: "ईमेल",
+      lbl_contact_pref: "पसंदीदा संपर्क माध्यम", lbl_comment: "टिप्पणी (वैकल्पिक)",
+      terms_text_before: "मैंने पढ़ लिया है और सहमत हूं ", terms_link_text: "सेवा शर्तों और गोपनीयता सूचना",
+      terms_text_after: " से, और मैं अपनी जानकारी को मेरे अनुरोध को पूरा करने के लिए नियुक्त स्वतंत्र सेवा प्रदाता के साथ साझा किए जाने के लिए सहमति देता/देती हूं।",
+      btn_submit: "अनुरोध भेजें", btn_update: "अनुरोध अपडेट करें", sending_label: "भेजा जा रहा है&hellip;",
+      note_price: "साइट पर दिखाई गई कीमतें अनुमानित हैं। काम शुरू होने से पहले आपकी गाड़ी के अनुसार अंतिम कीमत की पुष्टि की जाएगी।",
+      link_back_home: "&larr; होमपेज पर वापस जाएं",
+      err_submit_fail: "आपका अनुरोध भेजने में कुछ गड़बड़ हुई। कृपया फिर से कोशिश करें, या सीधे dav.art.iva@gmail.com पर ईमेल करें।",
+      map_title: "अपना स्थान पिन करें", map_subtitle_choose: "कौन सा शहर &mdash; या हम आपका पता लगाएं?", map_or: "या",
+      map_use_location: "मेरा वर्तमान स्थान उपयोग करें", map_no_pin_hint: "अभी तक कोई पिन नहीं &mdash; पिन लगाने के लिए मानचित्र पर टैप करें।",
+      map_cancel: "रद्द करें", map_confirm: "स्थान की पुष्टि करें",
+      btn_download: "डाउनलोड करें", btn_close: "बंद करें", pin_pinned_label: "स्थान पिन किया गया",
+      cookie_text_before: "हम साइट एनालिटिक्स और विज्ञापन प्रदर्शन मापने के लिए कुकीज़ का उपयोग करते हैं। अधिक जानकारी के लिए हमारी ", cookie_terms_link: "सेवा शर्तें और गोपनीयता सूचना", cookie_text_after: " देखें।", cookie_accept: "स्वीकार करें"
+    },
+    pa: {
+      req_eyebrow: "Daviart &middot; ਬੁਕਿੰਗ", req_h1: "ਤੇਲ ਤਬਦੀਲੀ ਲਈ ਬੇਨਤੀ ਕਰੋ",
+      req_subtitle: "ਹੇਠਾਂ ਕੁਝ ਵੇਰਵੇ ਭਰੋ, ਬਾਕੀ ਅਸੀਂ ਸੰਭਾਲ ਲਵਾਂਗੇ।",
+      req_callback_note: "ਭੇਜਣ ਤੋਂ ਬਾਅਦ, ਸਾਡਾ ਸਰਵਿਸ ਮੈਨੇਜਰ ਬੁਕਿੰਗ ਪੱਕੀ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ ਵੇਰਵਿਆਂ ਦੀ ਪੁਸ਼ਟੀ ਲਈ ਤੁਹਾਨੂੰ ਕਾਲ ਜਾਂ ਟੈਕਸਟ ਕਰੇਗਾ।",
+      req_english_notice: "ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਜਵਾਬ ਅੰਗਰੇਜ਼ੀ ਵਿੱਚ ਭਰੋ &mdash; ਇਸ ਪੇਜ 'ਤੇ ਸਿਰਫ਼ ਲੇਬਲ ਅਨੁਵਾਦ ਕੀਤੇ ਗਏ ਹਨ।",
+      req_required_note: "ਲਾਜ਼ਮੀ",
+      leg_vehicles: "ਗੱਡੀ(ਆਂ)", btn_add_vehicle: "+ ਇੱਕ ਹੋਰ ਗੱਡੀ ਜੋੜੋ", vehicle_label_prefix: "ਗੱਡੀ", remove_btn: "ਹਟਾਓ",
+      make_label: "ਮੇਕ", model_label: "ਮਾਡਲ", year_label: "ਸਾਲ", oiltype_label: "ਤੇਲ ਦੀ ਕਿਸਮ",
+      leg_where: "ਕਿੱਥੇ ਮਿਲਣਾ ਹੈ", lbl_city: "ਸ਼ਹਿਰ", lbl_address: "ਪਤਾ", lbl_postal: "ਪੋਸਟਲ ਕੋਡ",
+      btn_pin_map: "ਨਕਸ਼ੇ 'ਤੇ ਪਿੰਨ ਕਰੋ", pin_clear: "ਹਟਾਓ",
+      leg_when: "ਕਦੋਂ ਸੁਖਾਲਾ ਹੈ", lbl_pref_date: "ਪਸੰਦੀਦਾ ਮਿਤੀ", lbl_pref_time: "ਪਸੰਦੀਦਾ ਸਮਾਂ",
+      leg_extra: "ਵਾਧੂ ਸੇਵਾਵਾਂ", btn_add_extra: "+ ਵਾਧੂ ਸੇਵਾ ਜੋੜੋ", lbl_extra_other: "ਸੂਚੀ ਵਿੱਚ ਨਾ ਹੋਵੇ ਅਜਿਹਾ ਕੁਝ ਹੋਰ ਚਾਹੀਦਾ?",
+      leg_contact: "ਸੰਪਰਕ", lbl_name: "ਨਾਮ", lbl_phone: "ਫ਼ੋਨ", lbl_email: "ਈਮੇਲ",
+      lbl_contact_pref: "ਪਸੰਦੀਦਾ ਸੰਪਰਕ ਤਰੀਕਾ", lbl_comment: "ਟਿੱਪਣੀ (ਵਿਕਲਪਿਕ)",
+      terms_text_before: "ਮੈਂ ਪੜ੍ਹ ਲਿਆ ਹੈ ਅਤੇ ਸਹਿਮਤ ਹਾਂ ", terms_link_text: "ਸੇਵਾ ਸ਼ਰਤਾਂ ਅਤੇ ਪਰਦੇਦਾਰੀ ਨੋਟਿਸ",
+      terms_text_after: " ਨਾਲ, ਅਤੇ ਮੈਂ ਆਪਣੀ ਜਾਣਕਾਰੀ ਨੂੰ ਮੇਰੀ ਬੇਨਤੀ ਪੂਰੀ ਕਰਨ ਲਈ ਨਿਯੁਕਤ ਸੁਤੰਤਰ ਸੇਵਾ ਪ੍ਰਦਾਤਾ ਨਾਲ ਸਾਂਝਾ ਕੀਤੇ ਜਾਣ ਦੀ ਸਹਿਮਤੀ ਦਿੰਦਾ/ਦਿੰਦੀ ਹਾਂ।",
+      btn_submit: "ਬੇਨਤੀ ਭੇਜੋ", btn_update: "ਬੇਨਤੀ ਅੱਪਡੇਟ ਕਰੋ", sending_label: "ਭੇਜਿਆ ਜਾ ਰਿਹਾ ਹੈ&hellip;",
+      note_price: "ਸਾਈਟ 'ਤੇ ਦਿਖਾਈਆਂ ਕੀਮਤਾਂ ਅੰਦਾਜ਼ਨ ਹਨ। ਕੰਮ ਸ਼ੁਰੂ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ ਤੁਹਾਡੀ ਗੱਡੀ ਮੁਤਾਬਕ ਅੰਤਿਮ ਕੀਮਤ ਦੀ ਪੁਸ਼ਟੀ ਕੀਤੀ ਜਾਵੇਗੀ।",
+      link_back_home: "&larr; ਹੋਮਪੇਜ 'ਤੇ ਵਾਪਸ ਜਾਓ",
+      err_submit_fail: "ਤੁਹਾਡੀ ਬੇਨਤੀ ਭੇਜਣ ਵਿੱਚ ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ, ਜਾਂ ਸਿੱਧਾ dav.art.iva@gmail.com 'ਤੇ ਈਮੇਲ ਕਰੋ।",
+      map_title: "ਆਪਣਾ ਸਥਾਨ ਪਿੰਨ ਕਰੋ", map_subtitle_choose: "ਕਿਹੜਾ ਸ਼ਹਿਰ &mdash; ਜਾਂ ਅਸੀਂ ਤੁਹਾਡਾ ਪਤਾ ਲਗਾਈਏ?", map_or: "ਜਾਂ",
+      map_use_location: "ਮੇਰਾ ਮੌਜੂਦਾ ਸਥਾਨ ਵਰਤੋ", map_no_pin_hint: "ਹਾਲੇ ਕੋਈ ਪਿੰਨ ਨਹੀਂ &mdash; ਪਿੰਨ ਲਗਾਉਣ ਲਈ ਨਕਸ਼ੇ 'ਤੇ ਟੈਪ ਕਰੋ।",
+      map_cancel: "ਰੱਦ ਕਰੋ", map_confirm: "ਸਥਾਨ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ",
+      btn_download: "ਡਾਊਨਲੋਡ ਕਰੋ", btn_close: "ਬੰਦ ਕਰੋ", pin_pinned_label: "ਸਥਾਨ ਪਿੰਨ ਕੀਤਾ ਗਿਆ",
+      cookie_text_before: "ਅਸੀਂ ਸਾਈਟ ਵਿਸ਼ਲੇਸ਼ਣ ਅਤੇ ਇਸ਼ਤਿਹਾਰ ਪ੍ਰਦਰਸ਼ਨ ਮਾਪਣ ਲਈ ਕੂਕੀਜ਼ ਵਰਤਦੇ ਹਾਂ। ਹੋਰ ਜਾਣਕਾਰੀ ਲਈ ਸਾਡੀ ", cookie_terms_link: "ਸੇਵਾ ਸ਼ਰਤਾਂ ਅਤੇ ਪਰਦੇਦਾਰੀ ਨੋਟਿਸ", cookie_text_after: " ਵੇਖੋ।", cookie_accept: "ਸਵੀਕਾਰ ਕਰੋ"
+    },
+    zh: {
+      req_eyebrow: "Daviart &middot; 預約", req_h1: "申請更換機油",
+      req_subtitle: "填寫以下幾項資料，其餘交給我們。",
+      req_callback_note: "送出後，我們的服務經理會致電或傳訊與您確認詳情，之後才會正式排定預約。",
+      req_english_notice: "請以英文填寫您的回答&mdash;本頁僅翻譯標籤文字。",
+      req_required_note: "必填",
+      leg_vehicles: "車輛", btn_add_vehicle: "+ 新增另一輛車", vehicle_label_prefix: "車輛", remove_btn: "移除",
+      make_label: "廠牌", model_label: "型號", year_label: "年份", oiltype_label: "機油類型",
+      leg_where: "到府地點", lbl_city: "城市", lbl_address: "地址", lbl_postal: "郵遞區號",
+      btn_pin_map: "在地圖上標記", pin_clear: "清除",
+      leg_when: "方便時間", lbl_pref_date: "希望日期", lbl_pref_time: "希望時段",
+      leg_extra: "額外服務", btn_add_extra: "+ 新增額外服務", lbl_extra_other: "還有清單上沒有的其他需求嗎？",
+      leg_contact: "聯絡方式", lbl_name: "姓名", lbl_phone: "電話", lbl_email: "電子郵件",
+      lbl_contact_pref: "偏好聯絡方式", lbl_comment: "備註（選填）",
+      terms_text_before: "我已閱讀並同意", terms_link_text: "服務條款與隱私權聲明",
+      terms_text_after: "，並同意將我的資料分享給負責完成此次服務的獨立服務商。",
+      btn_submit: "送出申請", btn_update: "更新申請", sending_label: "傳送中&hellip;",
+      note_price: "網站上顯示的價格僅供參考，實際費用會在施工前依您的車輛確認。",
+      link_back_home: "&larr; 返回首頁",
+      err_submit_fail: "送出申請時發生問題，請再試一次，或直接寄信至 dav.art.iva@gmail.com。",
+      map_title: "標記您的位置", map_subtitle_choose: "選擇城市&mdash;還是要幫您定位？", map_or: "或",
+      map_use_location: "使用我目前的位置", map_no_pin_hint: "尚未標記&mdash;點一下地圖即可放置標記。",
+      map_cancel: "取消", map_confirm: "確認位置",
+      btn_download: "下載", btn_close: "關閉", pin_pinned_label: "位置已標記",
+      cookie_text_before: "我們使用 Cookie 進行網站分析並衡量廣告成效。詳情請參閱我們的", cookie_terms_link: "服務條款與隱私權聲明", cookie_text_after: "。", cookie_accept: "接受"
+    },
+    es: {
+      req_eyebrow: "Daviart &middot; Reserva", req_h1: "Solicitar un cambio de aceite",
+      req_subtitle: "Completa algunos datos a continuación y nosotros nos encargamos del resto.",
+      req_callback_note: "Después de enviar, nuestro gerente de servicio te llamará o enviará un mensaje para confirmar los detalles antes de reservar definitivamente.",
+      req_english_notice: "Por favor completa tus respuestas en inglés &mdash; solo las etiquetas de esta página están traducidas.",
+      req_required_note: "Obligatorio",
+      leg_vehicles: "Vehículo(s)", btn_add_vehicle: "+ Agregar otro vehículo", vehicle_label_prefix: "Vehículo", remove_btn: "Quitar",
+      make_label: "Marca", model_label: "Modelo", year_label: "Año", oiltype_label: "Tipo de aceite",
+      leg_where: "Dónde encontrarnos", lbl_city: "Ciudad", lbl_address: "Dirección", lbl_postal: "Código postal",
+      btn_pin_map: "Marcar en el mapa", pin_clear: "quitar",
+      leg_when: "Cuándo te conviene", lbl_pref_date: "Fecha preferida", lbl_pref_time: "Hora preferida",
+      leg_extra: "Servicios adicionales", btn_add_extra: "+ Agregar servicio adicional", lbl_extra_other: "¿Algo más que no esté en la lista?",
+      leg_contact: "Contacto", lbl_name: "Nombre", lbl_phone: "Teléfono", lbl_email: "Correo electrónico",
+      lbl_contact_pref: "Método de contacto preferido", lbl_comment: "Comentario (opcional)",
+      terms_text_before: "He leído y acepto los ", terms_link_text: "Términos de servicio y aviso de privacidad",
+      terms_text_after: ", y doy mi consentimiento para que mi información se comparta con el proveedor de servicios independiente asignado a mi solicitud.",
+      btn_submit: "Enviar solicitud", btn_update: "Actualizar solicitud", sending_label: "Enviando&hellip;",
+      note_price: "Los precios mostrados son estimados. El precio final se confirma según tu vehículo antes de comenzar el trabajo.",
+      link_back_home: "&larr; Volver al inicio",
+      err_submit_fail: "Algo salió mal al enviar tu solicitud. Intenta de nuevo, o escribe directamente a dav.art.iva@gmail.com.",
+      map_title: "Marca tu ubicación", map_subtitle_choose: "¿Qué ciudad — o prefieres que te ubiquemos?", map_or: "o",
+      map_use_location: "Usar mi ubicación actual", map_no_pin_hint: "Aún no hay marcador &mdash; toca el mapa para colocar uno.",
+      map_cancel: "Cancelar", map_confirm: "Confirmar ubicación",
+      btn_download: "Descargar", btn_close: "Cerrar", pin_pinned_label: "Ubicación marcada",
+      cookie_text_before: "Utilizamos cookies para el análisis del sitio y para medir el rendimiento publicitario. Consulta nuestros ", cookie_terms_link: "Términos de servicio y aviso de privacidad", cookie_text_after: " para más información.", cookie_accept: "Aceptar"
+    },
+    tl: {
+      req_eyebrow: "Daviart &middot; Pag-book", req_h1: "Humiling ng Pagpalit ng Langis",
+      req_subtitle: "Punan ang ilang detalye sa ibaba at kami na ang bahala sa iba.",
+      req_callback_note: "Pagkatapos mong mag-submit, tatawagan o te-text ka ng aming service manager para kumpirmahin ang mga detalye bago ito ma-book nang tuluyan.",
+      req_english_notice: "Pakipunan ang iyong mga sagot sa Ingles &mdash; ang mga label lamang sa pahinang ito ang isinalin.",
+      req_required_note: "Kailangan",
+      leg_vehicles: "Sasakyan", btn_add_vehicle: "+ Magdagdag ng isa pang sasakyan", vehicle_label_prefix: "Sasakyan", remove_btn: "Alisin",
+      make_label: "Make", model_label: "Modelo", year_label: "Taon", oiltype_label: "Uri ng langis",
+      leg_where: "Saan magkita", lbl_city: "Lungsod", lbl_address: "Address", lbl_postal: "Postal code",
+      btn_pin_map: "I-pin sa mapa", pin_clear: "alisin",
+      leg_when: "Kailan pwede", lbl_pref_date: "Nais na petsa", lbl_pref_time: "Nais na oras",
+      leg_extra: "Karagdagang serbisyo", btn_add_extra: "+ Magdagdag ng karagdagang serbisyo", lbl_extra_other: "May iba pa bang hindi nasa listahan?",
+      leg_contact: "Kontak", lbl_name: "Pangalan", lbl_phone: "Numero ng telepono", lbl_email: "Email",
+      lbl_contact_pref: "Nais na paraan ng pakikipag-ugnayan", lbl_comment: "Komento (opsyonal)",
+      terms_text_before: "Nabasa ko at sumasang-ayon ako sa ", terms_link_text: "Mga Tuntunin ng Serbisyo at Abiso sa Privacy",
+      terms_text_after: ", at pumapayag ako na ibahagi ang aking impormasyon sa independiyenteng service provider na itinalaga para tapusin ang aking kahilingan.",
+      btn_submit: "Ipadala ang kahilingan", btn_update: "I-update ang kahilingan", sending_label: "Ipinapadala&hellip;",
+      note_price: "Ang mga presyong ipinapakita ay tantiya lamang. Ang huling presyo ay kukumpirmahin batay sa iyong sasakyan bago simulan ang anumang trabaho.",
+      link_back_home: "&larr; Bumalik sa homepage",
+      err_submit_fail: "May problemang nangyari sa pagpapadala ng iyong kahilingan. Subukang muli, o mag-email nang direkta sa dav.art.iva@gmail.com.",
+      map_title: "I-pin ang iyong lokasyon", map_subtitle_choose: "Aling lungsod — o hanapin ka namin?", map_or: "o",
+      map_use_location: "Gamitin ang aking kasalukuyang lokasyon", map_no_pin_hint: "Wala pang pin &mdash; tapikin ang mapa para maglagay ng isa.",
+      map_cancel: "Kanselahin", map_confirm: "Kumpirmahin ang lokasyon",
+      btn_download: "I-download", btn_close: "Isara", pin_pinned_label: "Naka-pin ang lokasyon",
+      cookie_text_before: "Gumagamit kami ng cookies para sa pagsusuri ng site at pagsukat ng performance ng ad. Tingnan ang aming ", cookie_terms_link: "Mga Tuntunin ng Serbisyo at Abiso sa Privacy", cookie_text_after: " para sa detalye.", cookie_accept: "Tanggapin"
+    }
+  };
+  var currentLangReq = 'en';
+  var tR = function (key) {
+    return (I18N_REQ[currentLangReq] && I18N_REQ[currentLangReq][key]) || (I18N_REQ.en && I18N_REQ.en[key]) || key;
+  };
+
   var SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzRwXmmBpgr9Jfg5w7nV2c3-NyEh1MvHLgIZKRy2A_Vh8mrDoYut9CxkidAsYIx9zqTwA/exec';
   var LAST_KEY = 'daviart_last_request';
   var EDIT_KEY = 'daviart_edit_request';
@@ -178,13 +684,546 @@
   var statusBox = document.getElementById('form-status');
   var submitBtn = document.getElementById('submit-btn');
 
-  // Arriving here via "Edit request" on the thank-you page — pre-fill
-  // everything and reuse the same request ID so re-submitting updates the
-  // original row in the sheet instead of creating a duplicate.
   var editData = null;
   try { editData = JSON.parse(sessionStorage.getItem(EDIT_KEY) || 'null'); } catch (e) {}
   var requestId = (editData && editData.requestId) || genId();
+  var isEditMode = false;
 
+  // ---------- Make/model autocomplete ----------
+  var CAR_DATA = {
+    'Acura': ['ILX', 'MDX', 'RDX', 'TLX'],
+    'Audi': ['A3', 'A4', 'A6', 'Q3', 'Q5', 'Q7'],
+    'BMW': ['2 Series', '3 Series', '5 Series', 'X1', 'X3', 'X5'],
+    'Buick': ['Enclave', 'Encore', 'Envision'],
+    'Cadillac': ['CT4', 'CT5', 'Escalade', 'XT4', 'XT5'],
+    'Chevrolet': ['Cruze', 'Equinox', 'Malibu', 'Silverado', 'Suburban', 'Tahoe', 'Traverse'],
+    'Chrysler': ['300', 'Pacifica'],
+    'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan'],
+    'Ford': ['Bronco', 'Edge', 'Escape', 'Explorer', 'F-150', 'Fusion', 'Mustang', 'Ranger'],
+    'GMC': ['Acadia', 'Canyon', 'Sierra', 'Terrain', 'Yukon'],
+    'Honda': ['Accord', 'Civic', 'CR-V', 'HR-V', 'Odyssey', 'Pilot', 'Ridgeline'],
+    'Hyundai': ['Elantra', 'Kona', 'Santa Fe', 'Sonata', 'Tucson', 'Venue'],
+    'Infiniti': ['Q50', 'QX50', 'QX60'],
+    'Jeep': ['Cherokee', 'Compass', 'Grand Cherokee', 'Renegade', 'Wrangler'],
+    'Kia': ['Forte', 'Rio', 'Seltos', 'Sorento', 'Soul', 'Sportage', 'Telluride'],
+    'Lexus': ['ES', 'IS', 'NX', 'RX'],
+    'Mazda': ['CX-3', 'CX-5', 'CX-9', 'Mazda3', 'Mazda6'],
+    'Mercedes-Benz': ['C-Class', 'E-Class', 'GLA', 'GLC', 'GLE'],
+    'Mitsubishi': ['Eclipse Cross', 'Outlander', 'RVR'],
+    'Nissan': ['Altima', 'Kicks', 'Murano', 'Pathfinder', 'Qashqai', 'Rogue', 'Sentra', 'Versa'],
+    'Ram': ['1500', '2500', 'ProMaster'],
+    'Subaru': ['Ascent', 'Crosstrek', 'Forester', 'Impreza', 'Legacy', 'Outback'],
+    'Tesla': ['Model 3', 'Model S', 'Model X', 'Model Y'],
+    'Toyota': ['4Runner', 'Camry', 'Corolla', 'Highlander', 'Prius', 'RAV4', 'Sienna', 'Tacoma', 'Tundra'],
+    'Volkswagen': ['Atlas', 'Golf', 'Jetta', 'Passat', 'Tiguan'],
+    'Volvo': ['XC40', 'XC60', 'XC90']
+  };
+  var MAKE_NAMES = Object.keys(CAR_DATA);
+
+  var getMakeSuggestions = function (q) {
+    q = (q || '').trim().toLowerCase();
+    var list = !q ? MAKE_NAMES : MAKE_NAMES.filter(function (m) { return m.toLowerCase().indexOf(q) === 0; });
+    if (q && !list.length) list = MAKE_NAMES.filter(function (m) { return m.toLowerCase().indexOf(q) !== -1; });
+    return list.slice(0, 8);
+  };
+  var getModelSuggestions = function (makeVal, q) {
+    var matchKey = MAKE_NAMES.filter(function (m) { return m.toLowerCase() === (makeVal || '').trim().toLowerCase(); })[0];
+    if (!matchKey) return [];
+    var models = CAR_DATA[matchKey];
+    q = (q || '').trim().toLowerCase();
+    var list = !q ? models : models.filter(function (m) { return m.toLowerCase().indexOf(q) === 0; });
+    if (q && !list.length) list = models.filter(function (m) { return m.toLowerCase().indexOf(q) !== -1; });
+    return list.slice(0, 8);
+  };
+
+  var attachAutocomplete = function (input, listEl, getSuggestions, onSelect, showBadge) {
+    var items = [];
+    var activeIndex = -1;
+    var paint = function () {
+      Array.prototype.forEach.call(listEl.children, function (el, i) { el.classList.toggle('ac-active', i === activeIndex); });
+    };
+    var render = function (newItems) {
+      items = newItems;
+      activeIndex = -1;
+      if (!items.length) { listEl.style.display = 'none'; listEl.innerHTML = ''; return; }
+      listEl.innerHTML = items.map(function (item, i) {
+        var badge = showBadge ? '<span class="ac-badge">' + item.charAt(0).toUpperCase() + '</span>' : '';
+        return '<div class="ac-item" data-i="' + i + '">' + badge + '<span>' + item + '</span></div>';
+      }).join('');
+      listEl.style.display = 'block';
+    };
+    var select = function (i) {
+      if (i < 0 || i >= items.length) return;
+      input.value = items[i];
+      render([]);
+      if (onSelect) onSelect(items[i]);
+    };
+    input.addEventListener('input', function () { render(getSuggestions(input.value)); });
+    input.addEventListener('focus', function () { render(getSuggestions(input.value)); });
+    input.addEventListener('keydown', function (e) {
+      if (listEl.style.display !== 'block') return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); paint(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); paint(); }
+      else if (e.key === 'Enter') { if (activeIndex >= 0) { e.preventDefault(); select(activeIndex); } }
+      else if (e.key === 'Escape') { render([]); }
+    });
+    listEl.addEventListener('mousedown', function (e) {
+      var item = e.target.closest('.ac-item');
+      if (!item) return;
+      select(parseInt(item.getAttribute('data-i'), 10));
+    });
+    input.addEventListener('blur', function () { setTimeout(function () { render([]); }, 120); });
+  };
+
+  // ---------- Year "wheel" picker ----------
+  var buildYearPicker = function (root, hidden, initialYear) {
+    var YEAR_MIN = 1980, YEAR_MAX = 2027, ROW = 44;
+    var scroll = root.querySelector('.year-picker-scroll');
+    var years = [];
+    for (var y = YEAR_MAX; y >= YEAR_MIN; y--) years.push(y);
+    var html = '<div class="year-pad"></div>';
+    years.forEach(function (yr) { html += '<div class="year-option" data-year="' + yr + '">' + yr + '</div>'; });
+    html += '<div class="year-pad"></div>';
+    scroll.innerHTML = html;
+    var options = Array.prototype.slice.call(scroll.querySelectorAll('.year-option'));
+
+    var updateActive = function () {
+      var idx = Math.round(scroll.scrollTop / ROW);
+      idx = Math.max(0, Math.min(idx, options.length - 1));
+      options.forEach(function (opt, i) { opt.classList.toggle('active', i === idx); });
+      hidden.value = options[idx].getAttribute('data-year');
+    };
+    var scrollToYear = function (year, smooth) {
+      var i = -1;
+      options.forEach(function (opt, oi) { if (opt.getAttribute('data-year') === String(year)) i = oi; });
+      if (i < 0) i = 0;
+      scroll.scrollTo({ top: i * ROW, behavior: smooth ? 'smooth' : 'auto' });
+    };
+
+    scroll.addEventListener('scroll', function () { requestAnimationFrame(updateActive); }, { passive: true });
+    options.forEach(function (opt) { opt.addEventListener('click', function () { scrollToYear(opt.getAttribute('data-year'), true); }); });
+    root.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowUp') { e.preventDefault(); scroll.scrollBy({ top: -ROW, behavior: 'smooth' }); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); scroll.scrollBy({ top: ROW, behavior: 'smooth' }); }
+    });
+
+    // Mouse-wheel scrolling is handled by hand rather than left to the browser:
+    // native wheel scrolling combined with mandatory scroll-snap tends to jump
+    // several years per notch and then stall while the snap animation catches
+    // up. Instead, every wheel tick moves exactly one year, throttled so quick
+    // trackpad/wheel bursts don't all fire at once — slower, but predictable.
+    var wheelCooldown = false;
+    scroll.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      if (wheelCooldown) return;
+      wheelCooldown = true;
+      setTimeout(function () { wheelCooldown = false; }, 130);
+      var dir = e.deltaY > 0 ? 1 : -1;
+      var idx = Math.round(scroll.scrollTop / ROW) + dir;
+      idx = Math.max(0, Math.min(idx, options.length - 1));
+      scroll.scrollTo({ top: idx * ROW, behavior: 'smooth' });
+    }, { passive: false });
+
+    // Clicking the centered value lets you type a year directly, instead of
+    // only scrolling to it — the input sits invisibly over the center row and
+    // only reveals itself (and shows a text cursor) once focused.
+    var manualInput = root.querySelector('.year-picker-input');
+    if (manualInput) {
+      manualInput.addEventListener('focus', function () { manualInput.value = hidden.value; manualInput.select(); });
+      manualInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); manualInput.blur(); } });
+      manualInput.addEventListener('blur', function () {
+        var v = parseInt(manualInput.value, 10);
+        if (!isNaN(v)) scrollToYear(Math.max(YEAR_MIN, Math.min(YEAR_MAX, v)), true);
+        manualInput.value = '';
+      });
+    }
+
+    // Up/down arrow buttons — same one-row-at-a-time step as the wheel.
+    var arrowUp = root.querySelector('.year-arrow-up');
+    var arrowDown = root.querySelector('.year-arrow-down');
+    if (arrowUp) arrowUp.addEventListener('click', function () { scroll.scrollBy({ top: -ROW, behavior: 'smooth' }); });
+    if (arrowDown) arrowDown.addEventListener('click', function () { scroll.scrollBy({ top: ROW, behavior: 'smooth' }); });
+
+    scrollToYear(initialYear, false);
+    updateActive();
+
+    return {
+      setValue: function (year) { scrollToYear(year, false); setTimeout(updateActive, 30); },
+      getValue: function () { return hidden.value; }
+    };
+  };
+
+  // ---------- Custom dropdown ("oil type", "time") ----------
+  var setupDropdown = function (root, hidden, initialValue) {
+    var toggle = root.querySelector('.dd-toggle');
+    var menu = root.querySelector('.dd-menu');
+    var label = root.querySelector('.dd-label');
+    var items = menu.querySelectorAll('.dd-item');
+
+    var paintActive = function () {
+      items.forEach(function (it) { it.classList.toggle('active', it.getAttribute('data-value') === hidden.value); });
+    };
+    var setValue = function (v) {
+      hidden.value = v;
+      label.textContent = v;
+      paintActive();
+    };
+    var open = function () { menu.classList.add('open'); toggle.classList.add('open'); };
+    var close = function () { menu.classList.remove('open'); toggle.classList.remove('open'); };
+
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      document.querySelectorAll('.dd-menu.open').forEach(function (m) { if (m !== menu) m.classList.remove('open'); });
+      document.querySelectorAll('.dd-toggle.open').forEach(function (t) { if (t !== toggle) t.classList.remove('open'); });
+      menu.classList.contains('open') ? close() : open();
+    });
+    items.forEach(function (it) { it.addEventListener('click', function () { setValue(it.getAttribute('data-value')); close(); }); });
+    document.addEventListener('click', function (e) { if (!root.contains(e.target)) close(); });
+
+    setValue(initialValue);
+    return { setValue: setValue, getValue: function () { return hidden.value; } };
+  };
+
+  // ---------- Vehicle repeater (1 required, up to 5) ----------
+  var MAX_VEHICLES = 5;
+  var vehicleBlocks = [];
+  var vehiclesContainer = document.getElementById('vehicles-container');
+  var addVehicleBtn = document.getElementById('add-vehicle-btn');
+
+  var relabelVehicles = function () {
+    vehicleBlocks.forEach(function (b, i) {
+      var lbl = b.root.querySelector('.vehicle-label');
+      if (lbl) lbl.textContent = 'Vehicle ' + (i + 1);
+    });
+  };
+  var updateAddButtonVisibility = function () {
+    addVehicleBtn.style.display = vehicleBlocks.length >= MAX_VEHICLES ? 'none' : 'inline-flex';
+  };
+  var removeVehicle = function (block) {
+    var idx = vehicleBlocks.indexOf(block);
+    if (idx < 0) return;
+    block.root.remove();
+    vehicleBlocks.splice(idx, 1);
+    relabelVehicles();
+    updateAddButtonVisibility();
+  };
+  var createVehicleBlock = function (index) {
+    var isPrimary = index === 0;
+    var root = document.createElement('div');
+    root.className = 'vehicle-block';
+    root.style.cssText = 'padding-bottom:18px; margin-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.06);';
+
+    var reqAttr = isPrimary ? ' required' : '';
+    var makeAttrs = (isPrimary ? ' id="make" name="make"' : '') + reqAttr;
+    var modelAttrs = (isPrimary ? ' id="model" name="model"' : '') + reqAttr;
+    var makeLabelFor = isPrimary ? ' for="make"' : '';
+    var modelLabelFor = isPrimary ? ' for="model"' : '';
+    var reqStar = isPrimary ? ' <span class="req">*</span>' : '';
+    var yearName = isPrimary ? ' name="year"' : '';
+    var oilName = isPrimary ? ' name="oilType"' : '';
+
+    root.innerHTML =
+      '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">' +
+        '<span class="vehicle-label" style="font-family:\'Space Grotesk\',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6B7280;">' + tR('vehicle_label_prefix') + ' ' + (index + 1) + '</span>' +
+        (isPrimary ? '' : '<button type="button" class="remove-vehicle-btn" data-i18n="remove_btn">Remove</button>') +
+      '</div>' +
+      '<div class="form-row two">' +
+        '<div style="position:relative;"><label' + makeLabelFor + '><span data-i18n="make_label">Make</span>' + reqStar + '</label><input class="v-make"' + makeAttrs + ' placeholder="e.g. Toyota" autocomplete="off"><div class="ac-list"></div></div>' +
+        '<div style="position:relative;"><label' + modelLabelFor + '><span data-i18n="model_label">Model</span>' + reqStar + '</label><input class="v-model"' + modelAttrs + ' placeholder="e.g. RAV4" autocomplete="off"><div class="ac-list"></div></div>' +
+      '</div>' +
+      '<div class="form-row two">' +
+        '<div><label data-i18n="year_label">Year</label>' +
+          '<div class="year-picker" tabindex="0">' +
+            '<div class="year-picker-highlight"></div>' +
+            '<input class="year-picker-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="Type a year">' +
+            '<div class="year-picker-scroll"></div>' +
+            '<button type="button" class="year-arrow year-arrow-up" tabindex="-1" aria-label="Newer year"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>' +
+            '<button type="button" class="year-arrow year-arrow-down" tabindex="-1" aria-label="Older year"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
+          '</div>' +
+          '<input type="hidden" class="v-year"' + yearName + ' value="2026">' +
+        '</div>' +
+        '<div><label data-i18n="oiltype_label">Oil type</label>' +
+          '<div class="dd">' +
+            '<button type="button" class="dd-toggle"><span class="dd-label">Not sure / advise me</span><svg class="dd-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
+            '<div class="dd-menu">' +
+              '<div class="dd-item" data-value="Not sure / advise me">Not sure / advise me</div>' +
+              '<div class="dd-item" data-value="Conventional">Conventional</div>' +
+              '<div class="dd-item" data-value="Synthetic Blend">Synthetic Blend</div>' +
+              '<div class="dd-item" data-value="Full Synthetic">Full Synthetic</div>' +
+            '</div>' +
+          '</div>' +
+          '<input type="hidden" class="v-oiltype"' + oilName + ' value="Not sure / advise me">' +
+        '</div>' +
+      '</div>';
+
+    vehiclesContainer.appendChild(root);
+
+    var makeInput = root.querySelector('.v-make');
+    var modelInput = root.querySelector('.v-model');
+    var acLists = root.querySelectorAll('.ac-list');
+
+    attachAutocomplete(makeInput, acLists[0], function (q) { return getMakeSuggestions(q); }, function () {
+      modelInput.value = '';
+      modelInput.focus();
+    });
+    attachAutocomplete(modelInput, acLists[1], function (q) { return getModelSuggestions(makeInput.value, q); });
+
+    var yearApi = buildYearPicker(root.querySelector('.year-picker'), root.querySelector('.v-year'), 2026);
+    var oilApi = setupDropdown(root.querySelector('.dd'), root.querySelector('.v-oiltype'), 'Not sure / advise me');
+
+    var block = { root: root, makeInput: makeInput, modelInput: modelInput, yearApi: yearApi, oilApi: oilApi };
+    var removeBtn = root.querySelector('.remove-vehicle-btn');
+    if (removeBtn) removeBtn.addEventListener('click', function () { removeVehicle(block); });
+    return block;
+  };
+  var addVehicle = function () {
+    if (vehicleBlocks.length >= MAX_VEHICLES) return;
+    var block = createVehicleBlock(vehicleBlocks.length);
+    vehicleBlocks.push(block);
+    updateAddButtonVisibility();
+    return block;
+  };
+  addVehicleBtn.addEventListener('click', function () { addVehicle(); });
+  addVehicle(); // the mandatory first vehicle
+
+  // ---------- Preferred time (page-level custom dropdown) ----------
+  var timeApi = setupDropdown(document.getElementById('time-dd'), document.getElementById('time'), 'Morning (8–11am)');
+
+  // ---------- Additional services reveal ----------
+  (function () {
+    var btn = document.getElementById('extra-toggle-btn');
+    var list = document.getElementById('extra-services-list');
+    var otherWrap = document.getElementById('extra-other-wrap');
+    if (!btn || !list) return;
+    btn.addEventListener('click', function () {
+      list.classList.add('open');
+      if (otherWrap) otherWrap.style.display = 'block';
+      btn.style.display = 'none';
+    });
+  })();
+
+  // ---------- Pin-on-map (Leaflet + OpenStreetMap, no API key needed) ----------
+  (function () {
+    var mapModal = document.getElementById('map-modal');
+    var mapOpenBtn = document.getElementById('map-open-btn');
+    var mapCloseX = document.getElementById('map-close-x');
+    var mapCancelBtn = document.getElementById('map-cancel-btn');
+    var mapConfirmBtn = document.getElementById('map-confirm-btn');
+    var mapLocateBtn = document.getElementById('map-locate-btn');
+    var mapLocateInitialBtn = document.getElementById('map-locate-btn-initial');
+    var mapHint = document.getElementById('map-hint');
+    var pinStatus = document.getElementById('pin-status');
+    var pinCoords = document.getElementById('pin-coords');
+    var pinClear = document.getElementById('pin-clear');
+    var latInput = document.getElementById('lat');
+    var lngInput = document.getElementById('lng');
+    var addressInput = document.getElementById('address');
+    var stepChoose = document.getElementById('map-step-choose');
+    var stepMap = document.getElementById('map-step-map');
+    var cityChoiceBtns = document.querySelectorAll('.map-city-choice');
+    if (!mapModal || !window.L) return;
+
+    var CITY_CENTERS = { Vancouver: [49.2827, -123.1207], Calgary: [51.0447, -114.0719], Toronto: [43.6532, -79.3832] };
+
+    var leafletMap = null, marker = null;
+
+    var dropMarker = function (lat, lng) {
+      if (!marker) {
+        marker = L.marker([lat, lng], { draggable: true }).addTo(leafletMap);
+        marker.on('dragend', function () {
+          var p = marker.getLatLng();
+          mapHint.textContent = 'Pin at ' + p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) + '. Drag to adjust.';
+        });
+      } else {
+        marker.setLatLng([lat, lng]);
+      }
+      mapHint.textContent = 'Pin at ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '. Drag to adjust.';
+    };
+
+    var ensureMap = function () {
+      if (leafletMap) return;
+      leafletMap = L.map('leaflet-map').setView(CITY_CENTERS.Vancouver, 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+      }).addTo(leafletMap);
+      leafletMap.on('click', function (e) { dropMarker(e.latlng.lat, e.latlng.lng); });
+    };
+
+    // Step 1 (city / locate-me) is only shown the first time, before any pin
+    // exists — reopening the modal to adjust an existing pin goes straight
+    // back to the map instead of asking again.
+    var showChooseStep = function () {
+      stepChoose.style.display = 'flex';
+      stepMap.style.display = 'none';
+    };
+    var showMapStep = function (center, zoom) {
+      stepChoose.style.display = 'none';
+      stepMap.style.display = 'flex';
+      ensureMap();
+      if (center) leafletMap.setView(center, zoom || 12);
+      setTimeout(function () { leafletMap.invalidateSize(); }, 50);
+    };
+
+    var openMapModal = function () {
+      mapModal.classList.add('open');
+      if (marker) { showMapStep(); } else { showChooseStep(); }
+    };
+    var closeMapModal = function () { mapModal.classList.remove('open'); };
+
+    mapOpenBtn.addEventListener('click', openMapModal);
+    mapCloseX.addEventListener('click', closeMapModal);
+    mapCancelBtn.addEventListener('click', closeMapModal);
+    mapModal.addEventListener('click', function (e) { if (e.target === mapModal) closeMapModal(); });
+
+    Array.prototype.forEach.call(cityChoiceBtns, function (btn) {
+      btn.addEventListener('click', function () {
+        var city = btn.getAttribute('data-city');
+        var radio = document.querySelector('input[name="city"][value="' + city + '"]');
+        if (radio) radio.checked = true;
+        showMapStep(CITY_CENTERS[city], 12);
+      });
+    });
+
+    var runLocate = function () {
+      if (!navigator.geolocation) { mapHint.textContent = 'Location services are not available in this browser.'; return; }
+      mapHint.textContent = 'Locating…';
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        var lat = pos.coords.latitude, lng = pos.coords.longitude;
+        leafletMap.setView([lat, lng], 15);
+        dropMarker(lat, lng);
+      }, function () {
+        mapHint.textContent = 'Could not get your location — you can still tap the map to drop a pin.';
+      });
+    };
+    mapLocateBtn.addEventListener('click', runLocate);
+    mapLocateInitialBtn.addEventListener('click', function () {
+      showMapStep(CITY_CENTERS.Vancouver, 12);
+      runLocate();
+    });
+
+    mapConfirmBtn.addEventListener('click', function () {
+      if (!marker) { mapHint.textContent = 'Please drop a pin first — tap anywhere on the map.'; return; }
+      var p = marker.getLatLng();
+      latInput.value = p.lat.toFixed(6);
+      lngInput.value = p.lng.toFixed(6);
+      pinCoords.textContent = tR('pin_pinned_label') + ' (' + p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) + ')';
+      pinStatus.style.display = 'inline-flex';
+      mapConfirmBtn.textContent = 'Fetching address…';
+      mapConfirmBtn.disabled = true;
+      fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=en&lat=' + p.lat + '&lon=' + p.lng)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data) return;
+          if (data.display_name) addressInput.value = data.display_name;
+          if (data.address && data.address.postcode) {
+            var postalInput = document.getElementById('postal');
+            if (postalInput) postalInput.value = data.address.postcode.toUpperCase();
+          }
+          var cityBits = [data.address && data.address.city, data.address && data.address.town, data.address && data.address.village, data.address && data.address.municipality, data.display_name]
+            .filter(Boolean).join(' ').toLowerCase();
+          ['Vancouver', 'Calgary', 'Toronto'].forEach(function (c) {
+            if (cityBits.indexOf(c.toLowerCase()) !== -1) {
+              var radio = document.querySelector('input[name="city"][value="' + c + '"]');
+              if (radio) radio.checked = true;
+            }
+          });
+        })
+        .catch(function () {})
+        .finally(function () {
+          mapConfirmBtn.textContent = 'Confirm location';
+          mapConfirmBtn.disabled = false;
+          closeMapModal();
+        });
+    });
+
+    pinClear.addEventListener('click', function (e) {
+      e.preventDefault();
+      latInput.value = '';
+      lngInput.value = '';
+      pinStatus.style.display = 'none';
+    });
+  })();
+
+  // ---------- Phone: pre-filled with "+1 " so people only type the rest ----------
+  (function () {
+    var phoneInput = document.getElementById('phone');
+    if (!phoneInput) return;
+    phoneInput.addEventListener('focus', function () {
+      if (phoneInput.value === '+1 ') {
+        var len = phoneInput.value.length;
+        phoneInput.setSelectionRange(len, len);
+      }
+    });
+  })();
+
+  // ---------- Postal code: formatting only, no external lookup ----------
+  // (A live postal-code-to-address search used to sit here, but free map data
+  // isn't precise enough for Canadian postal codes and gave misleading
+  // results — removed. "Pin on map" is the reliable way to get exact
+  // coordinates; this field just auto-inserts the space, e.g. "T3P1R9" -> "T3P 1R9".)
+  (function () {
+    var postalInput = document.getElementById('postal');
+    if (!postalInput) return;
+    postalInput.addEventListener('input', function () {
+      var raw = postalInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+      postalInput.value = raw.length > 3 ? raw.slice(0, 3) + ' ' + raw.slice(3) : raw;
+    });
+  })();
+
+  // ---------- Address book: remembers addresses you've booked before on this
+  // device (localStorage) and suggests them as you type — no external service. ----------
+  (function () {
+    var addressInput = document.getElementById('address');
+    var addressList = document.getElementById('address-list');
+    if (!addressInput || !addressList) return;
+    var BOOK_KEY = 'daviart_address_book';
+
+    var getBook = function () {
+      try { return JSON.parse(localStorage.getItem(BOOK_KEY) || '[]'); } catch (e) { return []; }
+    };
+    window.__saveAddressBookEntry = function (entry) {
+      if (!entry || !entry.address) return;
+      try {
+        var book = getBook().filter(function (b) { return b.address.toLowerCase() !== entry.address.toLowerCase(); });
+        book.unshift(entry);
+        localStorage.setItem(BOOK_KEY, JSON.stringify(book.slice(0, 20)));
+      } catch (e) {}
+    };
+
+    var getAddressSuggestions = function (q) {
+      var book = getBook();
+      q = (q || '').trim().toLowerCase();
+      var list = !q ? book : book.filter(function (b) { return b.address.toLowerCase().indexOf(q) !== -1; });
+      return list.slice(0, 6).map(function (b) { return b.address; });
+    };
+
+    attachAutocomplete(addressInput, addressList, getAddressSuggestions, function (selectedAddress) {
+      var match = getBook().filter(function (b) { return b.address === selectedAddress; })[0];
+      if (!match) return;
+      if (match.postal) document.getElementById('postal').value = match.postal;
+      if (match.city) {
+        var radio = document.querySelector('input[name="city"][value="' + match.city + '"]');
+        if (radio) radio.checked = true;
+      }
+      if (match.lat && match.lng) {
+        document.getElementById('lat').value = match.lat;
+        document.getElementById('lng').value = match.lng;
+        var pinCoordsEl = document.getElementById('pin-coords');
+        var pinStatusEl = document.getElementById('pin-status');
+        if (pinCoordsEl && pinStatusEl) {
+          pinCoordsEl.textContent = tR('pin_pinned_label') + ' (' + parseFloat(match.lat).toFixed(4) + ', ' + parseFloat(match.lng).toFixed(4) + ')';
+          pinStatusEl.style.display = 'inline-flex';
+        }
+      }
+    });
+  })();
+
+  // Arriving here via "Edit request" on the thank-you page — pre-fill
+  // everything and reuse the same request ID so re-submitting updates the
+  // original row in the sheet instead of creating a duplicate. Note: this
+  // only ever restores a single vehicle (vehicle 1) — any extra vehicles or
+  // extra services from a previous booking were folded into the comment text
+  // and come back as plain text there, not as separate re-editable fields.
   if (editData) {
     sessionStorage.removeItem(EDIT_KEY);
     Object.keys(editData).forEach(function (key) {
@@ -197,8 +1236,127 @@
         el.value = editData[key];
       }
     });
-    submitBtn.textContent = 'Update request';
+    timeApi.setValue(form.elements.time.value);
+    vehicleBlocks[0].yearApi.setValue(form.elements.year.value);
+    vehicleBlocks[0].oilApi.setValue(form.elements.oilType.value);
+    if (form.elements.lat && form.elements.lat.value) {
+      var pinCoordsEl = document.getElementById('pin-coords');
+      var pinStatusEl = document.getElementById('pin-status');
+      if (pinCoordsEl && pinStatusEl) {
+        pinCoordsEl.textContent = tR('pin_pinned_label') + ' (' + parseFloat(form.elements.lat.value).toFixed(4) + ', ' + parseFloat(form.elements.lng.value).toFixed(4) + ')';
+        pinStatusEl.style.display = 'inline-flex';
+      }
+    }
+    isEditMode = true;
+    submitBtn.textContent = tR('btn_update');
   }
+
+  (function () {
+    var openLink = document.getElementById('terms-open-link');
+    var cookieTermsLink = document.getElementById('cookie-terms-link');
+    var modal = document.getElementById('terms-modal');
+    var content = document.getElementById('terms-content');
+    var closeX = document.getElementById('terms-close-x');
+    var closeBtn = document.getElementById('terms-close-btn');
+    if (!modal) return;
+    var loaded = false;
+    var open = function (e) {
+      if (e) e.preventDefault();
+      modal.style.display = 'flex';
+      if (!loaded) {
+        loaded = true;
+        fetch('terms.txt').then(function (res) { return res.text(); })
+          .then(function (text) { content.textContent = text; })
+          .catch(function () { content.textContent = 'Could not load the terms right now. You can still download them below.'; });
+      }
+    };
+    var close = function () { modal.style.display = 'none'; };
+    if (openLink) openLink.addEventListener('click', open);
+    if (cookieTermsLink) cookieTermsLink.addEventListener('click', open);
+    closeX.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display === 'flex') close(); });
+  })();
+
+  // Cookies/terms consent is remembered once given — either by accepting the
+  // cookie banner or by submitting the booking form (which requires the terms
+  // checkbox to be checked anyway). Once remembered, the banner stops showing
+  // and the checkbox below starts pre-checked on future visits.
+  var CONSENT_KEY = 'daviart_consent';
+  var hasConsent = function () {
+    try { return localStorage.getItem(CONSENT_KEY) === '1'; } catch (e) { return false; }
+  };
+  var giveConsent = function () {
+    try { localStorage.setItem(CONSENT_KEY, '1'); } catch (e) {}
+  };
+
+  (function () {
+    var banner = document.getElementById('cookie-banner');
+    var acceptBtn = document.getElementById('cookie-accept-btn');
+    var dismissBtn = document.getElementById('cookie-dismiss-btn');
+    if (!banner) return;
+    if (!hasConsent()) {
+      var dismissedThisSession = false;
+      try { dismissedThisSession = sessionStorage.getItem('daviart_cookie_dismissed') === '1'; } catch (e) {}
+      if (!dismissedThisSession) banner.style.display = 'block';
+    }
+    acceptBtn.addEventListener('click', function () { giveConsent(); banner.style.display = 'none'; });
+    dismissBtn.addEventListener('click', function () {
+      banner.style.display = 'none';
+      try { sessionStorage.setItem('daviart_cookie_dismissed', '1'); } catch (e) {}
+    });
+  })();
+
+  var termsCheckbox = document.getElementById('terms-checkbox');
+  if (termsCheckbox && hasConsent()) termsCheckbox.checked = true;
+
+  // Language switcher — translates labels/chrome only (see I18N_REQ above);
+  // shares index.html's localStorage key so the choice is remembered site-wide.
+  (function () {
+    var LABELS = { en: "EN", uk: "UA", fr: "FR", it: "IT", ru: "RU", hi: "HI", pa: "PA", zh: "中文", es: "ES", tl: "TL" };
+    var toggle = document.getElementById('lang-toggle');
+    var toggleLabel = document.getElementById('lang-toggle-label');
+    var menu = document.getElementById('lang-menu');
+    if (!toggle || !menu) return;
+
+    var setLang = function (lang) {
+      if (!I18N_REQ[lang]) lang = 'en';
+      currentLangReq = lang;
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        var val = I18N_REQ[lang][el.getAttribute('data-i18n')];
+        if (val != null) el.innerHTML = val;
+      });
+      if (typeof relabelVehicles === 'function') relabelVehicles();
+      if (submitBtn && !submitBtn.disabled) submitBtn.textContent = isEditMode ? tR('btn_update') : tR('btn_submit');
+      document.querySelectorAll('.lang-option').forEach(function (opt) {
+        var check = opt.querySelector('.lang-check');
+        if (check) check.style.opacity = (opt.getAttribute('data-lang') === lang) ? '1' : '0';
+      });
+      toggleLabel.textContent = LABELS[lang] || 'EN';
+      document.documentElement.setAttribute('lang', lang);
+      try { localStorage.setItem('daviart_lang', lang); } catch (e) {}
+    };
+
+    var openMenu = function () { menu.style.display = 'block'; toggle.setAttribute('aria-expanded', 'true'); };
+    var closeMenu = function () { menu.style.display = 'none'; toggle.setAttribute('aria-expanded', 'false'); };
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (menu.style.display === 'block') { closeMenu(); } else { openMenu(); }
+    });
+    document.querySelectorAll('.lang-option').forEach(function (opt) {
+      opt.addEventListener('click', function () { setLang(opt.getAttribute('data-lang')); closeMenu(); });
+      opt.addEventListener('mouseenter', function () { opt.style.background = 'rgba(255,255,255,0.06)'; });
+      opt.addEventListener('mouseleave', function () { opt.style.background = 'none'; });
+    });
+    document.addEventListener('click', function (e) {
+      if (!document.getElementById('lang-switch').contains(e.target)) closeMenu();
+    });
+
+    var saved = 'en';
+    try { saved = localStorage.getItem('daviart_lang') || 'en'; } catch (e) {}
+    setLang(saved);
+  })();
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -207,8 +1365,31 @@
     data.contactPref = fd.getAll('contactPref').join(', ');
     data.requestId = requestId;
 
+    // Extra vehicles (2nd onward) and extra services aren't part of the
+    // original sheet schema, so they're folded into the comment text as a
+    // clearly labelled summary — guaranteed to show up somewhere readable
+    // regardless of how the Google Sheet / Apps Script is set up on the
+    // backend, rather than risking a new field silently being dropped.
+    var extraVehicleLines = [];
+    for (var i = 1; i < vehicleBlocks.length; i++) {
+      var vb = vehicleBlocks[i];
+      var vMake = vb.makeInput.value.trim();
+      var vModel = vb.modelInput.value.trim();
+      if (!vMake && !vModel) continue;
+      extraVehicleLines.push('Vehicle ' + (i + 1) + ': ' + [vb.yearApi.getValue(), vMake, vModel].filter(Boolean).join(' ') + ' — ' + vb.oilApi.getValue());
+    }
+    var extraServiceChecked = Array.prototype.filter.call(document.querySelectorAll('.extra-service-cb'), function (cb) { return cb.checked; })
+      .map(function (cb) { return cb.value; });
+    var otherTextEl = document.getElementById('extra-other-text');
+    if (otherTextEl && otherTextEl.value.trim()) extraServiceChecked.push('Other: ' + otherTextEl.value.trim());
+
+    var extraNotes = [];
+    if (extraVehicleLines.length) extraNotes.push('Additional vehicles requested:\n' + extraVehicleLines.join('\n'));
+    if (extraServiceChecked.length) extraNotes.push('Extra services requested: ' + extraServiceChecked.join(', '));
+    if (extraNotes.length) data.comment = (extraNotes.join('\n\n') + (data.comment ? '\n\n' + data.comment : '')).trim();
+
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending…';
+    submitBtn.textContent = tR('sending_label');
     statusBox.className = 'form-status';
     statusBox.textContent = '';
 
@@ -220,12 +1401,16 @@
       .then(function (res) { return res.json(); })
       .then(function () {
         try { sessionStorage.setItem(LAST_KEY, JSON.stringify(data)); } catch (err) {}
+        giveConsent();
+        if (window.__saveAddressBookEntry) {
+          window.__saveAddressBookEntry({ address: data.address, postal: data.postal, city: data.city, lat: data.lat, lng: data.lng });
+        }
         window.location.href = 'thank-you.html';
       })
       .catch(function () {
         statusBox.className = 'form-status err';
-        statusBox.textContent = 'Something went wrong sending your request. Please try again, or email hello@daviart.ca directly.';
-        submitBtn.textContent = 'Send request';
+        statusBox.textContent = tR('err_submit_fail');
+        submitBtn.textContent = isEditMode ? tR('btn_update') : tR('btn_submit');
         submitBtn.disabled = false;
       });
   });

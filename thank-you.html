@@ -16,7 +16,8 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap"></noscript>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #06080F; }
@@ -92,6 +93,33 @@
 
   </div>
 </div>
+
+<!-- TERMS & PRIVACY MODAL — content is fetched live from terms.txt (single
+     source of truth shared with the other pages' modals and Download button). -->
+<div id="terms-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; padding:20px; background:rgba(4,6,12,0.72); backdrop-filter:blur(4px);">
+  <div style="background:#0E1420; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:28px 30px; max-width:600px; width:100%; max-height:82vh; display:flex; flex-direction:column; text-align:left; font-family:'Manrope',sans-serif;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;">
+      <h3 style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:20px; color:#F4F1EA; margin:0;">Terms of Service &amp; Privacy Notice</h3>
+      <button type="button" id="terms-close-x" aria-label="Close" style="background:none; border:none; color:#A7ADBC; font-size:24px; line-height:1; cursor:pointer; padding:2px 4px; flex:none;">&times;</button>
+    </div>
+    <div id="terms-content" style="overflow-y:auto; padding-right:8px; font-size:13.5px; line-height:1.7; color:#C3C8D4; white-space:pre-wrap;">Loading&hellip;</div>
+    <div style="display:flex; gap:10px; margin-top:20px; flex:none;">
+      <a href="terms.txt" download style="flex:1; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#FFDDA8; border:1px solid rgba(255,182,92,0.35); padding:11px; border-radius:100px;">Download</a>
+      <button type="button" id="terms-close-btn" style="flex:1; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#1A1206; background:linear-gradient(180deg,#FFCB8A,#F5A623); border:none; padding:11px; border-radius:100px; cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- COOKIE CONSENT BANNER -->
+<div id="cookie-banner" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:250; background:rgba(9,11,18,0.97); border-top:1px solid rgba(255,255,255,0.1); padding:16px 20px; backdrop-filter:blur(6px);">
+  <div style="max-width:960px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:14px; justify-content:space-between;">
+    <p style="flex:1; min-width:240px; font-family:'Manrope',sans-serif; font-size:13.5px; line-height:1.55; color:#C3C8D4; margin:0;">We use cookies for site analytics and to measure ad performance. See our <a href="#" id="cookie-terms-link" style="color:#FFB65C; text-decoration:underline;">Terms of Service &amp; Privacy Notice</a> for details.</p>
+    <div style="display:flex; align-items:center; gap:8px; flex:none;">
+      <button type="button" id="cookie-accept-btn" style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; color:#1A1206; background:linear-gradient(180deg,#FFCB8A,#F5A623); border:none; padding:10px 22px; border-radius:100px; cursor:pointer;">Accept</button>
+      <button type="button" id="cookie-dismiss-btn" aria-label="Dismiss" style="background:none; border:none; color:#6B7280; font-size:20px; line-height:1; cursor:pointer; padding:4px 8px;">&times;</button>
+    </div>
+  </div>
+</div>
 <script>
   var STORE_KEY = 'daviart_last_request';
   var data = null;
@@ -157,6 +185,58 @@
       });
     }
   });
+
+  (function () {
+    var openLink = document.getElementById('cookie-terms-link');
+    var modal = document.getElementById('terms-modal');
+    var content = document.getElementById('terms-content');
+    var closeX = document.getElementById('terms-close-x');
+    var closeBtn = document.getElementById('terms-close-btn');
+    if (!modal) return;
+    var loaded = false;
+    var open = function (e) {
+      if (e) e.preventDefault();
+      modal.style.display = 'flex';
+      if (!loaded) {
+        loaded = true;
+        fetch('terms.txt').then(function (res) { return res.text(); })
+          .then(function (text) { content.textContent = text; })
+          .catch(function () { content.textContent = 'Could not load the terms right now. You can still download them below.'; });
+      }
+    };
+    var close = function () { modal.style.display = 'none'; };
+    if (openLink) openLink.addEventListener('click', open);
+    closeX.addEventListener('click', close);
+    closeBtn.addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display === 'flex') close(); });
+  })();
+
+  (function () {
+    // Same shared consent key as index.html/request.html — accepting once
+    // anywhere stops the banner everywhere.
+    var CONSENT_KEY = 'daviart_consent';
+    var hasConsent = function () {
+      try { return localStorage.getItem(CONSENT_KEY) === '1'; } catch (e) { return false; }
+    };
+    var giveConsent = function () {
+      try { localStorage.setItem(CONSENT_KEY, '1'); } catch (e) {}
+    };
+    var banner = document.getElementById('cookie-banner');
+    var acceptBtn = document.getElementById('cookie-accept-btn');
+    var dismissBtn = document.getElementById('cookie-dismiss-btn');
+    if (!banner) return;
+    if (!hasConsent()) {
+      var dismissedThisSession = false;
+      try { dismissedThisSession = sessionStorage.getItem('daviart_cookie_dismissed') === '1'; } catch (e) {}
+      if (!dismissedThisSession) banner.style.display = 'block';
+    }
+    acceptBtn.addEventListener('click', function () { giveConsent(); banner.style.display = 'none'; });
+    dismissBtn.addEventListener('click', function () {
+      banner.style.display = 'none';
+      try { sessionStorage.setItem('daviart_cookie_dismissed', '1'); } catch (e) {}
+    });
+  })();
 </script>
 </body>
 </html>

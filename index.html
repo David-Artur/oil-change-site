@@ -28,7 +28,8 @@
 <link rel="canonical" href="https://daviart.com/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Space+Grotesk:wght@400;500;600&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Space+Grotesk:wght@400;500;600&family=Manrope:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Space+Grotesk:wght@400;500;600&family=Manrope:wght@400;500;600&display=swap"></noscript>
 <script type="module" src="spheres-bg.js"></script>
 <script type="application/ld+json">
 {
@@ -37,7 +38,7 @@
   "name": "Daviart",
   "url": "https://daviart.com/",
   "areaServed": ["Vancouver", "Calgary", "Toronto"],
-  "email": "hello@daviart.ca"
+  "email": "dav.art.iva@gmail.com"
 }
 </script>
 <style>
@@ -158,9 +159,17 @@
         <button type="button" id="lang-toggle" aria-haspopup="true" aria-expanded="false" style="background:none; border:1px solid rgba(255,255,255,0.14); cursor:pointer; display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; color:#9AA0AD; font-family:'Space Grotesk',sans-serif; font-size:10.5px; font-weight:600; letter-spacing:0.02em; transition: border-color .2s ease, color .2s ease;">
           <span id="lang-toggle-label">EN</span>
         </button>
-        <div id="lang-menu" style="display:none; position:absolute; top:calc(100% + 10px); right:0; background:#10141B; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; min-width:160px; box-shadow:0 16px 34px rgba(0,0,0,0.45); z-index:60;">
+        <div id="lang-menu" style="display:none; position:absolute; top:calc(100% + 10px); right:0; background:#10141B; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; min-width:170px; max-height:340px; overflow-y:auto; box-shadow:0 16px 34px rgba(0,0,0,0.45); z-index:60;">
           <button type="button" class="lang-option" data-lang="en" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127468;&#127463;</span><span style="flex:1;">English</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
           <button type="button" class="lang-option" data-lang="uk" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127482;&#127462;</span><span style="flex:1;">Українська</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="fr" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127467;&#127479;</span><span style="flex:1;">Français</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="it" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127470;&#127481;</span><span style="flex:1;">Italiano</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="ru" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127479;&#127482;</span><span style="flex:1;">Русский</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="hi" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127470;&#127475;</span><span style="flex:1;">हिन्दी</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="pa" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127470;&#127475;</span><span style="flex:1;">ਪੰਜਾਬੀ</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="zh" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127469;&#127472;</span><span style="flex:1;">繁體中文</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="es" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127466;&#127480;</span><span style="flex:1;">Español</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
+          <button type="button" class="lang-option" data-lang="tl" style="display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; cursor:pointer; padding:9px 10px; border-radius:8px; color:#ECE7DE; font-family:'Manrope',sans-serif; font-size:13.5px; text-align:left;"><span style="font-size:16px; line-height:1;">&#127477;&#127469;</span><span style="flex:1;">Filipino</span><span class="lang-check" style="color:#F2B368; opacity:0;">&#10003;</span></button>
         </div>
       </div>
       <a id="nav-book-btn" href="request.html" target="_blank" style="position: relative; overflow: hidden; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color:#0C0A07; background: linear-gradient(180deg, #F2B368, #E0912F); padding: 11px 22px; border-radius: 100px; border: 1px solid rgba(255,220,170,0.5); white-space: nowrap; transition: all .25s ease;" style-hover="filter: brightness(1.05); transform: translateY(-1px);">
@@ -425,10 +434,10 @@
       </div>
       <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
         <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p data-i18n="quote4" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Had a slow leak I didn't even know about &mdash; caught during the multi-point check. Saved me a much bigger repair down the road.&rdquo;</p>
+        <p style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">「原來有個我自己都不知道的慢漏油問題，在多點檢查時被發現了，幫我省下了之後一筆更大的維修費。」</p>
         <div style="display:flex; align-items:center; gap: 13px;">
           <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">D</div>
-          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Daniel R.</div><div data-i18n="city1" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Vancouver, BC</div></div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Wei Z.</div><div style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Vancouver, BC</div></div>
         </div>
       </div>
       <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
@@ -449,10 +458,10 @@
       </div>
       <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
         <div style="color:#E8973C; letter-spacing:4px; font-size:13px; margin-bottom: 22px;">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <p data-i18n="quote7" style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Friendly, fast, and my car runs noticeably smoother. I've already told my whole office about Daviart.&rdquo;</p>
+        <p style="font-family:'Newsreader',serif; font-weight:400; font-size: 19px; line-height: 1.55; color:#DEDACF; margin-bottom: 28px;">&ldquo;Sympathique, rapide, et ma voiture roule nettement mieux. J'en ai déjà parlé à tout mon bureau.&rdquo;</p>
         <div style="display:flex; align-items:center; gap: 13px;">
-          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">E</div>
-          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">Elena V.</div><div data-i18n="city1" style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Vancouver, BC</div></div>
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#E8973C,#8F4A16);display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:500;color:#0C0A07;">&#201;</div>
+          <div><div style="font-family:'Manrope',sans-serif; font-weight:600; color:#ECE7DE; font-size:14px;">&#201;lise M.</div><div style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#7E828F; margin-top:3px;">Toronto, Ont.</div></div>
         </div>
       </div>
       <div class="testi-card" style="padding: 36px 32px; border-radius: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
@@ -547,8 +556,7 @@
         <div>
           <div data-i18n="foot_contact" style="font-family:'Space Grotesk',sans-serif; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color:#7E828F; margin-bottom: 18px;">Contact</div>
           <div style="display:flex; flex-direction:column; gap: 12px; font-family:'Manrope',sans-serif; font-size: 14.5px;">
-            <a href="tel:+18005550123" style="color:#B7B3AA;" style-hover="color:#F2B368;">1-800-555-0123</a>
-            <a href="mailto:hello@daviart.ca" style="color:#B7B3AA;" style-hover="color:#F2B368;">hello@daviart.ca</a>
+            <a href="mailto:dav.art.iva@gmail.com" style="color:#B7B3AA;" style-hover="color:#F2B368;">dav.art.iva@gmail.com</a>
           </div>
         </div>
         <div>
@@ -557,6 +565,7 @@
             <a href="#how" data-i18n="nav_how" style="color:#B7B3AA;" style-hover="color:#F2B368;">How it works</a>
             <a href="#pricing" data-i18n="nav_pricing" style="color:#B7B3AA;" style-hover="color:#F2B368;">Pricing</a>
             <a href="request.html" target="_blank" data-i18n="nav_book" style="color:#B7B3AA;" style-hover="color:#F2B368;">Book now</a>
+            <a href="#" id="terms-open-link" data-i18n="foot_terms" style="color:#B7B3AA;" style-hover="color:#F2B368;">Terms &amp; Privacy</a>
           </div>
         </div>
       </div>
@@ -565,6 +574,34 @@
       &copy; 2026 Daviart Oil Change. All rights reserved.
     </div>
   </footer>
+
+  <!-- TERMS & PRIVACY MODAL — content is fetched live from terms.txt (single
+       source of truth shared with the booking form's modal and its Download
+       button), never hardcoded here. -->
+  <div id="terms-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; padding:20px; background:rgba(5,6,10,0.72); backdrop-filter:blur(4px);">
+    <div style="background:#12161F; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:28px 30px; max-width:600px; width:100%; max-height:82vh; display:flex; flex-direction:column; text-align:left; font-family:'Manrope',sans-serif;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;">
+        <h3 style="font-family:'Newsreader',serif; font-weight:400; font-size:24px; color:#F4EFE6; margin:0;">Terms of Service &amp; Privacy Notice</h3>
+        <button type="button" id="terms-close-x" aria-label="Close" style="background:none; border:none; color:#9CA3B5; font-size:24px; line-height:1; cursor:pointer; padding:2px 4px; flex:none;">&times;</button>
+      </div>
+      <div id="terms-content" style="overflow-y:auto; padding-right:8px; font-size:13.5px; line-height:1.7; color:#D6D2C9; white-space:pre-wrap;">Loading&hellip;</div>
+      <div style="display:flex; gap:10px; margin-top:20px; flex:none;">
+        <a href="terms.txt" download style="flex:1; text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; color:#E8CBA0; border:1px solid rgba(232,151,60,0.35); padding:11px; border-radius:100px;">Download</a>
+        <button type="button" id="terms-close-btn" style="flex:1; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; color:#0C0A07; background:linear-gradient(180deg,#F2B368,#E0912F); border:none; padding:11px; border-radius:100px; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COOKIE CONSENT BANNER -->
+  <div id="cookie-banner" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:250; background:rgba(12,8,5,0.97); border-top:1px solid rgba(255,255,255,0.08); padding:16px 20px; backdrop-filter:blur(6px);">
+    <div style="max-width:960px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:14px; justify-content:space-between;">
+      <p style="flex:1; min-width:240px; font-family:'Manrope',sans-serif; font-size:13.5px; line-height:1.55; color:#B7B3AA; margin:0;"><span data-i18n="cookie_text_before">We use cookies for site analytics and to measure ad performance. See our </span><a href="#" id="cookie-terms-link" data-i18n="cookie_terms_link" style="color:#E8973C; text-decoration:underline;">Terms of Service &amp; Privacy Notice</a><span data-i18n="cookie_text_after"> for details.</span></p>
+      <div style="display:flex; align-items:center; gap:8px; flex:none;">
+        <button type="button" id="cookie-accept-btn" data-i18n="cookie_accept" style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px; color:#0C0A07; background:linear-gradient(180deg,#F2B368,#E0912F); border:none; padding:10px 22px; border-radius:100px; cursor:pointer;">Accept</button>
+        <button type="button" id="cookie-dismiss-btn" aria-label="Dismiss" style="background:none; border:none; color:#7E828F; font-size:20px; line-height:1; cursor:pointer; padding:4px 8px;">&times;</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -684,10 +721,8 @@
       quote1: "&ldquo;Booked at 9, done by 9:40 in my own driveway. I didn't even put my coffee down. This is the future of car maintenance.&rdquo;",
       quote2: "&ldquo;They came to my office parking lot while I was in meetings. Clean, professional, and the price was exactly what the site quoted.&rdquo;",
       quote3: "&ldquo;No more Saturday mornings wasted at the shop. Daviart texts when they're on the way and handles everything. Worth every dollar.&rdquo;",
-      quote4: "&ldquo;Had a slow leak I didn't even know about &mdash; caught during the multi-point check. Saved me a much bigger repair down the road.&rdquo;",
       quote5: "&ldquo;Booked on my phone during lunch, service was done before I finished work. Ridiculously convenient.&rdquo;",
       quote6: "&ldquo;Skeptical at first about a driveway oil change, but the tech was fully equipped and left the spot cleaner than he found it.&rdquo;",
-      quote7: "&ldquo;Friendly, fast, and my car runs noticeably smoother. I've already told my whole office about Daviart.&rdquo;",
       quote8: "&ldquo;Winter mornings are brutal here &mdash; having someone come to me instead of standing in a cold garage is a game changer.&rdquo;",
       quote9: "&ldquo;The digital receipt and reminder for my next service is such a nice touch. Feels like a modern, trustworthy company.&rdquo;",
       city1: "Vancouver, BC", city2: "Calgary, AB", city3: "Toronto, ON",
@@ -695,6 +730,8 @@
       cta_p: "Book in under a minute. Our mechanic will call you beforehand to confirm all the details. We come to you in Vancouver, Calgary, or Toronto.",
       foot_tagline: "Mobile oil changes that come to your home or office. Serving Vancouver, Calgary, and Toronto.",
       foot_contact: "Contact", foot_company: "Company", foot_copyright: "&copy; 2026 Daviart Oil Change. All rights reserved.",
+      foot_terms: "Terms &amp; Privacy",
+      cookie_text_before: "We use cookies for site analytics and to measure ad performance. See our ", cookie_terms_link: "Terms of Service &amp; Privacy Notice", cookie_text_after: " for details.", cookie_accept: "Accept",
       add_review_btn: "+ Leave a review", review_modal_title: "Leave a review",
       review_name_label: "Your name", review_city_label: "City", review_rating_label: "Rating", review_text_label: "Your review",
       review_cancel: "Cancel", review_submit: "Post review"
@@ -731,10 +768,8 @@
       quote1: "&laquo;Забронював о 9:00, все готово вже о 9:40 просто на моїй під'їзній доріжці. Я навіть каву не встиг поставити. Це майбутнє обслуговування авто.&raquo;",
       quote2: "&laquo;Приїхали на паркінг офісу, поки я був на нарадах. Чисто, професійно, і ціна точно збіглася з сайтом.&raquo;",
       quote3: "&laquo;Більше жодних суботніх ранків в автосервісі. Daviart пише, коли вже в дорозі, і робить усе сама. Варте кожного долара.&raquo;",
-      quote4: "&laquo;Виявилась повільна протічка, про яку я навіть не знав &mdash; технік помітив її під час багатопунктового огляду. Це врятувало мене від набагато серйознішого ремонту.&raquo;",
       quote5: "&laquo;Забронював з телефону в обідню перерву &mdash; усе було готово ще до кінця робочого дня. Неймовірно зручно.&raquo;",
       quote6: "&laquo;Спочатку сумнівався щодо заміни оливи просто на під'їзній доріжці, але технік мав усе обладнання і залишив місце чистішим, ніж було.&raquo;",
-      quote7: "&laquo;Дружньо, швидко, і машина явно їде плавніше. Я вже розповів усьому офісу про Daviart.&raquo;",
       quote8: "&laquo;Зимові ранки тут суворі &mdash; коли хтось приїжджає до тебе замість того, щоб стояти в холодному гаражі, це справжній порятунок.&raquo;",
       quote9: "&laquo;Електронний чек і нагадування про наступне обслуговування &mdash; приємна дрібниця. Відчувається як сучасна, надійна компанія.&raquo;",
       city1: "Ванкувер, БК", city2: "Калгарі, АБ", city3: "Торонто, ОН",
@@ -742,12 +777,398 @@
       cta_p: "Забронюйте менш ніж за хвилину. Наш механік зателефонує заздалегідь, щоб уточнити всі деталі. Ми приїдемо до вас у Ванкувері, Калгарі чи Торонто.",
       foot_tagline: "Виїзна заміна оливи прямо вдома чи в офісі. Працюємо у Ванкувері, Калгарі та Торонто.",
       foot_contact: "Контакти", foot_company: "Компанія", foot_copyright: "&copy; 2026 Daviart Oil Change. Усі права захищено.",
+      foot_terms: "Умови та конфіденційність",
+      cookie_text_before: "Ми використовуємо cookie для аналітики сайту та оцінки ефективності реклами. Детальніше — в наших ", cookie_terms_link: "Умовах надання послуг і Політиці конфіденційності", cookie_text_after: ".", cookie_accept: "Прийняти",
       add_review_btn: "+ Залишити відгук", review_modal_title: "Залишити відгук",
       review_name_label: "Ваше ім'я", review_city_label: "Місто", review_rating_label: "Оцінка", review_text_label: "Ваш відгук",
       review_cancel: "Скасувати", review_submit: "Опублікувати"
+    },
+    fr: {
+      nav_how: "Comment ça marche", nav_pricing: "Tarifs", nav_why: "Pourquoi nous", nav_book: "Réserver",
+      hero_eyebrow_line1: "Vidange d'huile à domicile", hero_eyebrow_line2: "Vancouver &middot; Calgary &middot; Toronto",
+      hero_line1: "Nous changeons votre huile", hero_line2: "pendant que vous sirotez votre café.",
+      cta_book: "Réserver une vidange à domicile", hero_secondary_cta: "Voir comment ça marche",
+      stat_service: "Durée moyenne", stat_trip: "Frais de déplacement", stat_reviews: "1 200+ avis",
+      how_h2: "Quatre étapes. Zéro détour.",
+      how_intro: "Oubliez le garage, la salle d'attente, le détour. Un technicien certifié se déplace chez vous ou au bureau et effectue une vidange complète dans votre entrée.",
+      step1_title: "Réservez en ligne", step1_desc: "Choisissez votre véhicule, le type d'huile et un créneau qui vous convient. Cela prend environ une minute.",
+      step2_title: "On vient à vous", step2_desc: "Un technicien certifié arrive chez vous ou au bureau, entièrement équipé &mdash; aucun pont élévateur requis.",
+      step3_title: "Entretien sur place", step3_desc: "Huile fraîche, nouveau filtre et vérification complète des fluides &mdash; pendant que vous poursuivez votre journée.",
+      step4_title: "Repartez l'esprit tranquille", step4_desc: "Nous recyclons l'huile usagée, réinitialisons votre indicateur d'entretien et vous envoyons un reçu numérique.",
+      incl_eyebrow: "Ce qui est inclus", incl_line1: "Chaque visite,", incl_line2: "le service complet.",
+      incl_intro: "Un prix transparent couvre tout ce qui suit. Aucuns frais cachés, aucune surprise à la fin.",
+      incl_item1: "Jusqu'à 5 L d'huile moteur de qualité", incl_item2: "Filtre à huile premium neuf",
+      incl_item3: "Appoint et vérification de tous les fluides essentiels", incl_item4: "Inspection visuelle multipoint", incl_item5: "Réinitialisation de l'indicateur d'entretien",
+      pricing_h2: "Choisissez votre huile. Voyez le prix.", cad_per_visit: "CAD &middot; par visite", pricing_cta: "Choisir ce forfait", most_popular: "Le plus populaire",
+      plan1_name: "Conventionnelle", plan1_desc: "Pour les moteurs plus âgés ou à kilométrage élevé.",
+      plan1_li1: "Huile moteur conventionnelle", plan1_li2: "Nouveau filtre inclus", li_fluid_check: "Vérification et appoint des fluides", plan1_li4: "Protection ~5 000 km",
+      plan2_name: "Semi-synthétique", plan2_desc: "Le choix équilibré pour la plupart des conducteurs.",
+      plan2_li1: "Huile semi-synthétique", li_premium_filter: "Nouveau filtre premium", li_full_fluid_check: "Vérification et appoint complets des fluides", plan2_li4: "Protection ~8 000 km", li_priority: "Réservation prioritaire",
+      plan3_name: "Synthétique intégrale", plan3_desc: "Protection maximale pour les moteurs modernes.",
+      plan3_li1: "Huile 100 % synthétique", plan3_li4: "Protection ~12 000 km",
+      pricing_note: "Les prix affichés sont des estimations et peuvent varier selon la marque, le modèle et la cylindrée de votre véhicule. Votre technicien confirmera le prix final avant de commencer les travaux.",
+      why_eyebrow: "Pourquoi Daviart", why_h2: "Pensé pour votre temps.",
+      why1_title: "Économisez votre temps", why1_desc: "Récupérez l'heure que vous perdriez à vous rendre au garage et à attendre.",
+      why2_title: "Jamais de file d'attente", why2_desc: "Pas de salle d'attente, pas de file &mdash; nous travaillons selon votre horaire, pas le nôtre.",
+      why3_title: "Prix transparent", why3_desc: "Le prix affiché à la réservation est celui que vous payez. Aucune surprise.",
+      why4_title: "À domicile ou au bureau", why4_desc: "Entrée, stationnement ou garage du bureau &mdash; là où se trouve votre voiture.",
+      rev_eyebrow: "Avis", rev_h2: "Les conducteurs partout au Canada l'adorent.",
+      quote1: "&ldquo;Réservé à 9h, terminé à 9h40 dans ma propre entrée. Je n'ai même pas eu le temps de reposer mon café. C'est l'avenir de l'entretien automobile.&rdquo;",
+      quote2: "&ldquo;Ils sont venus dans le stationnement de mon bureau pendant que j'étais en réunion. Propre, professionnel, et le prix correspondait exactement à ce qui était annoncé sur le site.&rdquo;",
+      quote3: "&ldquo;Fini les samedis matin perdus au garage. Daviart envoie un texto en chemin et s'occupe de tout. Ça vaut chaque dollar.&rdquo;",
+      quote5: "&ldquo;Réservé sur mon téléphone pendant le dîner, le service était terminé avant la fin de ma journée de travail. Incroyablement pratique.&rdquo;",
+      quote6: "&ldquo;Sceptique au début à l'idée d'une vidange dans mon entrée, mais le technicien était bien équipé et a laissé l'endroit plus propre qu'il ne l'a trouvé.&rdquo;",
+      quote8: "&ldquo;Les matins d'hiver sont rudes ici &mdash; avoir quelqu'un qui vient à moi plutôt que d'attendre dans un garage froid, ça change tout.&rdquo;",
+      quote9: "&ldquo;Le reçu numérique et le rappel pour mon prochain entretien, c'est une belle attention. On sent une entreprise moderne et fiable.&rdquo;",
+      city1: "Vancouver, C.-B.", city2: "Calgary, Alb.", city3: "Toronto, Ont.",
+      cta_eyebrow: "Prêts quand vous l'êtes", cta_line1: "Votre huile, prise en charge", cta_line2: "sans quitter votre entrée.",
+      cta_p: "Réservez en moins d'une minute. Notre mécanicien vous appellera au préalable pour confirmer tous les détails. Nous venons à vous à Vancouver, Calgary ou Toronto.",
+      foot_tagline: "Vidanges d'huile à domicile ou au bureau. Nous desservons Vancouver, Calgary et Toronto.",
+      foot_contact: "Contact", foot_company: "Entreprise", foot_copyright: "&copy; 2026 Daviart Oil Change. Tous droits réservés.",
+      foot_terms: "Conditions et confidentialité",
+      cookie_text_before: "Nous utilisons des cookies pour l'analyse du site et pour mesurer la performance publicitaire. Voir nos ", cookie_terms_link: "Conditions d'utilisation et politique de confidentialité", cookie_text_after: " pour plus de détails.", cookie_accept: "Accepter",
+      add_review_btn: "+ Laisser un avis", review_modal_title: "Laisser un avis",
+      review_name_label: "Votre nom", review_city_label: "Ville", review_rating_label: "Note", review_text_label: "Votre avis",
+      review_cancel: "Annuler", review_submit: "Publier l'avis"
+    },
+    it: {
+      nav_how: "Come funziona", nav_pricing: "Prezzi", nav_why: "Perché noi", nav_book: "Prenota ora",
+      hero_eyebrow_line1: "Cambio olio a domicilio", hero_eyebrow_line2: "Vancouver &middot; Calgary &middot; Toronto",
+      hero_line1: "Cambiamo il tuo olio", hero_line2: "mentre sorseggi il tuo caffè.",
+      cta_book: "Prenota un cambio olio a domicilio", hero_secondary_cta: "Guarda come funziona",
+      stat_service: "Servizio medio", stat_trip: "Costo di uscita", stat_reviews: "1.200+ recensioni",
+      how_h2: "Quattro passaggi. Zero spostamenti.",
+      how_intro: "Salta l'officina, la sala d'attesa, la deviazione. Un tecnico certificato viene a casa tua o in ufficio ed esegue un cambio olio completo nel tuo vialetto.",
+      step1_title: "Prenota online", step1_desc: "Scegli il tuo veicolo, il tipo di olio e un orario che ti si addice. Ci vuole circa un minuto.",
+      step2_title: "Veniamo da te", step2_desc: "Un tecnico certificato arriva a casa tua o in ufficio, completamente attrezzato &mdash; nessun sollevatore necessario.",
+      step3_title: "Assistenza sul posto", step3_desc: "Olio fresco, filtro nuovo e controllo completo dei fluidi &mdash; mentre continui la tua giornata.",
+      step4_title: "Riparti come nuovo", step4_desc: "Ricicliamo l'olio esausto, azzeriamo la spia di manutenzione e ti inviamo la ricevuta digitale.",
+      incl_eyebrow: "Cosa è incluso", incl_line1: "Ogni visita,", incl_line2: "il servizio completo.",
+      incl_intro: "Un prezzo trasparente copre tutto quanto segue. Nessun costo aggiuntivo, nessuna sorpresa a lavoro finito.",
+      incl_item1: "Fino a 5 L di olio motore di qualità", incl_item2: "Filtro olio premium nuovo",
+      incl_item3: "Rabbocco e controllo di tutti i fluidi principali", incl_item4: "Ispezione visiva multipunto", incl_item5: "Azzeramento della spia di manutenzione",
+      pricing_h2: "Scegli il tuo olio. Guarda il prezzo.", cad_per_visit: "CAD &middot; a visita", pricing_cta: "Scegli piano", most_popular: "Più scelto",
+      plan1_name: "Convenzionale", plan1_desc: "Per motori più vecchi o ad alto chilometraggio.",
+      plan1_li1: "Olio motore convenzionale", plan1_li2: "Filtro nuovo incluso", li_fluid_check: "Controllo e rabbocco fluidi", plan1_li4: "Protezione ~5.000 km",
+      plan2_name: "Semi-sintetico", plan2_desc: "La scelta equilibrata per la maggior parte dei guidatori.",
+      plan2_li1: "Olio semi-sintetico", li_premium_filter: "Filtro premium nuovo", li_full_fluid_check: "Controllo e rabbocco completo dei fluidi", plan2_li4: "Protezione ~8.000 km", li_priority: "Prenotazione prioritaria",
+      plan3_name: "Sintetico totale", plan3_desc: "Massima protezione per i motori moderni.",
+      plan3_li1: "Olio 100% sintetico", plan3_li4: "Protezione ~12.000 km",
+      pricing_note: "I prezzi indicati sono stime e possono variare in base a marca, modello e cilindrata del veicolo. Il tuo tecnico confermerà il prezzo finale prima di iniziare il lavoro.",
+      why_eyebrow: "Perché Daviart", why_h2: "Pensato per il tuo tempo.",
+      why1_title: "Risparmia tempo", why1_desc: "Recupera l'ora che perderesti guidando fino all'officina e aspettando.",
+      why2_title: "Mai in coda", why2_desc: "Niente sale d'attesa, niente code &mdash; lavoriamo secondo i tuoi orari, non i nostri.",
+      why3_title: "Prezzo trasparente", why3_desc: "Il prezzo che vedi alla prenotazione è quello che paghi. Nessuna sorpresa.",
+      why4_title: "A casa o in ufficio", why4_desc: "Vialetto, parcheggio o garage dell'ufficio &mdash; ovunque sia la tua auto.",
+      rev_eyebrow: "Recensioni", rev_h2: "Gli automobilisti di tutto il Canada lo adorano.",
+      quote1: "&ldquo;Prenotato alle 9, finito alle 9:40 proprio nel mio vialetto. Non ho nemmeno fatto in tempo a posare il caffè. Questo è il futuro della manutenzione auto.&rdquo;",
+      quote2: "&ldquo;Sono venuti nel parcheggio del mio ufficio mentre ero in riunione. Puliti, professionali, e il prezzo era esattamente quello indicato sul sito.&rdquo;",
+      quote3: "&ldquo;Basta sabati mattina persi in officina. Daviart scrive quando è in arrivo e pensa a tutto. Vale ogni dollaro.&rdquo;",
+      quote5: "&ldquo;Prenotato dal telefono durante la pausa pranzo, il servizio era finito prima che io terminassi di lavorare. Comodità assurda.&rdquo;",
+      quote6: "&ldquo;All'inizio scettico su un cambio olio nel vialetto, ma il tecnico era completamente attrezzato e ha lasciato il posto più pulito di come l'ha trovato.&rdquo;",
+      quote8: "&ldquo;Le mattine d'inverno qui sono dure &mdash; avere qualcuno che viene da te invece di stare in un garage freddo cambia tutto.&rdquo;",
+      quote9: "&ldquo;La ricevuta digitale e il promemoria per il prossimo servizio sono un bel dettaglio. Si sente un'azienda moderna e affidabile.&rdquo;",
+      city1: "Vancouver, BC", city2: "Calgary, AB", city3: "Toronto, ON",
+      cta_eyebrow: "Pronti quando lo sei tu", cta_line1: "Il tuo olio, gestito", cta_line2: "senza uscire dal tuo vialetto.",
+      cta_p: "Prenota in meno di un minuto. Il nostro meccanico ti chiamerà in anticipo per confermare tutti i dettagli. Veniamo da te a Vancouver, Calgary o Toronto.",
+      foot_tagline: "Cambi olio a domicilio o in ufficio. Serviamo Vancouver, Calgary e Toronto.",
+      foot_contact: "Contatti", foot_company: "Azienda", foot_copyright: "&copy; 2026 Daviart Oil Change. Tutti i diritti riservati.",
+      foot_terms: "Termini e privacy",
+      cookie_text_before: "Utilizziamo i cookie per l'analisi del sito e per misurare le prestazioni pubblicitarie. Consulta la nostra ", cookie_terms_link: "Informativa sui Termini di servizio e sulla privacy", cookie_text_after: " per maggiori dettagli.", cookie_accept: "Accetta",
+      add_review_btn: "+ Lascia una recensione", review_modal_title: "Lascia una recensione",
+      review_name_label: "Il tuo nome", review_city_label: "Città", review_rating_label: "Valutazione", review_text_label: "La tua recensione",
+      review_cancel: "Annulla", review_submit: "Pubblica recensione"
+    },
+    ru: {
+      nav_how: "Как это работает", nav_pricing: "Цены", nav_why: "Почему мы", nav_book: "Записаться",
+      hero_eyebrow_line1: "Выездная замена масла", hero_eyebrow_line2: "Ванкувер &middot; Калгари &middot; Торонто",
+      hero_line1: "Мы заменим ваше масло", hero_line2: "пока вы пьёте свой кофе.",
+      cta_book: "Заказать выездную замену масла", hero_secondary_cta: "Посмотреть, как это работает",
+      stat_service: "Среднее время визита", stat_trip: "Выезд", stat_reviews: "1200+ отзывов",
+      how_h2: "Четыре шага. Ноль лишних поездок.",
+      how_intro: "Забудьте про автосервис, очередь и лишний крюк. Сертифицированный техник приезжает к вам домой или в офис и полностью меняет масло прямо на вашей подъездной дорожке.",
+      step1_title: "Забронируйте онлайн", step1_desc: "Выберите автомобиль, тип масла и удобное время. Это занимает около минуты.",
+      step2_title: "Мы приедем к вам", step2_desc: "Сертифицированный техник приезжает к вам домой или в офис с полным оборудованием &mdash; подъёмник не требуется.",
+      step3_title: "Обслуживание на месте", step3_desc: "Свежее масло, новый фильтр и полная проверка жидкостей &mdash; пока вы занимаетесь своими делами.",
+      step4_title: "Уезжайте со свежим маслом", step4_desc: "Мы утилизируем старое масло, сбрасываем индикатор обслуживания и отправляем цифровую квитанцию.",
+      incl_eyebrow: "Что входит", incl_line1: "Каждый визит &mdash;", incl_line2: "полный комплекс.",
+      incl_intro: "Одна прозрачная цена покрывает всё ниже. Никаких допродаж и сюрпризов по завершении работы.",
+      incl_item1: "До 5 л качественного моторного масла", incl_item2: "Новый премиальный масляный фильтр",
+      incl_item3: "Доливка и проверка всех ключевых жидкостей", incl_item4: "Многоточечный визуальный осмотр", incl_item5: "Сброс индикатора обслуживания",
+      pricing_h2: "Выберите масло. Узнайте цену.", cad_per_visit: "CAD &middot; за визит", pricing_cta: "Выбрать план", most_popular: "Популярный выбор",
+      plan1_name: "Минеральное", plan1_desc: "Для старых двигателей или с большим пробегом.",
+      plan1_li1: "Минеральное моторное масло", plan1_li2: "Новый фильтр включён", li_fluid_check: "Проверка и доливка жидкостей", plan1_li4: "Защита ~5 000 км",
+      plan2_name: "Полусинтетика", plan2_desc: "Сбалансированный выбор для большинства водителей.",
+      plan2_li1: "Полусинтетическое масло", li_premium_filter: "Новый премиальный фильтр", li_full_fluid_check: "Полная проверка и доливка жидкостей", plan2_li4: "Защита ~8 000 км", li_priority: "Приоритетная запись",
+      plan3_name: "Синтетика", plan3_desc: "Максимальная защита для современных двигателей.",
+      plan3_li1: "100% синтетическое масло", plan3_li4: "Защита ~12 000 км",
+      pricing_note: "Указанные цены являются приблизительными и могут отличаться в зависимости от марки, модели и объёма двигателя вашего автомобиля. Мастер подтвердит окончательную цену перед началом работ.",
+      why_eyebrow: "Почему Daviart", why_h2: "Создано ради вашего времени.",
+      why1_title: "Экономьте время", why1_desc: "Верните себе час, который вы потратили бы на дорогу в сервис и ожидание.",
+      why2_title: "Никаких очередей", why2_desc: "Ни зала ожидания, ни очереди &mdash; мы работаем по вашему графику, а не своему.",
+      why3_title: "Прозрачная цена", why3_desc: "Цена при бронировании — это та цена, которую вы заплатите. Без сюрпризов.",
+      why4_title: "Дома или в офисе", why4_desc: "Подъездная дорожка, парковка или гараж офиса &mdash; где бы ни стояла ваша машина.",
+      rev_eyebrow: "Отзывы", rev_h2: "Водители по всей Канаде выбирают нас.",
+      quote1: "&laquo;Записался на 9:00, готово было уже в 9:40 прямо на моей подъездной дорожке. Даже кофе поставить не успел. Это будущее автосервиса.&raquo;",
+      quote2: "&laquo;Приехали на парковку моего офиса, пока я был на встрече. Чисто, профессионально, и цена точно совпала с той, что была на сайте.&raquo;",
+      quote3: "&laquo;Больше никаких потерянных субботних утр в автосервисе. Daviart пишет, когда уже в пути, и делает всё сам. Каждый доллар того стоит.&raquo;",
+      quote5: "&laquo;Записался с телефона во время обеда — сервис был закончен ещё до конца рабочего дня. Невероятно удобно.&raquo;",
+      quote6: "&laquo;Сначала скептически отнёсся к замене масла прямо на дорожке, но техник был полностью экипирован и оставил место чище, чем было.&raquo;",
+      quote8: "&laquo;Зимние утра здесь суровые — когда кто-то приезжает к тебе вместо холодного гаража, это меняет всё.&raquo;",
+      quote9: "&laquo;Цифровая квитанция и напоминание о следующем обслуживании — приятная деталь. Чувствуется современная, надёжная компания.&raquo;",
+      city1: "Ванкувер, БК", city2: "Калгари, АБ", city3: "Торонто, ОН",
+      cta_eyebrow: "Готовы, когда удобно вам", cta_line1: "Ваше масло под контролем", cta_line2: "без визита в сервис.",
+      cta_p: "Забронируйте меньше чем за минуту. Наш механик позвонит заранее, чтобы уточнить все детали. Мы приедем к вам в Ванкувере, Калгари или Торонто.",
+      foot_tagline: "Выездная замена масла прямо у вас дома или в офисе. Работаем в Ванкувере, Калгари и Торонто.",
+      foot_contact: "Контакты", foot_company: "Компания", foot_copyright: "&copy; 2026 Daviart Oil Change. Все права защищены.",
+      foot_terms: "Условия и конфиденциальность",
+      cookie_text_before: "Мы используем cookie для аналитики сайта и оценки эффективности рекламы. Подробнее — в наших ", cookie_terms_link: "Условиях предоставления услуг и политике конфиденциальности", cookie_text_after: ".", cookie_accept: "Принять",
+      add_review_btn: "+ Оставить отзыв", review_modal_title: "Оставить отзыв",
+      review_name_label: "Ваше имя", review_city_label: "Город", review_rating_label: "Оценка", review_text_label: "Ваш отзыв",
+      review_cancel: "Отмена", review_submit: "Опубликовать"
+    },
+    hi: {
+      nav_how: "यह कैसे काम करता है", nav_pricing: "मूल्य", nav_why: "हमें ही क्यों चुनें", nav_book: "अभी बुक करें",
+      hero_eyebrow_line1: "घर-बैठे तेल बदलाव", hero_eyebrow_line2: "वैंकूवर &middot; कैलगरी &middot; टोरंटो",
+      hero_line1: "हम आपकी कार का तेल बदलते हैं", hero_line2: "जब तक आप अपनी कॉफ़ी पीते हैं।",
+      cta_book: "घर-बैठे तेल बदलाव बुक करें", hero_secondary_cta: "देखें यह कैसे काम करता है",
+      stat_service: "औसत सेवा समय", stat_trip: "आने-जाने का शुल्क", stat_reviews: "1,200+ समीक्षाएं",
+      how_h2: "चार आसान चरण। कोई अतिरिक्त फेरा नहीं।",
+      how_intro: "गैराज, इंतज़ार और अतिरिक्त फेरे को भूल जाइए। एक प्रमाणित तकनीशियन आपके घर या ऑफ़िस आकर आपकी ड्राइववे में ही पूरा तेल बदलाव करता है।",
+      step1_title: "ऑनलाइन बुक करें", step1_desc: "अपनी गाड़ी, तेल का प्रकार और सुविधाजनक समय चुनें। इसमें बस एक मिनट लगता है।",
+      step2_title: "हम आपके पास आते हैं", step2_desc: "एक प्रमाणित तकनीशियन पूरी तरह से सुसज्जित होकर आपके घर या ऑफ़िस आता है &mdash; लिफ़्ट की ज़रूरत नहीं।",
+      step3_title: "मौके पर ही सर्विस", step3_desc: "ताज़ा तेल, नया फ़िल्टर और सभी तरल पदार्थों की पूरी जांच &mdash; जबकि आप अपने काम में लगे रहते हैं।",
+      step4_title: "तरोताज़ा होकर निकलें", step4_desc: "हम पुराने तेल को रीसायकल करते हैं, सर्विस इंडिकेटर रीसेट करते हैं और आपको डिजिटल रसीद ईमेल करते हैं।",
+      incl_eyebrow: "क्या शामिल है", incl_line1: "हर विज़िट में,", incl_line2: "पूरी सर्विस।",
+      incl_intro: "एक पारदर्शी कीमत में नीचे दिया गया सब कुछ शामिल है। कोई छिपा शुल्क नहीं, काम पूरा होने पर कोई आश्चर्यजनक बिल नहीं।",
+      incl_item1: "5 लीटर तक गुणवत्तापूर्ण मोटर तेल", incl_item2: "बिल्कुल नया प्रीमियम ऑयल फ़िल्टर",
+      incl_item3: "सभी मुख्य तरल पदार्थों की जांच और टॉप-अप", incl_item4: "मल्टी-पॉइंट विज़ुअल इंस्पेक्शन", incl_item5: "सर्विस इंडिकेटर रीसेट",
+      pricing_h2: "अपना तेल चुनें। कीमत देखें।", cad_per_visit: "CAD &middot; प्रति विज़िट", pricing_cta: "यह प्लान चुनें", most_popular: "सबसे लोकप्रिय",
+      plan1_name: "कन्वेंशनल", plan1_desc: "पुरानी या अधिक माइलेज वाली गाड़ियों के लिए।",
+      plan1_li1: "कन्वेंशनल मोटर तेल", plan1_li2: "नया फ़िल्टर शामिल", li_fluid_check: "तरल पदार्थों की जांच और टॉप-अप", plan1_li4: "~5,000 किमी सुरक्षा",
+      plan2_name: "सिंथेटिक ब्लेंड", plan2_desc: "अधिकतर रोज़ाना चलने वाली गाड़ियों के लिए संतुलित विकल्प।",
+      plan2_li1: "सेमी-सिंथेटिक ब्लेंड तेल", li_premium_filter: "नया प्रीमियम फ़िल्टर", li_full_fluid_check: "सभी तरल पदार्थों की पूरी जांच और टॉप-अप", plan2_li4: "~8,000 किमी सुरक्षा", li_priority: "प्राथमिकता बुकिंग",
+      plan3_name: "फ़ुल सिंथेटिक", plan3_desc: "आधुनिक इंजनों के लिए अधिकतम सुरक्षा।",
+      plan3_li1: "100% फ़ुल सिंथेटिक तेल", plan3_li4: "~12,000 किमी सुरक्षा",
+      pricing_note: "दिखाई गई कीमतें अनुमानित हैं और आपकी गाड़ी की मेक, मॉडल और इंजन साइज़ के अनुसार बदल सकती हैं। काम शुरू करने से पहले आपका सर्विस मैनेजर अंतिम कीमत की पुष्टि करेगा।",
+      why_eyebrow: "Daviart क्यों", why_h2: "आपके समय को ध्यान में रखकर बनाया गया।",
+      why1_title: "अपना समय बचाएं", why1_desc: "गैराज तक जाने और इंतज़ार में गंवाया जाने वाला घंटा वापस पाएं।",
+      why2_title: "कभी लाइन नहीं", why2_desc: "कोई वेटिंग रूम नहीं, कोई लाइन नहीं &mdash; हम आपके शेड्यूल पर काम करते हैं, अपने नहीं।",
+      why3_title: "पारदर्शी कीमत", why3_desc: "बुकिंग के समय जो कीमत आप देखते हैं, वही आप चुकाते हैं। कोई आश्चर्य नहीं।",
+      why4_title: "घर हो या ऑफ़िस", why4_desc: "ड्राइववे, पार्किंग या ऑफ़िस गैराज &mdash; जहां भी आपकी गाड़ी खड़ी हो।",
+      rev_eyebrow: "समीक्षाएं", rev_h2: "पूरे कनाडा में ड्राइवर इसे पसंद करते हैं।",
+      quote1: "&ldquo;सुबह 9 बजे बुक किया, 9:40 तक मेरी अपनी ड्राइववे में काम पूरा हो गया। मैंने अपनी कॉफ़ी भी नीचे नहीं रखी। यही है कार मेंटेनेंस का भविष्य।&rdquo;",
+      quote2: "&ldquo;जब मैं मीटिंग में था, तब वे मेरे ऑफ़िस की पार्किंग में आ गए। साफ़-सुथरा, पेशेवर, और कीमत बिल्कुल वही थी जो साइट पर बताई गई थी।&rdquo;",
+      quote3: "&ldquo;अब शनिवार की सुबह गैराज में बर्बाद नहीं होती। Daviart रास्ते में होने पर मैसेज करता है और सब कुछ खुद संभालता है। हर पैसा वसूल।&rdquo;",
+      quote5: "&ldquo;लंच के दौरान फ़ोन से बुक किया, काम खत्म होने से पहले ही सर्विस पूरी हो गई। बेहद सुविधाजनक।&rdquo;",
+      quote6: "&ldquo;शुरुआत में ड्राइववे में तेल बदलवाने को लेकर शक था, लेकिन तकनीशियन पूरी तरह सुसज्जित था और जगह को पहले से ज़्यादा साफ़ छोड़ गया।&rdquo;",
+      quote8: "&ldquo;यहां सर्दियों की सुबहें बहुत कठोर होती हैं &mdash; ठंडे गैराज में खड़े रहने के बजाय किसी का घर आना गेम-चेंजर है।&rdquo;",
+      quote9: "&ldquo;डिजिटल रसीद और अगली सर्विस के लिए रिमाइंडर एक बढ़िया टच है। एक आधुनिक, भरोसेमंद कंपनी जैसा एहसास होता है।&rdquo;",
+      city1: "वैंकूवर, बीसी", city2: "कैलगरी, एबी", city3: "टोरंटो, ओएन",
+      cta_eyebrow: "जब आप तैयार हों", cta_line1: "आपका तेल, संभाला गया", cta_line2: "अपनी ड्राइववे छोड़े बिना।",
+      cta_p: "एक मिनट से भी कम समय में बुक करें। हमारा मैकेनिक सभी विवरण पक्के करने के लिए पहले से आपको कॉल करेगा। हम वैंकूवर, कैलगरी या टोरंटो में आपके पास आते हैं।",
+      foot_tagline: "आपके घर या ऑफ़िस पर होने वाला तेल बदलाव। वैंकूवर, कैलगरी और टोरंटो में सेवा।",
+      foot_contact: "संपर्क करें", foot_company: "कंपनी", foot_copyright: "&copy; 2026 Daviart Oil Change. सर्वाधिकार सुरक्षित।",
+      foot_terms: "शर्तें और गोपनीयता",
+      cookie_text_before: "हम साइट एनालिटिक्स और विज्ञापन प्रदर्शन मापने के लिए कुकीज़ का उपयोग करते हैं। अधिक जानकारी के लिए हमारी ", cookie_terms_link: "सेवा शर्तें और गोपनीयता सूचना", cookie_text_after: " देखें।", cookie_accept: "स्वीकार करें",
+      add_review_btn: "+ समीक्षा लिखें", review_modal_title: "समीक्षा लिखें",
+      review_name_label: "आपका नाम", review_city_label: "शहर", review_rating_label: "रेटिंग", review_text_label: "आपकी समीक्षा",
+      review_cancel: "रद्द करें", review_submit: "समीक्षा पोस्ट करें"
+    },
+    pa: {
+      nav_how: "ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ", nav_pricing: "ਕੀਮਤਾਂ", nav_why: "ਸਾਨੂੰ ਕਿਉਂ ਚੁਣੋ", nav_book: "ਹੁਣੇ ਬੁੱਕ ਕਰੋ",
+      hero_eyebrow_line1: "ਘਰ-ਬੈਠੇ ਤੇਲ ਤਬਦੀਲੀ", hero_eyebrow_line2: "ਵੈਨਕੂਵਰ &middot; ਕੈਲਗਰੀ &middot; ਟੋਰਾਂਟੋ",
+      hero_line1: "ਅਸੀਂ ਤੁਹਾਡੀ ਕਾਰ ਦਾ ਤੇਲ ਬਦਲਦੇ ਹਾਂ", hero_line2: "ਜਦੋਂ ਤੁਸੀਂ ਆਪਣੀ ਕੌਫ਼ੀ ਪੀਂਦੇ ਹੋ।",
+      cta_book: "ਘਰ-ਬੈਠੇ ਤੇਲ ਤਬਦੀਲੀ ਬੁੱਕ ਕਰੋ", hero_secondary_cta: "ਦੇਖੋ ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ",
+      stat_service: "ਔਸਤ ਸੇਵਾ ਸਮਾਂ", stat_trip: "ਆਉਣ-ਜਾਣ ਦਾ ਖਰਚਾ", stat_reviews: "1,200+ ਸਮੀਖਿਆਵਾਂ",
+      how_h2: "ਚਾਰ ਆਸਾਨ ਕਦਮ। ਕੋਈ ਵਾਧੂ ਫੇਰਾ ਨਹੀਂ।",
+      how_intro: "ਗੈਰਾਜ, ਉਡੀਕ ਅਤੇ ਵਾਧੂ ਫੇਰੇ ਨੂੰ ਭੁੱਲ ਜਾਓ। ਇੱਕ ਪ੍ਰਮਾਣਿਤ ਤਕਨੀਸ਼ੀਅਨ ਤੁਹਾਡੇ ਘਰ ਜਾਂ ਦਫ਼ਤਰ ਆ ਕੇ ਤੁਹਾਡੀ ਡਰਾਈਵਵੇਅ ਵਿੱਚ ਹੀ ਪੂਰੀ ਤੇਲ ਤਬਦੀਲੀ ਕਰਦਾ ਹੈ।",
+      step1_title: "ਆਨਲਾਈਨ ਬੁੱਕ ਕਰੋ", step1_desc: "ਆਪਣੀ ਗੱਡੀ, ਤੇਲ ਦੀ ਕਿਸਮ ਅਤੇ ਸੁਖਾਲਾ ਸਮਾਂ ਚੁਣੋ। ਇਸ ਵਿੱਚ ਸਿਰਫ਼ ਇੱਕ ਮਿੰਟ ਲੱਗਦਾ ਹੈ।",
+      step2_title: "ਅਸੀਂ ਤੁਹਾਡੇ ਕੋਲ ਆਉਂਦੇ ਹਾਂ", step2_desc: "ਇੱਕ ਪ੍ਰਮਾਣਿਤ ਤਕਨੀਸ਼ੀਅਨ ਪੂਰੀ ਤਰ੍ਹਾਂ ਲੈਸ ਹੋ ਕੇ ਤੁਹਾਡੇ ਘਰ ਜਾਂ ਦਫ਼ਤਰ ਆਉਂਦਾ ਹੈ &mdash; ਲਿਫ਼ਟ ਦੀ ਲੋੜ ਨਹੀਂ।",
+      step3_title: "ਮੌਕੇ 'ਤੇ ਹੀ ਸਰਵਿਸ", step3_desc: "ਤਾਜ਼ਾ ਤੇਲ, ਨਵਾਂ ਫਿਲਟਰ ਅਤੇ ਸਾਰੇ ਤਰਲਾਂ ਦੀ ਪੂਰੀ ਜਾਂਚ &mdash; ਜਦੋਂ ਤੁਸੀਂ ਆਪਣੇ ਕੰਮ ਵਿੱਚ ਰੁੱਝੇ ਰਹਿੰਦੇ ਹੋ।",
+      step4_title: "ਤਾਜ਼ਗੀ ਨਾਲ ਰਵਾਨਾ ਹੋਵੋ", step4_desc: "ਅਸੀਂ ਪੁਰਾਣੇ ਤੇਲ ਨੂੰ ਰੀਸਾਈਕਲ ਕਰਦੇ ਹਾਂ, ਸਰਵਿਸ ਇੰਡੀਕੇਟਰ ਰੀਸੈਟ ਕਰਦੇ ਹਾਂ ਅਤੇ ਤੁਹਾਨੂੰ ਡਿਜੀਟਲ ਰਸੀਦ ਈਮੇਲ ਕਰਦੇ ਹਾਂ।",
+      incl_eyebrow: "ਕੀ ਸ਼ਾਮਲ ਹੈ", incl_line1: "ਹਰ ਫੇਰੀ 'ਤੇ,", incl_line2: "ਪੂਰੀ ਸਰਵਿਸ।",
+      incl_intro: "ਇੱਕ ਪਾਰਦਰਸ਼ੀ ਕੀਮਤ ਵਿੱਚ ਹੇਠਾਂ ਦਿੱਤਾ ਸਭ ਕੁਝ ਸ਼ਾਮਲ ਹੈ। ਕੋਈ ਲੁਕਿਆ ਖਰਚਾ ਨਹੀਂ, ਕੰਮ ਪੂਰਾ ਹੋਣ 'ਤੇ ਕੋਈ ਹੈਰਾਨੀ ਵਾਲਾ ਬਿੱਲ ਨਹੀਂ।",
+      incl_item1: "5 ਲੀਟਰ ਤੱਕ ਵਧੀਆ ਮੋਟਰ ਤੇਲ", incl_item2: "ਬਿਲਕੁਲ ਨਵਾਂ ਪ੍ਰੀਮੀਅਮ ਆਇਲ ਫਿਲਟਰ",
+      incl_item3: "ਸਾਰੇ ਮੁੱਖ ਤਰਲਾਂ ਦੀ ਜਾਂਚ ਅਤੇ ਟਾਪ-ਅੱਪ", incl_item4: "ਮਲਟੀ-ਪੁਆਇੰਟ ਵਿਜ਼ੂਅਲ ਜਾਂਚ", incl_item5: "ਸਰਵਿਸ ਇੰਡੀਕੇਟਰ ਰੀਸੈਟ",
+      pricing_h2: "ਆਪਣਾ ਤੇਲ ਚੁਣੋ। ਕੀਮਤ ਦੇਖੋ।", cad_per_visit: "CAD &middot; ਪ੍ਰਤੀ ਫੇਰੀ", pricing_cta: "ਇਹ ਪਲਾਨ ਚੁਣੋ", most_popular: "ਸਭ ਤੋਂ ਮਸ਼ਹੂਰ",
+      plan1_name: "ਕਨਵੈਨਸ਼ਨਲ", plan1_desc: "ਪੁਰਾਣੇ ਜਾਂ ਵੱਧ ਮਾਈਲੇਜ ਵਾਲੇ ਇੰਜਣਾਂ ਲਈ।",
+      plan1_li1: "ਕਨਵੈਨਸ਼ਨਲ ਮੋਟਰ ਤੇਲ", plan1_li2: "ਨਵਾਂ ਫਿਲਟਰ ਸ਼ਾਮਲ", li_fluid_check: "ਤਰਲਾਂ ਦੀ ਜਾਂਚ ਅਤੇ ਟਾਪ-ਅੱਪ", plan1_li4: "~5,000 ਕਿਲੋਮੀਟਰ ਸੁਰੱਖਿਆ",
+      plan2_name: "ਸਿੰਥੈਟਿਕ ਬਲੈਂਡ", plan2_desc: "ਜ਼ਿਆਦਾਤਰ ਰੋਜ਼ਾਨਾ ਡਰਾਈਵਰਾਂ ਲਈ ਸੰਤੁਲਿਤ ਚੋਣ।",
+      plan2_li1: "ਸੈਮੀ-ਸਿੰਥੈਟਿਕ ਬਲੈਂਡ ਤੇਲ", li_premium_filter: "ਨਵਾਂ ਪ੍ਰੀਮੀਅਮ ਫਿਲਟਰ", li_full_fluid_check: "ਸਾਰੇ ਤਰਲਾਂ ਦੀ ਪੂਰੀ ਜਾਂਚ ਅਤੇ ਟਾਪ-ਅੱਪ", plan2_li4: "~8,000 ਕਿਲੋਮੀਟਰ ਸੁਰੱਖਿਆ", li_priority: "ਪਹਿਲ ਬੁਕਿੰਗ",
+      plan3_name: "ਫੁੱਲ ਸਿੰਥੈਟਿਕ", plan3_desc: "ਆਧੁਨਿਕ ਇੰਜਣਾਂ ਲਈ ਵੱਧ ਤੋਂ ਵੱਧ ਸੁਰੱਖਿਆ।",
+      plan3_li1: "100% ਫੁੱਲ ਸਿੰਥੈਟਿਕ ਤੇਲ", plan3_li4: "~12,000 ਕਿਲੋਮੀਟਰ ਸੁਰੱਖਿਆ",
+      pricing_note: "ਦਿਖਾਈਆਂ ਗਈਆਂ ਕੀਮਤਾਂ ਅੰਦਾਜ਼ਨ ਹਨ ਅਤੇ ਤੁਹਾਡੀ ਗੱਡੀ ਦੇ ਮੇਕ, ਮਾਡਲ ਅਤੇ ਇੰਜਣ ਸਾਈਜ਼ ਮੁਤਾਬਕ ਬਦਲ ਸਕਦੀਆਂ ਹਨ। ਕੰਮ ਸ਼ੁਰੂ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਤੁਹਾਡਾ ਸਰਵਿਸ ਮੈਨੇਜਰ ਅੰਤਿਮ ਕੀਮਤ ਦੀ ਪੁਸ਼ਟੀ ਕਰੇਗਾ।",
+      why_eyebrow: "Daviart ਕਿਉਂ", why_h2: "ਤੁਹਾਡੇ ਸਮੇਂ ਨੂੰ ਧਿਆਨ ਵਿੱਚ ਰੱਖ ਕੇ ਬਣਾਇਆ ਗਿਆ।",
+      why1_title: "ਆਪਣਾ ਸਮਾਂ ਬਚਾਓ", why1_desc: "ਗੈਰਾਜ ਜਾਣ ਅਤੇ ਉਡੀਕ ਵਿੱਚ ਗੁਆਚਿਆ ਘੰਟਾ ਵਾਪਸ ਲਵੋ।",
+      why2_title: "ਕਦੇ ਵੀ ਲਾਈਨ ਨਹੀਂ", why2_desc: "ਕੋਈ ਉਡੀਕ ਕਮਰਾ ਨਹੀਂ, ਕੋਈ ਲਾਈਨ ਨਹੀਂ &mdash; ਅਸੀਂ ਤੁਹਾਡੇ ਸਮੇਂ ਮੁਤਾਬਕ ਕੰਮ ਕਰਦੇ ਹਾਂ, ਆਪਣੇ ਨਹੀਂ।",
+      why3_title: "ਪਾਰਦਰਸ਼ੀ ਕੀਮਤ", why3_desc: "ਬੁਕਿੰਗ ਸਮੇਂ ਜੋ ਕੀਮਤ ਤੁਸੀਂ ਦੇਖਦੇ ਹੋ, ਉਹੀ ਤੁਸੀਂ ਦਿੰਦੇ ਹੋ। ਕੋਈ ਹੈਰਾਨੀ ਨਹੀਂ।",
+      why4_title: "ਘਰ ਜਾਂ ਦਫ਼ਤਰ", why4_desc: "ਡਰਾਈਵਵੇਅ, ਪਾਰਕਿੰਗ ਜਾਂ ਦਫ਼ਤਰ ਦਾ ਗੈਰਾਜ &mdash; ਜਿੱਥੇ ਵੀ ਤੁਹਾਡੀ ਗੱਡੀ ਖੜ੍ਹੀ ਹੋਵੇ।",
+      rev_eyebrow: "ਸਮੀਖਿਆਵਾਂ", rev_h2: "ਪੂਰੇ ਕੈਨੇਡਾ ਵਿੱਚ ਡਰਾਈਵਰ ਇਸਨੂੰ ਪਸੰਦ ਕਰਦੇ ਹਨ।",
+      quote1: "&laquo;ਸਵੇਰੇ 9 ਵਜੇ ਬੁੱਕ ਕੀਤਾ, 9:40 ਤੱਕ ਮੇਰੀ ਆਪਣੀ ਡਰਾਈਵਵੇਅ ਵਿੱਚ ਕੰਮ ਪੂਰਾ ਹੋ ਗਿਆ। ਮੈਂ ਆਪਣੀ ਕੌਫ਼ੀ ਵੀ ਹੇਠਾਂ ਨਹੀਂ ਰੱਖੀ। ਇਹੀ ਹੈ ਕਾਰ ਮੇਨਟੇਨੈਂਸ ਦਾ ਭਵਿੱਖ।&raquo;",
+      quote2: "&laquo;ਜਦੋਂ ਮੈਂ ਮੀਟਿੰਗ ਵਿੱਚ ਸੀ, ਉਦੋਂ ਉਹ ਮੇਰੇ ਦਫ਼ਤਰ ਦੀ ਪਾਰਕਿੰਗ ਵਿੱਚ ਆ ਗਏ। ਸਾਫ਼-ਸੁਥਰਾ, ਪੇਸ਼ੇਵਰ, ਅਤੇ ਕੀਮਤ ਬਿਲਕੁਲ ਉਹੀ ਸੀ ਜੋ ਸਾਈਟ 'ਤੇ ਦੱਸੀ ਗਈ ਸੀ।&raquo;",
+      quote3: "&laquo;ਹੁਣ ਸ਼ਨੀਵਾਰ ਦੀਆਂ ਸਵੇਰਾਂ ਗੈਰਾਜ ਵਿੱਚ ਬਰਬਾਦ ਨਹੀਂ ਹੁੰਦੀਆਂ। Daviart ਰਸਤੇ ਵਿੱਚ ਹੋਣ 'ਤੇ ਮੈਸੇਜ ਕਰਦਾ ਹੈ ਅਤੇ ਸਭ ਕੁਝ ਖੁਦ ਸੰਭਾਲਦਾ ਹੈ। ਹਰ ਪੈਸਾ ਵਸੂਲ।&raquo;",
+      quote5: "&laquo;ਲੰਚ ਦੌਰਾਨ ਫ਼ੋਨ ਤੋਂ ਬੁੱਕ ਕੀਤਾ, ਕੰਮ ਖਤਮ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ ਹੀ ਸਰਵਿਸ ਪੂਰੀ ਹੋ ਗਈ। ਬਹੁਤ ਹੀ ਸੁਖਾਲਾ।&raquo;",
+      quote6: "&laquo;ਸ਼ੁਰੂ ਵਿੱਚ ਡਰਾਈਵਵੇਅ ਵਿੱਚ ਤੇਲ ਬਦਲਵਾਉਣ ਬਾਰੇ ਸ਼ੱਕ ਸੀ, ਪਰ ਤਕਨੀਸ਼ੀਅਨ ਪੂਰੀ ਤਰ੍ਹਾਂ ਲੈਸ ਸੀ ਅਤੇ ਥਾਂ ਨੂੰ ਪਹਿਲਾਂ ਨਾਲੋਂ ਸਾਫ਼ ਛੱਡ ਗਿਆ।&raquo;",
+      quote8: "&laquo;ਇੱਥੇ ਸਰਦੀਆਂ ਦੀਆਂ ਸਵੇਰਾਂ ਬਹੁਤ ਸਖ਼ਤ ਹੁੰਦੀਆਂ ਹਨ &mdash; ਠੰਡੇ ਗੈਰਾਜ ਵਿੱਚ ਖੜ੍ਹੇ ਰਹਿਣ ਦੀ ਬਜਾਏ ਕਿਸੇ ਦਾ ਘਰ ਆਉਣਾ ਵੱਡੀ ਗੱਲ ਹੈ।&raquo;",
+      quote9: "&laquo;ਡਿਜੀਟਲ ਰਸੀਦ ਅਤੇ ਅਗਲੀ ਸਰਵਿਸ ਲਈ ਰੀਮਾਈਂਡਰ ਇੱਕ ਵਧੀਆ ਛੋਹ ਹੈ। ਇੱਕ ਆਧੁਨਿਕ, ਭਰੋਸੇਯੋਗ ਕੰਪਨੀ ਵਾਂਗ ਮਹਿਸੂਸ ਹੁੰਦਾ ਹੈ।&raquo;",
+      city1: "ਵੈਨਕੂਵਰ, ਬੀਸੀ", city2: "ਕੈਲਗਰੀ, ਏਬੀ", city3: "ਟੋਰਾਂਟੋ, ਓਐਨ",
+      cta_eyebrow: "ਜਦੋਂ ਤੁਸੀਂ ਤਿਆਰ ਹੋ", cta_line1: "ਤੁਹਾਡਾ ਤੇਲ, ਸੰਭਾਲਿਆ ਗਿਆ", cta_line2: "ਆਪਣੀ ਡਰਾਈਵਵੇਅ ਛੱਡੇ ਬਿਨਾਂ।",
+      cta_p: "ਇੱਕ ਮਿੰਟ ਤੋਂ ਵੀ ਘੱਟ ਵਿੱਚ ਬੁੱਕ ਕਰੋ। ਸਾਡਾ ਮਕੈਨਿਕ ਸਾਰੇ ਵੇਰਵੇ ਪੱਕੇ ਕਰਨ ਲਈ ਪਹਿਲਾਂ ਤੁਹਾਨੂੰ ਕਾਲ ਕਰੇਗਾ। ਅਸੀਂ ਵੈਨਕੂਵਰ, ਕੈਲਗਰੀ ਜਾਂ ਟੋਰਾਂਟੋ ਵਿੱਚ ਤੁਹਾਡੇ ਕੋਲ ਆਉਂਦੇ ਹਾਂ।",
+      foot_tagline: "ਤੁਹਾਡੇ ਘਰ ਜਾਂ ਦਫ਼ਤਰ 'ਤੇ ਤੇਲ ਤਬਦੀਲੀ। ਵੈਨਕੂਵਰ, ਕੈਲਗਰੀ ਅਤੇ ਟੋਰਾਂਟੋ ਵਿੱਚ ਸੇਵਾ।",
+      foot_contact: "ਸੰਪਰਕ", foot_company: "ਕੰਪਨੀ", foot_copyright: "&copy; 2026 Daviart Oil Change. ਸਾਰੇ ਹੱਕ ਰਾਖਵੇਂ ਹਨ।",
+      foot_terms: "ਸ਼ਰਤਾਂ ਅਤੇ ਪਰਦੇਦਾਰੀ",
+      cookie_text_before: "ਅਸੀਂ ਸਾਈਟ ਵਿਸ਼ਲੇਸ਼ਣ ਅਤੇ ਇਸ਼ਤਿਹਾਰ ਪ੍ਰਦਰਸ਼ਨ ਮਾਪਣ ਲਈ ਕੂਕੀਜ਼ ਵਰਤਦੇ ਹਾਂ। ਹੋਰ ਜਾਣਕਾਰੀ ਲਈ ਸਾਡੀ ", cookie_terms_link: "ਸੇਵਾ ਸ਼ਰਤਾਂ ਅਤੇ ਪਰਦੇਦਾਰੀ ਨੋਟਿਸ", cookie_text_after: " ਵੇਖੋ।", cookie_accept: "ਸਵੀਕਾਰ ਕਰੋ",
+      add_review_btn: "+ ਸਮੀਖਿਆ ਲਿਖੋ", review_modal_title: "ਸਮੀਖਿਆ ਲਿਖੋ",
+      review_name_label: "ਤੁਹਾਡਾ ਨਾਮ", review_city_label: "ਸ਼ਹਿਰ", review_rating_label: "ਰੇਟਿੰਗ", review_text_label: "ਤੁਹਾਡੀ ਸਮੀਖਿਆ",
+      review_cancel: "ਰੱਦ ਕਰੋ", review_submit: "ਸਮੀਖਿਆ ਪੋਸਟ ਕਰੋ"
+    },
+    zh: {
+      nav_how: "服務流程", nav_pricing: "價格", nav_why: "為何選擇我們", nav_book: "立即預約",
+      hero_eyebrow_line1: "到府換機油服務", hero_eyebrow_line2: "溫哥華 &middot; 卡加利 &middot; 多倫多",
+      hero_line1: "我們為您更換機油", hero_line2: "您只需悠閒地喝杯咖啡。",
+      cta_book: "預約到府換機油", hero_secondary_cta: "了解運作方式",
+      stat_service: "平均服務時間", stat_trip: "到府費用", stat_reviews: "1,200+ 則評價",
+      how_h2: "四個步驟，零繞路。",
+      how_intro: "免去修車廠、候診室與繞路的麻煩。認證技師會到您家中或辦公室，在您的車道上完成整個換油流程。",
+      step1_title: "線上預約", step1_desc: "選擇您的車輛、機油類型和方便的時段，只需一分鐘左右。",
+      step2_title: "我們親自上門", step2_desc: "認證技師會攜帶齊全設備到您家中或辦公室 &mdash; 無需舉升機。",
+      step3_title: "當場完成服務", step3_desc: "新鮮機油、全新機油濾芯，以及完整的油液檢查 &mdash; 您可以繼續忙自己的事。",
+      step4_title: "煥然一新，安心出發", step4_desc: "我們會回收廢油、重設保養提示燈，並以電子郵件寄送您的數位收據。",
+      incl_eyebrow: "服務內容", incl_line1: "每次到府服務，", incl_line2: "都是完整套餐。",
+      incl_intro: "一口價涵蓋以下所有項目，服務完成後絕無追加費用或意外收費。",
+      incl_item1: "最多5公升優質機油", incl_item2: "全新高級機油濾芯",
+      incl_item3: "所有主要油液的補充與檢查", incl_item4: "多點目視檢查", incl_item5: "重設保養提示燈",
+      pricing_h2: "選擇機油，即刻看價格。", cad_per_visit: "CAD &middot; 每次服務", pricing_cta: "選擇此方案", most_popular: "最受歡迎",
+      plan1_name: "傳統機油", plan1_desc: "適合較舊或高里程數的引擎。",
+      plan1_li1: "傳統機油", plan1_li2: "含全新機油濾芯", li_fluid_check: "油液檢查與補充", plan1_li4: "約5,000公里保護",
+      plan2_name: "半合成機油", plan2_desc: "適合大多數日常通勤者的均衡選擇。",
+      plan2_li1: "半合成機油", li_premium_filter: "全新高級機油濾芯", li_full_fluid_check: "完整油液檢查與補充", plan2_li4: "約8,000公里保護", li_priority: "優先預約",
+      plan3_name: "全合成機油", plan3_desc: "為現代引擎提供最大保護。",
+      plan3_li1: "100% 全合成機油", plan3_li4: "約12,000公里保護",
+      pricing_note: "以上價格僅供參考，實際費用可能因車輛廠牌、型號及引擎排氣量而有所不同。技師會在開始服務前與您確認最終價格。",
+      why_eyebrow: "為何選擇 Daviart", why_h2: "為您的時間量身打造。",
+      why1_title: "節省您的時間", why1_desc: "省去開車前往修車廠及等候的一小時。",
+      why2_title: "永遠不用排隊", why2_desc: "沒有候車室，沒有排隊 &mdash; 我們配合您的時間，而非我們的。",
+      why3_title: "價格透明", why3_desc: "預約時看到的價格，就是您最終支付的價格，絕無意外。",
+      why4_title: "家中或辦公室皆可", why4_desc: "車道、停車場或辦公室車庫 &mdash; 無論您的車停在哪裡。",
+      rev_eyebrow: "客戶評價", rev_h2: "加拿大各地車主都喜愛的服務。",
+      quote1: "「早上9點預約，9點40分就在我自己的車道上完成了。我連咖啡都還沒放下。這就是汽車保養的未來。」",
+      quote2: "「我開會的時候，他們就到我辦公室的停車場來了。乾淨、專業，價格也和網站上寫的完全一致。」",
+      quote3: "「再也不用浪費週六早上去修車廠了。Daviart 快到時會發訊息，而且什麼都幫你搞定，非常值得。」",
+      quote5: "「午休時用手機預約，下班前服務就完成了，方便到不可思議。」",
+      quote6: "「一開始對在車道上換機油有點懷疑，但技師設備齊全，離開時現場比原本還乾淨。」",
+      quote8: "「這裡的冬天早晨很難熬 &mdash; 有人主動上門，而不用站在冰冷的車庫裡等，真的差很多。」",
+      quote9: "「電子收據和下次保養提醒是個很貼心的小細節，感覺是一家現代、值得信賴的公司。」",
+      city1: "溫哥華，卑詩省", city2: "卡加利，亞伯達省", city3: "多倫多，安大略省",
+      cta_eyebrow: "隨時準備為您服務", cta_line1: "您的機油", cta_line2: "無需離開車道即可搞定。",
+      cta_p: "不到一分鐘即可完成預約。我們的技師會事先致電確認所有細節。我們提供溫哥華、卡加利與多倫多的到府服務。",
+      foot_tagline: "到府或到辦公室的機油更換服務。服務範圍涵蓋溫哥華、卡加利與多倫多。",
+      foot_contact: "聯絡我們", foot_company: "公司", foot_copyright: "&copy; 2026 Daviart Oil Change. 版權所有。",
+      foot_terms: "條款與隱私",
+      cookie_text_before: "我們使用 Cookie 進行網站分析並衡量廣告成效。詳情請參閱我們的", cookie_terms_link: "服務條款與隱私權聲明", cookie_text_after: "。", cookie_accept: "接受",
+      add_review_btn: "+ 撰寫評價", review_modal_title: "撰寫評價",
+      review_name_label: "您的姓名", review_city_label: "城市", review_rating_label: "評分", review_text_label: "您的評價",
+      review_cancel: "取消", review_submit: "發佈評價"
+    },
+    es: {
+      nav_how: "Cómo funciona", nav_pricing: "Precios", nav_why: "Por qué elegirnos", nav_book: "Reservar ahora",
+      hero_eyebrow_line1: "Cambio de aceite a domicilio", hero_eyebrow_line2: "Vancouver &middot; Calgary &middot; Toronto",
+      hero_line1: "Cambiamos tu aceite", hero_line2: "mientras disfrutas tu café.",
+      cta_book: "Reservar un cambio de aceite a domicilio", hero_secondary_cta: "Ver cómo funciona",
+      stat_service: "Duración promedio", stat_trip: "Costo de traslado", stat_reviews: "1200+ reseñas",
+      how_h2: "Cuatro pasos. Cero desvíos.",
+      how_intro: "Olvídate del taller, la sala de espera y el desvío. Un técnico certificado llega a tu casa u oficina y realiza un cambio de aceite completo en tu entrada.",
+      step1_title: "Reserva en línea", step1_desc: "Elige tu vehículo, tipo de aceite y un horario que te convenga. Toma alrededor de un minuto.",
+      step2_title: "Vamos hasta ti", step2_desc: "Un técnico certificado llega a tu casa u oficina, completamente equipado &mdash; sin necesidad de elevador.",
+      step3_title: "Servicio en el lugar", step3_desc: "Aceite fresco, filtro nuevo y revisión completa de fluidos &mdash; mientras sigues con tu día.",
+      step4_title: "Sal manejando como nuevo", step4_desc: "Reciclamos el aceite usado, reiniciamos tu indicador de servicio y te enviamos tu recibo digital por correo.",
+      incl_eyebrow: "Qué incluye", incl_line1: "Cada visita,", incl_line2: "el servicio completo.",
+      incl_intro: "Un precio transparente cubre todo lo siguiente. Sin cargos adicionales ni sorpresas al terminar el trabajo.",
+      incl_item1: "Hasta 5 L de aceite de motor de calidad", incl_item2: "Filtro de aceite premium nuevo",
+      incl_item3: "Revisión y relleno de todos los fluidos clave", incl_item4: "Inspección visual multipunto", incl_item5: "Reinicio del indicador de servicio",
+      pricing_h2: "Elige tu aceite. Mira el precio.", cad_per_visit: "CAD &middot; por visita", pricing_cta: "Elegir plan", most_popular: "Más popular",
+      plan1_name: "Convencional", plan1_desc: "Para motores más antiguos o con alto kilometraje.",
+      plan1_li1: "Aceite de motor convencional", plan1_li2: "Filtro nuevo incluido", li_fluid_check: "Revisión y relleno de fluidos", plan1_li4: "Protección de ~5,000 km",
+      plan2_name: "Semisintético", plan2_desc: "La opción equilibrada para la mayoría de los conductores.",
+      plan2_li1: "Aceite semisintético", li_premium_filter: "Filtro premium nuevo", li_full_fluid_check: "Revisión y relleno completo de fluidos", plan2_li4: "Protección de ~8,000 km", li_priority: "Reserva prioritaria",
+      plan3_name: "Sintético completo", plan3_desc: "Máxima protección para motores modernos.",
+      plan3_li1: "Aceite 100% sintético", plan3_li4: "Protección de ~12,000 km",
+      pricing_note: "Los precios mostrados son estimados y pueden variar según la marca, el modelo y el tamaño del motor de tu vehículo. Tu técnico confirmará el precio final antes de comenzar el trabajo.",
+      why_eyebrow: "Por qué Daviart", why_h2: "Pensado para tu tiempo.",
+      why1_title: "Ahorra tu tiempo", why1_desc: "Recupera la hora que perderías conduciendo al taller y esperando.",
+      why2_title: "Nunca hay filas", why2_desc: "Sin salas de espera, sin filas &mdash; trabajamos según tu horario, no el nuestro.",
+      why3_title: "Precio transparente", why3_desc: "El precio que ves al reservar es el que pagas. Sin sorpresas.",
+      why4_title: "En casa o en la oficina", why4_desc: "Entrada, estacionamiento o garaje de oficina &mdash; donde sea que esté tu auto.",
+      rev_eyebrow: "Reseñas", rev_h2: "Los conductores de todo Canadá lo aman.",
+      quote1: "&ldquo;Reservé a las 9, listo a las 9:40 en mi propia entrada. Ni siquiera bajé mi café. Este es el futuro del mantenimiento automotriz.&rdquo;",
+      quote2: "&ldquo;Vinieron al estacionamiento de mi oficina mientras estaba en reuniones. Limpio, profesional, y el precio fue exactamente el que indicaba el sitio.&rdquo;",
+      quote3: "&ldquo;Se acabaron los sábados perdidos en el taller. Daviart avisa por mensaje cuando va en camino y se encarga de todo. Vale cada dólar.&rdquo;",
+      quote5: "&ldquo;Reservé desde mi teléfono durante el almuerzo, el servicio estaba listo antes de que terminara mi jornada. Increíblemente conveniente.&rdquo;",
+      quote6: "&ldquo;Al principio dudaba de un cambio de aceite en la entrada de mi casa, pero el técnico estaba completamente equipado y dejó el lugar más limpio de como lo encontró.&rdquo;",
+      quote8: "&ldquo;Las mañanas de invierno aquí son brutales &mdash; tener a alguien que viene a mí en lugar de esperar en un garaje frío lo cambia todo.&rdquo;",
+      quote9: "&ldquo;El recibo digital y el recordatorio para el próximo servicio son un lindo detalle. Se siente como una empresa moderna y confiable.&rdquo;",
+      city1: "Vancouver, BC", city2: "Calgary, AB", city3: "Toronto, ON",
+      cta_eyebrow: "Listos cuando tú lo estés", cta_line1: "Tu aceite, resuelto", cta_line2: "sin salir de tu entrada.",
+      cta_p: "Reserva en menos de un minuto. Nuestro mecánico te llamará previamente para confirmar todos los detalles. Vamos hasta ti en Vancouver, Calgary o Toronto.",
+      foot_tagline: "Cambios de aceite a domicilio o en tu oficina. Servimos Vancouver, Calgary y Toronto.",
+      foot_contact: "Contacto", foot_company: "Empresa", foot_copyright: "&copy; 2026 Daviart Oil Change. Todos los derechos reservados.",
+      foot_terms: "Términos y privacidad",
+      cookie_text_before: "Utilizamos cookies para el análisis del sitio y para medir el rendimiento publicitario. Consulta nuestros ", cookie_terms_link: "Términos de servicio y aviso de privacidad", cookie_text_after: " para más información.", cookie_accept: "Aceptar",
+      add_review_btn: "+ Dejar una reseña", review_modal_title: "Dejar una reseña",
+      review_name_label: "Tu nombre", review_city_label: "Ciudad", review_rating_label: "Calificación", review_text_label: "Tu reseña",
+      review_cancel: "Cancelar", review_submit: "Publicar reseña"
+    },
+    tl: {
+      nav_how: "Paano ito gumagana", nav_pricing: "Presyo", nav_why: "Bakit kami", nav_book: "Mag-book ngayon",
+      hero_eyebrow_line1: "Pagpalit ng langis sa bahay", hero_eyebrow_line2: "Vancouver &middot; Calgary &middot; Toronto",
+      hero_line1: "Papalitan namin ang langis ng iyong sasakyan", hero_line2: "habang tinatamasa mo ang iyong kape.",
+      cta_book: "Mag-book ng pagpalit ng langis sa bahay", hero_secondary_cta: "Tingnan kung paano ito gumagana",
+      stat_service: "Karaniwang tagal ng serbisyo", stat_trip: "Bayad sa pagpunta", stat_reviews: "1,200+ na review",
+      how_h2: "Apat na hakbang. Walang paligoy-ligoy.",
+      how_intro: "Iwasan na ang paglakad sa shop, ang paghihintay, ang paligoy-ligoy. Isang sertipikadong technician ang pupunta sa iyong bahay o opisina at gagawa ng kumpletong pagpalit ng langis sa iyong driveway.",
+      step1_title: "Mag-book online", step1_desc: "Piliin ang iyong sasakyan, uri ng langis, at oras na angkop sa iyo. Isang minuto lang ito.",
+      step2_title: "Kami ang pupunta sa iyo", step2_desc: "Isang sertipikadong technician na kumpletong may dalang kagamitan ang pupunta sa iyong bahay o opisina &mdash; hindi kailangan ng lift.",
+      step3_title: "Sinerbisyuhan sa mismong lugar", step3_desc: "Sariwang langis, bagong filter, at kumpletong pagsusuri ng fluids &mdash; habang ikaw ay nagpapatuloy sa iyong araw.",
+      step4_title: "Umalis nang bago ang pakiramdam", step4_desc: "Rine-recycle namin ang lumang langis, ina-reset ang service indicator, at ipinapadala sa iyo ang digital receipt sa pamamagitan ng email.",
+      incl_eyebrow: "Ano ang kasama", incl_line1: "Bawat pagbisita,", incl_line2: "kumpletong serbisyo.",
+      incl_intro: "Isang malinaw na presyo ang sumasakop sa lahat ng nasa ibaba. Walang dagdag na bayad, walang gulat na singil pagkatapos ng trabaho.",
+      incl_item1: "Hanggang 5 L ng de-kalidad na motor oil", incl_item2: "Bagong premium na oil filter",
+      incl_item3: "Pagdagdag at pagsusuri ng lahat ng mahahalagang fluids", incl_item4: "Multi-point visual inspection", incl_item5: "Pag-reset ng service indicator",
+      pricing_h2: "Piliin ang iyong langis. Tingnan ang presyo.", cad_per_visit: "CAD &middot; bawat pagbisita", pricing_cta: "Piliin ang plan", most_popular: "Pinakasikat",
+      plan1_name: "Conventional", plan1_desc: "Para sa mas lumang o mataas ang mileage na makina.",
+      plan1_li1: "Conventional na motor oil", plan1_li2: "Kasama ang bagong filter", li_fluid_check: "Pagsusuri at pagdagdag ng fluids", plan1_li4: "~5,000 km na proteksyon",
+      plan2_name: "Synthetic Blend", plan2_desc: "Ang balanseng pagpipilian para sa karamihan ng araw-araw na drivers.",
+      plan2_li1: "Semi-synthetic blend na langis", li_premium_filter: "Bagong premium na filter", li_full_fluid_check: "Kumpletong pagsusuri at pagdagdag ng fluids", plan2_li4: "~8,000 km na proteksyon", li_priority: "Prayoridad na booking",
+      plan3_name: "Full Synthetic", plan3_desc: "Pinakamataas na proteksyon para sa modernong makina.",
+      plan3_li1: "100% full synthetic na langis", plan3_li4: "~12,000 km na proteksyon",
+      pricing_note: "Ang mga presyong ipinapakita ay tantiya lamang at maaaring magbago depende sa gawa, modelo, at laki ng makina ng iyong sasakyan. Kukumpirmahin ng iyong service manager ang huling presyo bago simulan ang anumang trabaho.",
+      why_eyebrow: "Bakit Daviart", why_h2: "Ginawa para sa iyong oras.",
+      why1_title: "Tipirin ang iyong oras", why1_desc: "Bawiin ang oras na mawawala sa pagmamaneho papunta sa shop at paghihintay.",
+      why2_title: "Walang pila, kailanman", why2_desc: "Walang waiting room, walang pila &mdash; kami ang sumusunod sa iyong schedule, hindi sa amin.",
+      why3_title: "Malinaw na presyo", why3_desc: "Ang presyong nakikita mo sa pag-book ang siya mong babayaran. Walang gulat.",
+      why4_title: "Bahay o opisina", why4_desc: "Driveway, paradahan, o garahe ng opisina &mdash; kahit saan naroon ang iyong sasakyan.",
+      rev_eyebrow: "Mga Review", rev_h2: "Iniibig ito ng mga drivers sa buong Canada.",
+      quote1: "&ldquo;Nag-book ako ng 9, tapos na by 9:40 sa mismong driveway ko. Hindi ko pa man nabababa ang kape ko, tapos na. Ito na ang hinaharap ng car maintenance.&rdquo;",
+      quote2: "&ldquo;Pumunta sila sa parking lot ng opisina ko habang nasa meeting ako. Malinis, propesyonal, at eksaktong tugma ang presyo sa nakalagay sa site.&rdquo;",
+      quote3: "&ldquo;Wala nang nasasayang na Sabado ng umaga sa shop. Nagte-text si Daviart pagdating nila at inaayos nila lahat. Sulit talaga.&rdquo;",
+      quote5: "&ldquo;Nag-book ako gamit ang phone habang lunch, tapos na ang serbisyo bago pa matapos ang trabaho ko. Sobrang convenient.&rdquo;",
+      quote6: "&ldquo;Sa una ay medyo alanganin ako sa pagpapalit ng langis sa driveway, pero kumpleto ang gamit ng technician at mas malinis pa ang natirang lugar kaysa dati.&rdquo;",
+      quote8: "&ldquo;Matindi ang taglamig dito tuwing umaga &mdash; malaking bagay na may pupunta sa iyo imbes na tumayo sa malamig na garahe.&rdquo;",
+      quote9: "&ldquo;Ang digital receipt at paalala para sa susunod na serbisyo ay magandang detalye. Parang moderno at mapagkakatiwalaang kumpanya.&rdquo;",
+      city1: "Vancouver, BC", city2: "Calgary, AB", city3: "Toronto, ON",
+      cta_eyebrow: "Handa kapag handa ka na", cta_line1: "Ang iyong langis, ayos na", cta_line2: "nang hindi umaalis sa iyong driveway.",
+      cta_p: "Mag-book sa loob ng isang minuto. Tatawagan ka muna ng aming mekaniko para kumpirmahin ang lahat ng detalye. Pupunta kami sa iyo sa Vancouver, Calgary, o Toronto.",
+      foot_tagline: "Pagpalit ng langis na dumarating sa iyong bahay o opisina. Naglilingkod sa Vancouver, Calgary, at Toronto.",
+      foot_contact: "Kontak", foot_company: "Kumpanya", foot_copyright: "&copy; 2026 Daviart Oil Change. Lahat ng karapatan ay nakalaan.",
+      foot_terms: "Mga Tuntunin at Privacy",
+      cookie_text_before: "Gumagamit kami ng cookies para sa pagsusuri ng site at pagsukat ng performance ng ad. Tingnan ang aming ", cookie_terms_link: "Mga Tuntunin ng Serbisyo at Abiso sa Privacy", cookie_text_after: " para sa detalye.", cookie_accept: "Tanggapin",
+      add_review_btn: "+ Mag-iwan ng review", review_modal_title: "Mag-iwan ng review",
+      review_name_label: "Iyong pangalan", review_city_label: "Lungsod", review_rating_label: "Rating", review_text_label: "Iyong review",
+      review_cancel: "Kanselahin", review_submit: "I-post ang review"
     }
   };
-  var LABELS = { en: "EN", uk: "UA" };
+  var LABELS = { en: "EN", uk: "UA", fr: "FR", it: "IT", ru: "RU", hi: "HI", pa: "PA", zh: "中文", es: "ES", tl: "TL" };
 
   var toggle = document.getElementById('lang-toggle');
   var toggleLabel = document.getElementById('lang-toggle-label');
@@ -765,7 +1186,7 @@
       if (check) check.style.opacity = (opt.getAttribute('data-lang') === lang) ? '1' : '0';
     });
     toggleLabel.textContent = LABELS[lang] || 'EN';
-    document.documentElement.setAttribute('lang', lang === 'uk' ? 'uk' : 'en');
+    document.documentElement.setAttribute('lang', lang);
     try { localStorage.setItem('daviart_lang', lang); } catch (e) {}
   };
 
@@ -785,9 +1206,22 @@
     if (!document.getElementById('lang-switch').contains(e.target)) closeMenu();
   });
 
-  var saved = 'en';
-  try { saved = localStorage.getItem('daviart_lang') || 'en'; } catch (e) {}
-  setLang(saved);
+  // First-time visitors (nothing saved yet) get the language their browser is
+  // set to, if we support it; anyone who has already picked a language keeps
+  // that choice on every later visit, regardless of what the browser reports.
+  var detectBrowserLang = function () {
+    var candidates = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || 'en'];
+    for (var i = 0; i < candidates.length; i++) {
+      var code = (candidates[i] || '').toLowerCase().split('-')[0];
+      if (code === 'fil') code = 'tl';
+      if (I18N[code]) return code;
+    }
+    return 'en';
+  };
+
+  var stored = null;
+  try { stored = localStorage.getItem('daviart_lang'); } catch (e) {}
+  setLang(stored || detectBrowserLang());
 })();
 </script>
 
@@ -932,6 +1366,62 @@
     rating = 5;
     paintStars();
     close();
+  });
+})();
+
+(function () {
+  var openLink = document.getElementById('terms-open-link');
+  var cookieTermsLink = document.getElementById('cookie-terms-link');
+  var modal = document.getElementById('terms-modal');
+  var content = document.getElementById('terms-content');
+  var closeX = document.getElementById('terms-close-x');
+  var closeBtn = document.getElementById('terms-close-btn');
+  if (!modal) return;
+  var loaded = false;
+  var open = function (e) {
+    if (e) e.preventDefault();
+    modal.style.display = 'flex';
+    if (!loaded) {
+      loaded = true;
+      fetch('terms.txt').then(function (res) { return res.text(); })
+        .then(function (text) { content.textContent = text; })
+        .catch(function () { content.textContent = 'Could not load the terms right now. You can still download them below.'; });
+    }
+  };
+  var close = function () { modal.style.display = 'none'; };
+  if (openLink) openLink.addEventListener('click', open);
+  if (cookieTermsLink) cookieTermsLink.addEventListener('click', open);
+  closeX.addEventListener('click', close);
+  closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display === 'flex') close(); });
+})();
+
+(function () {
+  // Cookie/terms consent is remembered once given — either by accepting this
+  // banner here, or by submitting the booking form on request.html (which
+  // requires its terms checkbox to be checked). Same localStorage key on
+  // every page, so accepting once anywhere stops the banner everywhere.
+  var CONSENT_KEY = 'daviart_consent';
+  var hasConsent = function () {
+    try { return localStorage.getItem(CONSENT_KEY) === '1'; } catch (e) { return false; }
+  };
+  var giveConsent = function () {
+    try { localStorage.setItem(CONSENT_KEY, '1'); } catch (e) {}
+  };
+  var banner = document.getElementById('cookie-banner');
+  var acceptBtn = document.getElementById('cookie-accept-btn');
+  var dismissBtn = document.getElementById('cookie-dismiss-btn');
+  if (!banner) return;
+  if (!hasConsent()) {
+    var dismissedThisSession = false;
+    try { dismissedThisSession = sessionStorage.getItem('daviart_cookie_dismissed') === '1'; } catch (e) {}
+    if (!dismissedThisSession) banner.style.display = 'block';
+  }
+  acceptBtn.addEventListener('click', function () { giveConsent(); banner.style.display = 'none'; });
+  dismissBtn.addEventListener('click', function () {
+    banner.style.display = 'none';
+    try { sessionStorage.setItem('daviart_cookie_dismissed', '1'); } catch (e) {}
   });
 })();
 </script>
