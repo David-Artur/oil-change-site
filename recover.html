@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Восстановить аккаунт — DaviArt Craft</title>
+<meta name="description" content="Забыл пароль на сервере DaviArt Craft? Заполни заявку: опиши свой мир, админ сверит ответы с игрой и пришлёт новый пароль.">
+<meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://daviart.com/recover.html">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DaviArt Craft">
+<meta property="og:title" content="Восстановить аккаунт — DaviArt Craft">
+<meta property="og:description" content="Забыл пароль? Заполни заявку — админ сверит ответы с игрой и пришлёт новый пароль.">
+<meta property="og:image" content="https://daviart.com/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<header class="page-head">
+  <div class="wrap">
+    <img src="img/icon-192.png" alt="" width="44" height="44">
+    <a href="./">DaviArt Craft</a>
+    <a class="back" href="./">← На главную</a>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:760px">
+  <section style="padding-top:28px">
+    <h2>Забыл пароль — восстановить аккаунт</h2>
+    <p class="lead">Если помнишь старый пароль, просто смени его в игре: <code>/changepassword старый новый</code>. Не помнишь — заполни заявку: админ сверит твои ответы с тем, что есть в игре, и пришлёт новый пароль.</p>
+
+    <div class="warn-box" role="note">
+      <strong>⚠ Пиши то, что знаешь только ты, но что админ может проверить в игре.</strong>
+      <p><b>Не пиши старый пароль.</b> Чем подробнее — тем быстрее восстановим.</p>
+    </div>
+
+    <form class="recover" id="form" novalidate>
+      <div class="card field">
+        <label for="nick">Ник в игре <span class="req">*</span></label>
+        <input type="text" id="nick" name="nick" required maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Например, Steve_2010">
+      </div>
+
+      <div class="card field">
+        <span class="lab">Как с тобой связаться <span class="req">*</span></span>
+        <p class="hint">Хотя бы одно: ник в Discord или e-mail. Сюда придёт ответ.</p>
+        <div class="two">
+          <div><label for="discord" class="sr">Discord</label><input type="text" id="discord" name="discord" maxlength="64" placeholder="Discord-ник" autocapitalize="off" spellcheck="false"></div>
+          <div><label for="email" class="sr">E-mail</label><input type="email" id="email" name="email" maxlength="120" placeholder="E-mail" autocapitalize="off" spellcheck="false"></div>
+        </div>
+      </div>
+
+      <div class="card field">
+        <label for="lastseen">Когда последний раз заходил</label>
+        <p class="hint">Примерно: «вчера вечером», «12 октября днём».</p>
+        <input type="text" id="lastseen" name="last_seen" maxlength="120">
+      </div>
+
+      <div class="card field">
+        <label for="base">В каком мире жил и где дом / база</label>
+        <p class="hint">Мир (Святые земли, Долины, Пограничье, Пустоши) и примерные координаты X, Y, Z (видны по F3). Что рядом: река, деревня, гора.</p>
+        <textarea id="base" name="world_and_base" maxlength="1500"></textarea>
+      </div>
+
+      <div class="card field">
+        <label for="claim">Приват</label>
+        <p class="hint">Есть ли приват — в каком мире, как называется, кто участники.</p>
+        <textarea id="claim" name="claim" maxlength="1000"></textarea>
+      </div>
+
+      <div class="card field">
+        <label for="inv">Что в инвентаре и в эндер-сундуке</label>
+        <p class="hint">Самое ценное и примерно сколько: «железный меч, 2 стака угля, 14 железа, в эндер-сундуке — кирка и 30 меди».</p>
+        <textarea id="inv" name="inventory_enderchest" maxlength="1500"></textarea>
+      </div>
+
+      <div class="card field">
+        <div class="two">
+          <div><label for="balance">Примерный баланс, $</label><input type="text" id="balance" name="balance" maxlength="40" inputmode="numeric"></div>
+          <div><label for="level">Уровень персонажа</label><input type="text" id="level" name="level" maxlength="40" inputmode="numeric"></div>
+        </div>
+      </div>
+
+      <div class="card field">
+        <label for="homes">Дома (/sethome) — названия</label>
+        <input type="text" id="homes" name="homes" maxlength="200" placeholder="Например: база, шахта">
+      </div>
+
+      <div class="card field">
+        <label for="friends">С кем играл, кто может подтвердить</label>
+        <textarea id="friends" name="friends" maxlength="800"></textarea>
+      </div>
+
+      <div class="card field">
+        <label for="lastdid">Что делал в последний раз</label>
+        <p class="hint">Что строил, что копал, кого убил, куда ходил.</p>
+        <textarea id="lastdid" name="last_actions" maxlength="1500"></textarea>
+      </div>
+
+      <div class="card field">
+        <label for="extra">Ещё приметы</label>
+        <p class="hint">Всё, что поможет узнать твой аккаунт: питомцы, таблички с надписями, необычные постройки, смерти.</p>
+        <textarea id="extra" name="extra" maxlength="2000"></textarea>
+      </div>
+
+      <div class="hp" aria-hidden="true"><label>Не заполняй это поле <input type="text" name="_honey" id="honey" tabindex="-1" autocomplete="off"></label></div>
+
+      <div class="card field">
+        <label class="check"><input type="checkbox" id="agree" required> <span>Я понимаю, что админ сверит ответы с игрой, а ложная заявка = бан. <span class="req">*</span></span></label>
+      </div>
+
+      <div class="formmsg err" id="err" hidden></div>
+      <div class="formmsg ok" id="ok" hidden></div>
+
+      <button class="btn green" type="submit" id="send" style="width:100%;font-size:1.08rem">Отправить заявку</button>
+    </form>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><img src="img/favicon-32.png" alt="">© DaviArt Craft</div>
+    <nav aria-label="Ссылки">
+      <a href="./">Главная</a>
+      <a href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>
+      <a href="./#rules">Правила</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+/* Отправка через formsubmit.co (AJAX). Письмо уходит владельцу на e-mail ниже.
+ * Первая заявка → formsubmit присылает на этот адрес письмо «Activate» — его нужно один раз подтвердить. */
+(function () {
+  "use strict";
+  var ENDPOINT = "https://formsubmit.co/ajax/dav.art.iva@gmail.com";
+  var DISCORD = "https://discord.gg/sTgZM8Kh";
+  var LIMIT_KEY = "daviart-recover-sent", LIMIT_MS = 10 * 60 * 1000;
+  var f = document.getElementById("form"), btn = document.getElementById("send");
+  var err = document.getElementById("err"), ok = document.getElementById("ok");
+  var v = function (id) { return (document.getElementById(id).value || "").trim(); };
+  function showErr(html) { err.innerHTML = html; err.hidden = false; ok.hidden = true; err.scrollIntoView({ block: "center", behavior: "smooth" }); }
+  function lastSent() { try { return +localStorage.getItem(LIMIT_KEY) || 0; } catch (e) { return 0; } }
+  function markSent() { try { localStorage.setItem(LIMIT_KEY, String(Date.now())); } catch (e) {} }
+
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    err.hidden = true;
+    if (v("honey")) return; // бот
+    var nick = v("nick"), discord = v("discord"), email = v("email");
+    if (!nick) { showErr("Укажи ник в игре."); document.getElementById("nick").focus(); return; }
+    if (!discord && !email) { showErr("Укажи, как с тобой связаться: Discord-ник или e-mail."); document.getElementById("discord").focus(); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr("Проверь e-mail — похоже, в нём опечатка."); document.getElementById("email").focus(); return; }
+    if (!document.getElementById("agree").checked) { showErr("Поставь галочку внизу — что понимаешь, как проверяется заявка."); return; }
+    var wait = LIMIT_MS - (Date.now() - lastSent());
+    if (wait > 0) { showErr("Заявка уже отправлена. Следующую можно через " + Math.ceil(wait / 60000) + " мин. Срочно — пиши в <a href=\"" + DISCORD + "\" target=\"_blank\" rel=\"noopener\">Discord</a>."); return; }
+
+    var data = {
+      _subject: "DaviArt Craft — восстановление аккаунта: " + nick,
+      _template: "table",
+      _captcha: "false",
+      _honey: "",
+      "Ник": nick,
+      "Discord": discord || "—",
+      "E-mail": email || "—",
+      "Последний вход": v("lastseen") || "—",
+      "Мир и база (координаты)": v("base") || "—",
+      "Приват": v("claim") || "—",
+      "Инвентарь и эндер-сундук": v("inv") || "—",
+      "Баланс $": v("balance") || "—",
+      "Уровень": v("level") || "—",
+      "Дома /sethome": v("homes") || "—",
+      "С кем играл": v("friends") || "—",
+      "Что делал в последний раз": v("lastdid") || "—",
+      "Ещё приметы": v("extra") || "—",
+      "Согласие": "понимаю: ответы сверят с игрой, ложная заявка = бан"
+    };
+    if (email) data._replyto = email;
+
+    btn.disabled = true; btn.textContent = "Отправляю…";
+    fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(data) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || String(j.success) === "false") throw j; return j; }); })
+      .then(function () {
+        markSent();
+        f.querySelectorAll("input,textarea,button").forEach(function (el) { el.disabled = true; });
+        ok.innerHTML = "<b>✔ Заявка отправлена.</b> Админ сверит ответы с игрой — ответ придёт в Discord или на почту в течение 1–2 дней. Если появятся вопросы, тебе напишут.";
+        ok.hidden = false; err.hidden = true; btn.textContent = "Отправлено";
+        ok.scrollIntoView({ block: "center", behavior: "smooth" });
+      })
+      .catch(function () {
+        btn.disabled = false; btn.textContent = "Отправить заявку";
+        showErr("Не отправилось. Попробуй ещё раз чуть позже или напиши в <a href=\"" + DISCORD + "\" target=\"_blank\" rel=\"noopener\">Discord</a> — там тоже помогут.");
+      });
+  });
+})();
+</script>
+</body>
+</html>
