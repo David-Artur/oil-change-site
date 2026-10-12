@@ -229,3 +229,29 @@ form.recover { display: grid; gap: 14px; }
   .cmds, .worlds, .features, .rules, .soon { grid-template-columns: 1fr; }
 }
 .stats .wide { grid-column: 1 / -1; }
+
+/* ---------- страница «Партнёрам» ---------- */
+.note-mail { color: var(--muted); font-size: .92rem; margin: 10px 0 0; }
+.pcard { padding: 16px; display: grid; gap: 12px; }
+.pcard.hl { border-color: var(--gold); background: var(--gold-bg); }
+.pcard .big { margin: 0; font-size: 1.05rem; }
+.codebox { flex: none; }
+.plist { margin: 12px 0 0; padding: 14px 16px 14px 34px; }
+.plist li + li { margin-top: 6px; }
+.warnlist { padding: 16px; border-color: var(--red); }
+.warnlist h3 { color: var(--red); margin-bottom: 6px; }
+.warnlist ul { margin: 0 0 10px; padding-left: 20px; }
+.warnlist p { margin: 0; }
+.paygrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.stat { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.stat .num { font: 800 2rem/1.1 var(--pixel); color: var(--grass); }
+.stat span:last-child { color: var(--muted); font-size: .94rem; }
+.ptop { width: 100%; border-collapse: collapse; }
+.ptop th, .ptop td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.ptop th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
+.ptop td:first-child, .ptop th:first-child { width: 44px; color: var(--soft); }
+.ptop td:last-child, .ptop th:last-child { text-align: right; font-weight: 700; }
+.ptop tr:last-child td { border-bottom: 0; }
+.ptop-empty { padding: 22px 16px; display: grid; gap: 8px; justify-items: start; }
+.ptop-empty b { font-size: 1.1rem; color: var(--grass); }
+.ptop-empty span { color: var(--muted); }
