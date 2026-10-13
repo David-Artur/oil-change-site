@@ -24,16 +24,44 @@
     var pic = w.img ? '<div class="pic" style="background-image:url(' + w.img + ')" role="img" aria-label="Карта местности у точки прибытия: ' + esc(w.name) + '">'
                     : '<div class="pic ' + (w.art || "") + '" aria-hidden="true">';
     pic += '<span class="badge">' + esc(w.tag) + "</span></div>";
-    var st = [["Сложность", w.diff], ["PvP", w.pvp], ["Смерть: навыки", w.loss], ["Вещи при смерти", w.items]];
+    var st = [["Сложность", w.diff], ["PvP", w.pvp], ["Смерть: навыки", w.loss], ["Вещи при смерти", w.items],
+              ["Приваты", w.claims ? "есть" : "нет"], ["Телепорт", w.tp || "—"]];
+    if (w.grief) st.push(["Гриферство", w.grief, 1]);
+    if (w.boom) st.push(["Взрывы", w.boom, 1]);
     var hasNo = w.noOres && w.noOres !== "—";
     if (w.ores) st.push(["Руды", w.ores, hasNo ? 0 : 1]);
     if (hasNo) st.push(["Нет (→ медь)", w.noOres]);
     if (w.structures) st.push(["Строения", w.structures, 1]);
     var dl = '<dl class="stats">' + st.map(function (x) { return "<div" + (x[2] ? ' class="wide"' : "") + "><dt>" + x[0] + "</dt><dd>" + rich(x[1]) + "</dd></div>"; }).join("") + "</dl>";
     var notes = (w.notes || []).length ? '<ul class="more">' + w.notes.map(function (n) { return "<li>" + rich(n) + "</li>"; }).join("") + "</ul>" : "";
+    var maplink = S.map && w.map ? '<a class="btn small maplink" href="' + mapUrl(w.map) + '" target="_blank" rel="noopener">🗺 Карта этого мира</a>' : "";
     return '<article class="card world tone-' + w.tone + '" id="w-' + w.id + '">' + pic + '<div class="body"><h3>' + esc(w.name) +
-      ' <span class="lvl" title="Рекомендуемый уровень">ур. ' + esc(w.level) + "</span></h3>" + dl + notes + "</div></article>";
+      ' <span class="lvl" title="Рекомендуемый уровень">ур. ' + esc(w.level) + "</span></h3>" + dl + notes + maplink + "</div></article>";
   }).join("");
+  // веб-карта: кнопки на каждый мир (+ лобби)
+  function mapUrl(id) { return S.map + "/#" + id + ":0:64:0:1500:0:0:0:1:flat"; }
+  var mb = $("map-buttons");
+  if (mb && S.map) mb.innerHTML = [["world_lobby", "Лобби"]].concat((window.WORLDS || []).map(function (w) { return [w.map, w.name]; }))
+    .map(function (x) { return '<a class="btn small" href="' + mapUrl(x[0]) + '" target="_blank" rel="noopener">' + esc(x[1]) + "</a>"; }).join("");
+
+  /* ---------- разделы-гайды (data.js GUIDES + схемы viz.js) ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll("[data-guide]"), function (sec) {
+    var g = (window.GUIDES || {})[sec.getAttribute("data-guide")];
+    if (!g) return;
+    var h = '<h2><span class="gico" aria-hidden="true">' + g.icon + "</span>" + esc(g.title) + "</h2>";
+    h += '<p class="lead">' + rich(g.lead) + "</p>";
+    if (g.easier) h += '<p class="easier">↗ <b>Прокачивается — со временем станет легче.</b> ' + rich(g.easier) + "</p>";
+    if (g.table) h += '<div class="card tablewrap"><table class="gtable"><thead><tr>' + g.table.head.map(function (c) { return "<th>" + esc(c) + "</th>"; }).join("") +
+      "</tr></thead><tbody>" + g.table.rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + rich(c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
+    if (g.viz && window.VIZ) h += '<div class="vizgrid">' + g.viz.map(function (v, i) {
+      return window.VIZ[v] ? '<figure class="card">' + window.VIZ[v]() + "<figcaption>" + esc((g.captions || [])[i] || "") + "</figcaption></figure>" : "";
+    }).join("") + "</div>";
+    h += '<div class="gblocks">' + (g.blocks || []).map(function (b) {
+      var body = b.list ? "<ul>" + b.list.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("") + "</ul>" : "<p>" + rich(b.p) + "</p>";
+      return '<div class="card gblock"><h3>' + rich(b.h) + "</h3>" + body + "</div>";
+    }).join("") + "</div>";
+    sec.innerHTML = h;
+  });
   var wc = $("worlds-common");
   if (wc && window.WORLDS_COMMON) wc.innerHTML = WORLDS_COMMON.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("");
 

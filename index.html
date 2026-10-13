@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -61,7 +61,15 @@
 <nav class="nav" id="nav" aria-label="Разделы">
   <div class="wrap">
     <a href="#join">Как зайти</a>
+    <a href="#claims">Приваты</a>
     <a href="#worlds">Миры</a>
+    <a href="#teleport">Телепорт</a>
+    <a href="#economy">Экономика</a>
+    <a href="#skills">Прокачка</a>
+    <a href="#body">Тело</a>
+    <a href="#stamina">Стамина</a>
+    <a href="#climate">Температура</a>
+    <a href="#pvp">PvP</a>
     <a href="#features">Особенности</a>
     <a href="#commands">Команды</a>
     <a href="#rules">Правила</a>
@@ -78,13 +86,27 @@
     <ol class="steps" id="join-steps"></ol>
   </section>
 
+  <section id="claims" class="guide" data-guide="claims"></section>
+
   <section id="worlds">
     <h2>Миры</h2>
     <p class="lead">Всё начинается в <b>лобби</b> — парящем острове с шестью порталами. Чем дальше мир, тем он опаснее, богаче и тем больше отнимает смерть. Рекомендуемый уровень — уровень персонажа.</p>
     <div class="worlds" id="worlds-list"></div>
     <h3 style="margin:26px 0 0;font-size:1.2rem">Общее для всех миров</h3>
     <ul class="card common" id="worlds-common"></ul>
+    <div class="card mapcard" id="map">
+      <div><h3>🗺 Веб-карта всех миров</h3><p>Карта в браузере — видно рельеф, приваты и где стоят игроки. Открой нужный мир:</p></div>
+      <div class="mapbtns" id="map-buttons"></div>
+    </div>
   </section>
+
+  <section id="teleport" class="guide" data-guide="teleport"></section>
+  <section id="economy" class="guide" data-guide="economy"></section>
+  <section id="skills" class="guide" data-guide="skills"></section>
+  <section id="body" class="guide" data-guide="body"></section>
+  <section id="stamina" class="guide" data-guide="stamina"></section>
+  <section id="climate" class="guide" data-guide="climate"></section>
+  <section id="pvp" class="guide" data-guide="pvp"></section>
 
   <section id="features">
     <h2>Особенности сервера</h2>
@@ -128,7 +150,7 @@
 
 <footer>
   <div class="wrap">
-    <div><img src="img/favicon-32.png" alt="">© DaviArt Craft · сайт обновлён <span id="updated">2026-10-12</span></div>
+    <div><img src="img/favicon-32.png" alt="">© DaviArt Craft · сайт обновлён <span id="updated">2026-10-13</span></div>
     <nav aria-label="Ссылки">
       <a href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>
       <a href="http://mc.daviart.com:8100" target="_blank" rel="noopener">Карта мира</a>
@@ -141,7 +163,10 @@
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="data.js?v=2"></script>
-<script src="app.js?v=2"></script>
+<a class="dot-admin" href="admin.html" aria-label="Служебная страница" title=""></a>
+
+<script src="data.js?v=3"></script>
+<script src="viz.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
