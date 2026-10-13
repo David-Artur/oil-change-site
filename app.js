@@ -44,12 +44,26 @@
   if (mb && S.map) mb.innerHTML = [["world_lobby", "Лобби"]].concat((window.WORLDS || []).map(function (w) { return [w.map, w.name]; }))
     .map(function (x) { return '<a class="btn small" href="' + mapUrl(x[0]) + '" target="_blank" rel="noopener">' + esc(x[1]) + "</a>"; }).join("");
 
+  /* Компас из Minecraft — пиксельная иконка 16×16 (d — обод, m — рамка, f — циферблат, r — стрелка, k — ось, g — хвост). */
+  function compassIcon() {
+    var rows = [".....dddddd.....", "...ddmmmmmmdd...", "..dmmffffffmmd..", ".dmffffrrffffmd.", "dmfffffrrfffffmd", "dmfffffrrfffffmd",
+      "dmfffffrrfffffmd", "dmfffffkkfffffmd", "dmfffffggfffffmd", "dmfffffggfffffmd", "dmfffffggfffffmd", ".dmffffggffffmd.",
+      ".dmffffffffffmd.", "..dmmffffffmmd..", "...ddmmmmmmdd...", ".....dddddd....."];
+    var col = { d: "#3a3a3a", m: "#9a9a9a", f: "#e6dcc4", r: "#d42a2a", k: "#3a3a3a", g: "#6b6b6b" }, px = "";
+    rows.forEach(function (r, y) { for (var x = 0; x < 16; x++) if (col[r[x]]) px += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="' + col[r[x]] + '"/>'; });
+    return '<svg class="mc-ico" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Компас">' + px + "</svg>";
+  }
+
   /* ---------- разделы-гайды (data.js GUIDES + схемы viz.js) ---------- */
   Array.prototype.forEach.call(document.querySelectorAll("[data-guide]"), function (sec) {
     var g = (window.GUIDES || {})[sec.getAttribute("data-guide")];
     if (!g) return;
     var h = '<h2><span class="gico" aria-hidden="true">' + g.icon + "</span>" + esc(g.title) + "</h2>";
     h += '<p class="lead">' + rich(g.lead) + "</p>";
+    if (g.howto) h += '<div class="howto">' + g.howto.map(function (b) {
+      var body = b.list ? "<ol>" + b.list.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("") + "</ol>" : "<p>" + rich(b.p) + "</p>";
+      return '<div class="card howto-card' + (b.icon ? " has-ico" : "") + '">' + (b.icon === "compass" ? compassIcon() : "") + "<div><h3>" + rich(b.h) + "</h3>" + body + "</div></div>";
+    }).join("") + "</div>";
     if (g.easier) h += '<p class="easier">↗ <b>Прокачивается — со временем станет легче.</b> ' + rich(g.easier) + "</p>";
     if (g.table) h += '<div class="card tablewrap"><table class="gtable"><thead><tr>' + g.table.head.map(function (c) { return "<th>" + esc(c) + "</th>"; }).join("") +
       "</tr></thead><tbody>" + g.table.rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + rich(c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
@@ -117,6 +131,27 @@
     filterCmds();
   });
   filterCmds();
+
+  /* ---------- лидеры (живые данные с сервера: S.leadersJson, раз в 10 мин) ---------- */
+  var lc = $("lead-chips"), lb = $("lead-box"), lu = $("lead-upd");
+  if (lb && S.leadersJson && window.fetch) {
+    fetch(S.leadersJson + "?t=" + Math.floor(Date.now() / 300000)).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+      var cats = Object.keys(d.cats || {}), cur = cats[0];
+      function show() {
+        var c = d.cats[cur] || { rows: [] };
+        lb.innerHTML = c.rows.length ? '<table class="gtable"><thead><tr><th>#</th><th>Игрок</th><th>' + esc(c.title) + "</th></tr></thead><tbody>" +
+          c.rows.map(function (r, i) { return "<tr><td>" + (i + 1) + "</td><td>" + esc(r.name) + "</td><td>" + esc(r.value) + "</td></tr>"; }).join("") + "</tbody></table>"
+          : '<p class="empty" style="padding:16px">Пока никого — стань первым!</p>';
+        if (lc) Array.prototype.forEach.call(lc.querySelectorAll(".chip"), function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-c") === cur ? "true" : "false"); });
+      }
+      if (lc) {
+        lc.innerHTML = cats.map(function (k) { return '<button class="chip" type="button" data-c="' + k + '" aria-pressed="false">' + esc(d.cats[k].title) + "</button>"; }).join("");
+        lc.addEventListener("click", function (e) { var b = e.target.closest(".chip"); if (!b) return; cur = b.getAttribute("data-c"); show(); });
+      }
+      if (lu && d.updated) lu.textContent = "Обновлено: " + new Date(d.updated).toLocaleString("ru-RU");
+      show();
+    }).catch(function () { lb.innerHTML = '<p class="empty" style="padding:16px">Таблица временно недоступна — загляни позже или напиши <code>/top</code> в игре.</p>'; });
+  }
 
   /* ---------- правила, скоро, FAQ ---------- */
   var rl = $("rules-list");

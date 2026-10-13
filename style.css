@@ -194,6 +194,14 @@ section { padding: 40px 0 8px; }
 .vizgrid figure { margin: 0; padding: 10px; }
 .vizgrid figcaption { font-size: .82rem; color: var(--soft); margin-top: 6px; }
 .viz { width: 100%; height: auto; display: block; }
+.howto { display: grid; gap: 10px; grid-template-columns: 1fr 1.3fr; margin-bottom: 18px; align-items: stretch; }
+.howto-card { padding: 16px 18px; }
+.howto-card.has-ico { display: flex; gap: 16px; align-items: flex-start; border-color: var(--grass); background: var(--grass-bg); }
+.howto-card h3 { font-size: 1.15rem; margin-bottom: 8px; }
+.howto-card p { margin: 0; color: var(--muted); }
+.howto-card ol { margin: 0; padding-left: 20px; }
+.howto-card li + li { margin-top: 5px; }
+.mc-ico { width: 72px; height: 72px; flex: none; image-rendering: pixelated; filter: drop-shadow(0 2px 0 rgba(0,0,0,.25)); }
 .gblocks { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); align-items: start; }
 .gblock { padding: 14px; }
 .gblock h3 { font-size: 1.03rem; margin-bottom: 6px; }
@@ -259,7 +267,8 @@ form.recover { display: grid; gap: 14px; }
   .brand img { width: 56px; height: 56px; }
   .actions .btn { flex: 1 1 100%; }
   .ip-box { padding-left: 12px; }
-  .cmds, .worlds, .features, .rules, .soon, .gblocks, .vizgrid { grid-template-columns: 1fr; }
+  .cmds, .worlds, .features, .rules, .soon, .gblocks, .vizgrid, .howto { grid-template-columns: 1fr; }
+  .mc-ico { width: 56px; height: 56px; }
   .gtable { font-size: .86rem; }
   .gtable th, .gtable td { padding: 8px 8px; }
   .gtable td:first-child { white-space: normal; }
