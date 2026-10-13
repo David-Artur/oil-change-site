@@ -76,7 +76,22 @@
 .body-fig { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 14px; }
 .body-fig div { font-size: .9rem; }
 .body-fig .bar { margin-top: 4px; }
+.cab-sync { margin: 2px 0 0; color: var(--soft); font-size: .8rem; }
+.badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 99px; background: var(--red); color: #fff; font-size: .72rem; line-height: 18px; text-align: center; }
+.inv { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
+.inv5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.slot { min-height: 54px; background: var(--card2); border: 1px solid var(--line2); border-radius: 4px; padding: 4px; font-size: .72rem; line-height: 1.2; overflow: hidden; word-break: break-word; }
+.slot.empty { opacity: .45; }
+.slot .bar { height: 4px; margin-top: 3px; }
+.ench { color: #b67cff; }
+.chat { max-height: 280px; overflow-y: auto; background: var(--card2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: .92rem; }
+.chat .cl + .cl { margin-top: 4px; }
+.chat .tm { color: var(--soft); font-size: .78rem; }
+.cab-sel { font: 500 .95rem var(--font); padding: 8px 10px; min-height: 44px; border: 1px solid var(--line2); border-radius: 6px; background: var(--card2); color: var(--text); }
+.note-card { border-color: var(--gold); background: var(--gold-bg); }
+.lots td:first-child { white-space: normal; }
 @media (max-width: 720px) {
+  .inv { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .cab-grid2 { grid-template-columns: 1fr; }
   .cab-title { display: none; }
   .cab-kpis { gap: 14px; }

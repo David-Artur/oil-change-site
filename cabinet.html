@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css?v=6">
-<link rel="stylesheet" href="cabinet.css?v=1">
+<link rel="stylesheet" href="cabinet.css?v=2">
 </head>
 <body>
 <header class="cab-top">
@@ -44,9 +44,11 @@
       <div class="card cab-why">
         <h2>Что даёт аккаунт</h2>
         <ul>
-          <li><b>Профиль:</b> баланс, уровень, все 39 навыков, состояние тела, время в игре, смерти, убийства.</li>
-          <li><b>Приваты:</b> переименовать, добавить и убрать друзей, права каждого (строить, сундуки, двери, управление), двери для гостей, взрывы, видимость на веб-карте.</li>
-          <li><b>Клан:</b> создать, пригласить игрока (даже если он не в сети), принять приглашение, исключить, назначить заместителя, передать лидерство, налог, банк.</li>
+          <li><b>Персонаж:</b> где ты сейчас, здоровье и сытость, снаряжение и инвентарь, дома по мирам (со ссылкой на карту), места в рейтингах, все 39 навыков, тело, статистика.</li>
+          <li><b>Приваты:</b> переименовать, добавить и убрать друзей, права каждого (строить, сундуки, двери, управление), двери для гостей, взрывы, видимость на веб-карте, «показать на карте».</li>
+          <li><b>Клан:</b> создать, пригласить игрока (даже если он не в сети), принять приглашение, <b>клан-чат с сайта</b>, исключить, назначить заместителя, передать лидерство, налог, банк, список всех кланов.</li>
+          <li><b>Рынок:</b> витрина с поиском, <b>покупка с сайта</b> (предмет — на Склад), снять свой лот, Склад, что продалось, пока тебя не было.</li>
+          <li><b>Синхронизация:</b> данные — прямо с сервера, обновляются сами каждые 20 секунд; изменения отсюда сразу в игре.</li>
           <li><b>Ачивки:</b> прогресс по каждой — забрать награду можно у Гида в лобби.</li>
         </ul>
         <p class="cab-note">Безопасно: сайт не знает твоего пароля. Код может получить только тот, кто вошёл в игру под ником (а ник защищён паролем). Выйти на всех устройствах — <code>/account logout</code> в игре. Размер привата и его удаление — только в игре.</p>
@@ -60,6 +62,7 @@
       <div>
         <h1 id="me-nick">—</h1>
         <p class="cab-sub"><span class="dot" id="me-dot"></span><span id="me-online"></span></p>
+        <p class="cab-sync" id="sync" aria-live="polite"></p>
       </div>
       <div class="cab-kpis">
         <div><span class="lbl">Баланс</span><b id="me-bal">—</b></div>
@@ -72,12 +75,14 @@
       <button class="chip" data-tab="profile" role="tab">Профиль</button>
       <button class="chip" data-tab="claims" role="tab">Приваты</button>
       <button class="chip" data-tab="clan" role="tab">Клан</button>
+      <button class="chip" data-tab="market" role="tab">Рынок <span class="badge" id="tab-badge" hidden></span></button>
       <button class="chip" data-tab="ach" role="tab">Ачивки</button>
       <button class="chip" data-tab="help" role="tab">Справка</button>
     </div>
     <div id="tab-profile" class="cab-tab"></div>
     <div id="tab-claims" class="cab-tab" hidden></div>
     <div id="tab-clan" class="cab-tab" hidden></div>
+    <div id="tab-market" class="cab-tab" hidden></div>
     <div id="tab-ach" class="cab-tab" hidden></div>
     <div id="tab-help" class="cab-tab" hidden></div>
   </section>
@@ -86,6 +91,6 @@
 </main>
 
 <div class="toast" id="toast" role="status"></div>
-<script src="cabinet.js?v=1"></script>
+<script src="cabinet.js?v=2"></script>
 </body>
 </html>
