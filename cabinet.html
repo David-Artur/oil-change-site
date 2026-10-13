@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Личный кабинет · DaviArt Craft</title>
+<meta name="description" content="Личный кабинет игрока DaviArt Craft: профиль и навыки, приваты, клан, ачивки — прямо с сайта. Вход кодом из игры.">
+<meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="cabinet.css?v=1">
+</head>
+<body>
+<header class="cab-top">
+  <div class="wrap">
+    <a class="cab-brand" href="index.html"><img src="img/favicon-32.png" alt="" width="28" height="28">DaviArt Craft</a>
+    <span class="cab-title">Личный кабинет</span>
+    <a class="btn small" href="index.html">← На сайт</a>
+  </div>
+</header>
+
+<main class="wrap cab">
+  <!-- вход -->
+  <section id="login-view" hidden>
+    <h1>Личный кабинет</h1>
+    <p class="lead">Привяжи свой игровой ник к сайту — и управляй приватами и кланом прямо отсюда, смотри навыки, тело, статистику и ачивки. Пароль не нужен: вход — одноразовым кодом из игры.</p>
+    <div class="cab-grid2">
+      <form class="card cab-login" id="login-form" autocomplete="off">
+        <h2>Войти</h2>
+        <ol class="cab-steps">
+          <li>Зайди на сервер <b>daviart.com</b> и напиши в чат <code>/account</code></li>
+          <li>Игра покажет код из 6 знаков (действует 10 минут, один раз)</li>
+          <li>Введи сюда свой ник и этот код</li>
+        </ol>
+        <label>Ник в игре<input id="f-nick" name="nick" required maxlength="16" autocapitalize="off" spellcheck="false" placeholder="Steve"></label>
+        <label>Код из игры<input id="f-code" name="code" required maxlength="8" autocapitalize="characters" spellcheck="false" placeholder="AB3K7Q" inputmode="text"></label>
+        <button class="btn green" type="submit">Войти</button>
+        <p class="cab-msg" id="login-msg" role="alert"></p>
+      </form>
+      <div class="card cab-why">
+        <h2>Что даёт аккаунт</h2>
+        <ul>
+          <li><b>Профиль:</b> баланс, уровень, все 39 навыков, состояние тела, время в игре, смерти, убийства.</li>
+          <li><b>Приваты:</b> переименовать, добавить и убрать друзей, права каждого (строить, сундуки, двери, управление), двери для гостей, взрывы, видимость на веб-карте.</li>
+          <li><b>Клан:</b> создать, пригласить игрока (даже если он не в сети), принять приглашение, исключить, назначить заместителя, передать лидерство, налог, банк.</li>
+          <li><b>Ачивки:</b> прогресс по каждой — забрать награду можно у Гида в лобби.</li>
+        </ul>
+        <p class="cab-note">Безопасно: сайт не знает твоего пароля. Код может получить только тот, кто вошёл в игру под ником (а ник защищён паролем). Выйти на всех устройствах — <code>/account logout</code> в игре. Размер привата и его удаление — только в игре.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- кабинет -->
+  <section id="cab-view" hidden>
+    <div class="card cab-head">
+      <div>
+        <h1 id="me-nick">—</h1>
+        <p class="cab-sub"><span class="dot" id="me-dot"></span><span id="me-online"></span></p>
+      </div>
+      <div class="cab-kpis">
+        <div><span class="lbl">Баланс</span><b id="me-bal">—</b></div>
+        <div><span class="lbl">Уровень</span><b id="me-lvl">—</b></div>
+        <div><span class="lbl">Клан</span><b id="me-clan">—</b></div>
+      </div>
+      <button class="btn small" id="logout" type="button">Выйти</button>
+    </div>
+    <div class="chips cab-tabs" id="tabs" role="tablist" aria-label="Разделы кабинета">
+      <button class="chip" data-tab="profile" role="tab">Профиль</button>
+      <button class="chip" data-tab="claims" role="tab">Приваты</button>
+      <button class="chip" data-tab="clan" role="tab">Клан</button>
+      <button class="chip" data-tab="ach" role="tab">Ачивки</button>
+      <button class="chip" data-tab="help" role="tab">Справка</button>
+    </div>
+    <div id="tab-profile" class="cab-tab"></div>
+    <div id="tab-claims" class="cab-tab" hidden></div>
+    <div id="tab-clan" class="cab-tab" hidden></div>
+    <div id="tab-ach" class="cab-tab" hidden></div>
+    <div id="tab-help" class="cab-tab" hidden></div>
+  </section>
+
+  <section id="load-view"><p class="empty">Загружаю…</p></section>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="cabinet.js?v=1"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DaviArt Craft — хардкорное выживание с прокачкой · daviart.com</title>
-<meta name="description" content="DaviArt Craft — Minecraft-сервер: хардкорное выживание с прокачкой, ванильное выживание с элементами хардкора. Java 1.21.10, без модов, можно с TLauncher. Прокачка 38 навыков, 4 мира, приваты компасом. Адрес daviart.com">
+<meta name="description" content="DaviArt Craft — Minecraft-сервер: хардкорное выживание с прокачкой, ванильное выживание с элементами хардкора. Java 1.21.10, без модов, можно с TLauncher. Прокачка 39 навыков, 4 мира, приваты компасом. Адрес daviart.com">
 <meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://daviart.com/">
@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -36,7 +36,7 @@
     </div>
     <p class="tagline"><b>Хардкорное выживание с прокачкой</b> · ванильное выживание с элементами хардкора · Minecraft Java <b>1.21.10</b> · без модов, можно с пиратки / TLauncher</p>
     <ul class="facts">
-      <li class="ok">✔ без модов</li><li class="ok">✔ TLauncher</li><li>38 навыков</li><li>4 мира + Незер и Энд</li><li>приваты компасом</li>
+      <li class="ok">✔ без модов</li><li class="ok">✔ TLauncher</li><li>39 навыков</li><li>4 мира + Незер и Энд</li><li>приваты компасом</li>
     </ul>
 
     <div class="ip">
@@ -54,6 +54,7 @@
       <a class="btn green" href="#join">▶ Как зайти</a>
       <a class="btn blue" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>
       <a class="btn" href="http://mc.daviart.com:8100" target="_blank" rel="noopener">🗺 Карта мира</a>
+      <a class="btn gold" href="cabinet.html" data-cab>👤 Кабинет</a>
     </div>
   </div>
 </header>
@@ -68,6 +69,10 @@
     <a href="#market">Рынок</a>
     <a href="#clans">Кланы</a>
     <a href="#leaders">Лидеры</a>
+    <a href="#cabinet" data-cab>Кабинет</a>
+    <a href="#ach">Ачивки</a>
+    <a href="#bloodmoon">Кровавая луна</a>
+    <a href="#elytra">Элитры</a>
     <a href="#skills">Прокачка</a>
     <a href="#body">Тело</a>
     <a href="#stamina">Стамина</a>
@@ -114,6 +119,20 @@
     <div class="card tablewrap" id="lead-box"><p class="empty" style="padding:16px">Загружаю…</p></div>
     <p class="lead" id="lead-upd" style="font-size:.85rem;margin-top:8px"></p>
   </section>
+  <section id="cabinet" data-cab>
+    <h2>Личный кабинет</h2>
+    <p class="lead">Привяжи игровой ник к сайту — и управляй приватами и кланом прямо отсюда. Пароль не нужен: в игре напиши <code>/account</code>, получишь одноразовый код и введёшь его на сайте вместе с ником.</p>
+    <div class="gblocks">
+      <div class="card gblock"><h3>👤 Профиль</h3><p>Баланс, уровень, все навыки, состояние тела, время в игре, смерти и убийства, ачивки с прогрессом.</p></div>
+      <div class="card gblock"><h3>🧭 Приваты</h3><p>Переименовать, добавить и убрать друзей, права каждого, двери для гостей, взрывы, видимость на веб-карте. Размер и удаление — в игре.</p></div>
+      <div class="card gblock"><h3>⚑ Клан</h3><p>Создать клан, пригласить игрока (даже не в сети), принять приглашение, назначить заместителя, исключить, передать лидерство, банк и налог.</p></div>
+      <div class="card gblock"><h3>🔒 Безопасно</h3><p>Сайт не знает пароля. Код получает только тот, кто зашёл в игру под ником. Выйти на всех устройствах — <code>/account logout</code>.</p></div>
+    </div>
+    <p style="margin-top:14px"><a class="btn gold" href="cabinet.html">Открыть личный кабинет</a></p>
+  </section>
+  <section id="ach" class="guide" data-guide="ach"></section>
+  <section id="bloodmoon" class="guide" data-guide="bloodmoon"></section>
+  <section id="elytra" class="guide" data-guide="elytra"></section>
   <section id="skills" class="guide" data-guide="skills"></section>
   <section id="body" class="guide" data-guide="body"></section>
   <section id="stamina" class="guide" data-guide="stamina"></section>
@@ -177,8 +196,8 @@
 
 <a class="dot-admin" href="admin.html" aria-label="Служебная страница" title=""></a>
 
-<script src="data.js?v=5"></script>
-<script src="viz.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="data.js?v=7"></script>
+<script src="viz.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

@@ -70,12 +70,14 @@
     if (g.viz && window.VIZ) h += '<div class="vizgrid">' + g.viz.map(function (v, i) {
       return window.VIZ[v] ? '<figure class="card">' + window.VIZ[v]() + "<figcaption>" + esc((g.captions || [])[i] || "") + "</figcaption></figure>" : "";
     }).join("") + "</div>";
-    h += '<div class="gblocks">' + (g.blocks || []).map(function (b) {
+    h += '<div class="gblocks">' + (g.blocks || []).filter(function (b) { return !b.cab || S.cabinet; }).map(function (b) {
       var body = b.list ? "<ul>" + b.list.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("") + "</ul>" : "<p>" + rich(b.p) + "</p>";
       return '<div class="card gblock"><h3>' + rich(b.h) + "</h3>" + body + "</div>";
     }).join("") + "</div>";
     sec.innerHTML = h;
   });
+  /* личный кабинет: пока API не включён — ссылки спрятаны (SITE.cabinet) */
+  if (!S.cabinet) Array.prototype.forEach.call(document.querySelectorAll("[data-cab]"), function (el) { el.hidden = true; el.style.display = "none"; });
   var wc = $("worlds-common");
   if (wc && window.WORLDS_COMMON) wc.innerHTML = WORLDS_COMMON.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("");
 
@@ -96,7 +98,7 @@
   if (chips) chips.innerHTML = '<button class="chip" type="button" data-g="all" aria-pressed="true">Все</button>' +
     groups.map(function (g) { return '<button class="chip" type="button" data-g="' + g.id + '" aria-pressed="false">' + g.icon + " " + esc(g.title) + "</button>"; }).join("");
   if (list) list.innerHTML = groups.map(function (g) {
-    return '<div class="cgroup" data-group="' + g.id + '"><h3>' + g.icon + " " + esc(g.title) + '</h3><div class="cmds">' + g.items.map(function (it) {
+    return '<div class="cgroup" data-group="' + g.id + '"><h3>' + g.icon + " " + esc(g.title) + '</h3><div class="cmds">' + g.items.filter(function (it) { return !it.cab || S.cabinet; }).map(function (it) {
       var isAct = it.c.charAt(0) !== "/";
       var copyTxt = it.ex === "" ? "" : (it.ex || it.c);
       var hay = norm([it.c, it.d, it.ex, it.k, g.title].join(" "));
