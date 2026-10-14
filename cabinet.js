@@ -21,7 +21,8 @@
   var RANK = {3: "лидер", 2: "заместитель", 1: "участник"};
   var RANKS = {level: "Уровень", money: "Деньги", pvp: "PvP", mobs: "Мобы", time: "Время в игре", market: "Оборот Рынка", ach: "Ачивки"};
   var CATS = [["all", "Все"], ["res", "Ресурсы"], ["blocks", "Блоки"], ["tools", "Снаряжение"], ["magic", "Магия"], ["food", "Еда"], ["other", "Другое"]];
-  var TABS = ["profile", "claims", "clan", "market", "ach", "account", "help"];
+  var TABS = ["profile", "claims", "clan", "market", "ach", "account", "help", "donate"];
+  var donTiers = null, donLoading = false;
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); }
@@ -113,16 +114,22 @@
   });
 
   Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip"), function (b) {
-    b.addEventListener("click", function () { setTab(b.getAttribute("data-tab")); });
+    b.addEventListener("click", function () {
+      setTab(b.getAttribute("data-tab"));
+      var v = $("cab-view"), y = v ? v.getBoundingClientRect().top + window.scrollY : 0;   // прокручено вниз — к началу вкладки
+      if (window.scrollY > y) window.scrollTo(0, y);
+    });
   });
 
   function setTab(t) {
     tab = t;
     Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip"), function (b) { b.setAttribute("aria-selected", b.getAttribute("data-tab") === t); });
     TABS.forEach(function (x) { $("tab-" + x).hidden = x !== t; });
+    $("cab-view").classList.toggle("on-donate", t === "donate");   // на «Донате» полоса бонуса не дублирует карточку
     try { history.replaceState(null, "", "#" + t); } catch (e) { }
     if (t === "market" && !market) loadMarket();
     if (t === "clan" && !clansAll) loadClans();
+    if (t === "donate" && !donTiers && !donLoading && me) loadDonate();
   }
 
   // ---------------------------------------------------------------- синхронизация
@@ -185,6 +192,7 @@
     renderAch();
     renderAccount();
     renderHelp();
+    renderDonate();
     if (market) renderMarket(); else renderMarketShell();
     setTab(tab);
   }
@@ -234,7 +242,7 @@
         '<h3 style="margin-top:12px">Хотбар</h3><div class="inv">' + inv.slice(5, 14).map(cell).join("") + "</div>" +
         '<h3 style="margin-top:12px">Рюкзак</h3><div class="inv">' + inv.slice(14).map(cell).join("") + "</div></div>";
     } else h += '<div class="card cab-card"><h2>Снаряжение и инвентарь</h2><p class="cab-meta">Видно, когда ты в игре.</p></div>';
-    $("tab-profile").innerHTML = h;
+    $("profile-body").innerHTML = h;
   }
 
   function renderClaims() {
@@ -488,33 +496,53 @@
     h += '<button class="btn gold" type="button" id="bb-donate">💛 Поддержать сервер' + (b.gifted ? "" : ' <span class="bb-gift">+подарок</span>') + "</button></div>";
     $("bonusbar").innerHTML = h;
     var c = $("bb-claim");
-    if (c) c.onclick = function () { c.disabled = true; api("/bonus", {}).then(function (j) { toast(j.message || "", !j.ok); if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); } }); };
+    if (c) c.onclick = function () { claimBonus(c); };
     $("bb-donate").onclick = openDonate;
   }
   function hm(ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); if (m === 60) { h++; m = 0; } return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); }
 
-  function openDonate() {
-    $("don-modal").hidden = false;
-    api("/donate").then(function (d) {
-      var t = (d && d.tiers) || [];
-      $("don-list").innerHTML = t.length ? t.map(function (x) {
-        return '<div class="card don-card"><h3>' + esc(x.title) + '</h3><p class="don-price">' + esc(x.price) + " <span>" + esc(x.period) + "</span></p><ul>" +
-          (x.perks || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + '</ul><button class="btn gold" type="button" data-dtier="' + esc(x.id) + '">Поддержать</button></div>';
-      }).join("") : '<p class="cab-meta">Не удалось загрузить пакеты.</p>';
-      Array.prototype.forEach.call(document.querySelectorAll("[data-dtier]"), function (b) {
-        b.onclick = function () {
-          b.disabled = true;
-          api("/donate", {tier: b.getAttribute("data-dtier")}).then(function (j) {
-            toast(j.message || "Спасибо!", !j.ok);
-            $("don-modal").hidden = true;
-            if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); }
-          });
-        };
-      });
-    });
+  // вкладка «Донат»: первая карточка — бесплатный подарок (бонус дня), дальше — пакеты
+  function openDonate() { setTab("donate"); var t = $("tabs"); if (t && t.scrollIntoView) t.scrollIntoView({behavior: "smooth", block: "start"}); }
+  function loadDonate() { donLoading = true; return api("/donate").then(function (d) { donLoading = false; donTiers = (d && d.tiers) || []; renderDonate(); }); }
+  function claimBonus(btn) {
+    btn.disabled = true;
+    api("/bonus", {}).then(function (j) { toast(j.message || "", !j.ok); if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); renderDonate(); } else btn.disabled = false; });
   }
-  $("don-close").onclick = function () { $("don-modal").hidden = true; };
-  $("don-modal").onclick = function (e) { if (e.target === $("don-modal")) $("don-modal").hidden = true; };
+  function renderDonate() {
+    var b = me.bonus || {}, a = b.active, h = '<div class="card cab-card"><h2>💛 Донат и подарки</h2><p class="cab-meta">Первая карточка — <b>бесплатный подарок</b>, забирай каждый день. ' +
+      'Оплата пакетов пока не подключена — но нажми «Поддержать»: мы увидим, сколько людей хотят помочь' + (b.gifted ? "" : ", а тебе — <b>разовый подарок</b> +45 минут к бонусу") +
+      ". Пакеты — только внешний вид: за деньги на сервере не побеждают.</p></div>";
+    // бесплатная карточка
+    h += '<div class="don-grid don-tab-grid"><div class="card don-card don-free"><span class="don-tag">Бесплатно · каждый день</span><div class="gift-big"><span class="gift-glow">🎁</span></div>' +
+      '<h3>Подарок дня</h3><p class="don-price">0 ₽ <span>на 1–3 часа</span></p><ul>' +
+      (b.types || []).map(function (x) { return "<li><b>" + esc(x.title) + "</b> — " + esc(x.desc) + "</li>"; }).join("") + "</ul>";
+    if (a) h += '<p class="cab-meta"><b>Сейчас: ' + esc(a.title) + "</b> — ещё " + hm(Math.max(0, a.until - Date.now())) + "</p>" +
+      (b.nextIn > 0 ? '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>" : "");
+    else if (b.nextIn > 0) h += '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>";
+    else h += '<button class="btn green" type="button" id="don-claim">🎁 Забрать бесплатно</button>';
+    h += "</div>";
+    // пакеты
+    if (!donTiers) h += '<p class="cab-meta">Загружаю пакеты…</p>';
+    else if (!donTiers.length) h += '<p class="cab-meta">Не удалось загрузить пакеты.</p>';
+    else h += donTiers.map(function (x) {
+      return '<div class="card don-card"><span class="don-tag gold">Пакет</span><h3>' + esc(x.title) + '</h3><p class="don-price">' + esc(x.price) + " <span>" + esc(x.period) + "</span></p><ul>" +
+        (x.perks || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + '</ul><button class="btn gold" type="button" data-dtier="' + esc(x.id) + '">💛 Поддержать</button>' +
+        (b.gifted ? "" : '<p class="don-hint">🎁 за первое нажатие — подарок</p>') + "</div>";
+    }).join("");
+    $("tab-donate").innerHTML = h + "</div>";
+    var c = $("don-claim"); if (c) c.onclick = function () { claimBonus(c); };
+    Array.prototype.forEach.call(document.querySelectorAll("[data-dtier]"), function (btn) {
+      btn.onclick = function () {
+        btn.disabled = true;
+        api("/donate", {tier: btn.getAttribute("data-dtier")}).then(function (j) {
+          toast(j.message || "Спасибо!", !j.ok);
+          if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); }
+          renderDonate();
+        });
+      };
+    });
+    if (!donTiers && !donLoading && tab === "donate") loadDonate();
+  }
 
   // ---------------------------------------------------------------- аккаунт
   function renderAccount() {
@@ -598,6 +626,5 @@
   // ---------------------------------------------------------------- старт
   var h0 = (location.hash || "").replace("#", "");
   if (TABS.indexOf(h0) >= 0) tab = h0;
-  if (h0 === "donate") setTimeout(function () { if (me) openDonate(); }, 1500);
   if (tok()) { show("load"); load(true); } else show("login");
 })();

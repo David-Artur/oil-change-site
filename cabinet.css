@@ -28,7 +28,10 @@
 .cab-kpis { display: flex; gap: 22px; flex-wrap: wrap; }
 .cab-kpis .lbl { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); }
 .cab-kpis b { font-size: 1.15rem; }
-.cab-tabs { margin: 16px 0 14px; }
+.cab-tabs { flex-wrap: wrap; overflow: visible; margin: 0 0 12px; position: sticky; top: 0; z-index: 40; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+#tab-profile > .cab-head { margin-bottom: 14px; }
+.cab #cab-view { padding-top: 0; }
+#cab-view.on-donate .cab-bonusbar { display: none; }
 .chip[aria-selected=true] { background: var(--grass); color: #fff; border-color: var(--grass); }
 .cab-tab { display: grid; gap: 14px; }
 .cab-tab[hidden], .cab [hidden] { display: none !important; }
@@ -116,6 +119,19 @@
 .don-card ul { margin: 8px 0 12px; padding-left: 18px; color: var(--muted); font-size: .9rem; flex: 1; }
 .don-price { margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--gold); }
 .don-price span { font-size: .82rem; font-weight: 500; color: var(--soft); }
+/* вкладка «Донат»: золотая, с мерцающим подарком */
+.chip.chip-don { background: linear-gradient(135deg, #f7d154, #d9a21b); color: #3a2600; border-color: #b8860b; font-weight: 700; box-shadow: 0 0 10px rgba(247, 199, 60, .55); }
+.chip.chip-don[aria-selected=true] { background: linear-gradient(135deg, #ffe07a, #e8b02a); color: #2a1b00; border-color: #8a6100; box-shadow: 0 0 14px rgba(247, 199, 60, .85); }
+.gift-glow { display: inline-block; animation: giftGlow 1.6s ease-in-out infinite; filter: drop-shadow(0 0 4px #fff3a0); }
+@keyframes giftGlow { 0%, 100% { transform: scale(1) rotate(0); filter: drop-shadow(0 0 2px #fff3a0); } 50% { transform: scale(1.22) rotate(-8deg); filter: drop-shadow(0 0 8px #fff3a0); } }
+.don-tab-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.don-free { border: 2px solid var(--grass); background: var(--grass-bg); position: relative; }
+.don-free .don-price { color: var(--grass); }
+.don-tag { align-self: flex-start; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; background: var(--grass); color: #fff; }
+.don-tag.gold { background: var(--gold); color: #2a1b00; }
+.don-free .gift-big { font-size: 2.2rem; line-height: 1; margin-bottom: 4px; }
+.don-hint { font-size: .8rem; color: var(--soft); margin: 6px 0 0; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .gift-glow, .bb-ico.pulse { animation: none; } }
 @media (max-width: 720px) {
   .inv { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .cab-grid2 { grid-template-columns: 1fr; }
