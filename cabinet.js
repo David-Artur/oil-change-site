@@ -279,7 +279,7 @@
     }).join("") : '<p class="cab-meta">Домов нет. В каждом мире (1–3) — свой: встань на место и напиши <code>/sethome</code>.</p>') + "</div>";
     var b = me.body || {};
     if (Object.keys(b).length) {
-      h += '<div class="card cab-card"><h2>Тело</h2><p class="cab-meta">Части тела лечатся сами (кровать — ×5), бинтами и у лекаря. Сломанные ноги — медленно ходишь.</p><div class="body-fig">' +
+      h += '<div class="card cab-card"><h2>Тело</h2><p class="cab-meta">Части тела лечатся сами (кровать — ×5, в Святых землях — ×10), бинтами и у лекаря. Сломанные ноги — медленно ходишь.</p><div class="body-fig">' +
         BODY.map(function (p) { var v = Math.round((b[p[0]] == null ? 1 : b[p[0]]) * 100); return "<div>" + p[1] + " · <b>" + v + "%</b>" + bar(v, v < 25 ? "bad" : v < 60 ? "warn" : "") + "</div>"; }).join("") + "</div></div>";
     }
     var sk = me.skills || {}, keys = Object.keys(sk);
