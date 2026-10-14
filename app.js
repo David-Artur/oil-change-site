@@ -3,6 +3,7 @@
 (function () {
   "use strict";
   var S = window.SITE || {};
+  window.DA_HAS_COPY = true;   // копирование [data-copy] делает app.js (ui.js тогда своё не вешает)
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   // `команда` → <code>команда</code> (остальной HTML из data.js пишем как есть — это наш файл)
@@ -13,9 +14,19 @@
   if (S.updated) { var u = $("updated"); if (u) u.textContent = S.updated.split("-").reverse().join("."); }
 
   /* ---------- как зайти ---------- */
+  // картинка к шагу — маленькая сцена «как в игре» (CSS + текстуры из img/mc)
+  var mcImg = function (t) { return 'style="background-image:url(img/mc/' + t + '.png)"'; };
+  var JOIN_V = {
+    launcher: '<div class="jv jv-launch"><div class="jv-logo">MINECRAFT</div><span class="jv-ver">Java 1.21.10</span><span class="jv-btn green">Играть</span></div>',
+    server: '<div class="jv jv-dirt"><div class="jv-title">Добавить сервер</div><label>Адрес сервера</label>' +
+      '<button type="button" class="jv-field" data-copy="' + esc(S.address || "daviart.com") + '" data-msg="Адрес скопирован — вставь его в Minecraft">' + esc(S.address || "daviart.com") + '<i class="copy-ico"></i></button><span class="jv-btn">Готово</span></div>',
+    chat: '<div class="jv jv-chat"><p class="y">Зарегистрируйся: /register пароль</p><p class="in">/register <span class="ph">пароль</span><b class="caret">_</b></p></div>',
+    portal: '<div class="jv jv-portal"><div class="frame"><i ' + mcImg("block__nether_portal") + '></i></div><span class="jv-sign">Святые земли</span></div>',
+    start: '<div class="jv jv-start"><span class="slot"><i ' + mcImg("item__raw_copper") + '></i><b>64</b></span><span class="arr">→</span><span class="slot"><i ' + mcImg("item__emerald") + '></i></span><span class="arr">→</span><span class="slot"><i ' + mcImg("item__compass_16") + '></i></span></div>'
+  };
   var js = $("join-steps");
-  if (js && window.JOIN) js.innerHTML = JOIN.map(function (s) {
-    return '<li class="card"><div><h3>' + rich(s.t) + "</h3><p>" + rich(s.d) + "</p></div></li>";
+  if (js && window.JOIN) js.innerHTML = JOIN.map(function (s, i) {
+    return '<li class="card jstep"><span class="jn">' + (i + 1) + "</span>" + (JOIN_V[s.v] || "") + "<h3>" + rich(s.t) + "</h3><p>" + rich(s.d) + "</p>" + (s.more ? '<p class="jmore">' + rich(s.more) + "</p>" : "") + "</li>";
   }).join("");
 
   /* ---------- миры ---------- */
