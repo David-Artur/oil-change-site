@@ -31,11 +31,16 @@
 .cab-tabs { flex-wrap: wrap; overflow: visible; margin: 0 0 12px; position: sticky; top: 0; z-index: 40; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
 #tab-profile > .cab-head { margin-bottom: 14px; }
 .cab #cab-view { padding-top: 0; }
-.bonus-chip { display: inline-flex; align-items: center; gap: 5px; font: 600 .82rem var(--font); color: var(--text); background: var(--gold-bg); border: 2px solid var(--gold); border-radius: 8px; padding: 4px 10px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.bonus-chip:hover { box-shadow: 0 0 10px rgba(247, 199, 60, .6); }
-.bonus-chip.ready { border-color: var(--grass); background: var(--grass-bg); }
-.bonus-chip .bc-ico { font-size: 1rem; line-height: 1; }
-.bonus-chip .bc-t { color: var(--soft); font-weight: 500; }
+/* «Донат» + продолжение с бонусом — одна кнопка: золотая часть и полупрозрачный «хвост» в той же рамке */
+.chip.chip-don, .chip.chip-don[aria-selected=true] { display: inline-flex; align-items: stretch; padding: 0; overflow: hidden; background: rgba(247, 199, 60, .14); border: 2px solid #d9a21b; max-width: 100%; }
+.chip-don .don-main { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #f7d154, #d9a21b); color: #3a2600; white-space: nowrap; }
+.chip-don[aria-selected=true] .don-main { background: linear-gradient(135deg, #ffe07a, #e8b02a); color: #2a1b00; }
+.don-card .btn { white-space: normal; }
+.chip-don .don-ext { background: linear-gradient(rgba(247, 199, 60, .16), rgba(247, 199, 60, .16)), var(--card); display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px 6px 10px; font-weight: 600; font-size: .82rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.chip-don .don-ext:empty { display: none; }
+.chip-don:hover .don-ext { background: linear-gradient(rgba(247, 199, 60, .26), rgba(247, 199, 60, .26)), var(--card); }
+.chip-don .bc-ico { font-size: 1rem; line-height: 1; }
+.chip-don .bc-t { color: var(--soft); font-weight: 500; }
 .chip[aria-selected=true] { background: var(--grass); color: #fff; border-color: var(--grass); }
 .cab-tab { display: grid; gap: 14px; }
 .cab-tab[hidden], .cab [hidden] { display: none !important; }

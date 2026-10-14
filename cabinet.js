@@ -33,7 +33,7 @@
   function tok() { return memTok || getTok(); }
   function item(it) { return esc((it.item || it.material || "?").replace(/_/g, " ")) + (it.amount > 1 ? " ×" + it.amount : "") + (it.enchanted ? ' <span class="ench" title="Зачарован">✦</span>' : ""); }
   function mapLink(worldId, x, y, z, label) {
-    var base = (me && me.map) || "http://mc.daviart.com:8100";
+    var base = "https://mc.daviart.com/map";   // через Caddy: https + сжатие (прямой :8100 без сжатия грузится на телефоне очень долго)
     return '<a class="btn small" target="_blank" rel="noopener" href="' + esc(base) + "/#" + encodeURIComponent(worldId) + ":" + x + ":" + (y || 64) + ":" + z + ':120:0:0:0:0:perspective">' + (label || "🗺 На карте") + "</a>";
   }
   function ago(t) { var s = Math.max(0, Math.round((Date.now() - t) / 1000)); return s < 60 ? s + " с" : Math.round(s / 60) + " мин"; }
@@ -483,17 +483,16 @@
   };
 
   // ---------------------------------------------------------------- бонус дня + донат (всегда рядом, над вкладками)
-  // маленькая плашка в золотой рамке справа от вкладки «Донат»: что сейчас действует / подарок ждёт; клик — во вкладку «Донат»
+  // продолжение кнопки «Донат» (полупрозрачная часть той же кнопки): что сейчас действует / подарок ждёт; клик — во вкладку «Донат»
   var BONUS_ICO = {vigor: "⚡", miner: "⛏", legs: "👟", night: "🌙", trade: "💰", fish: "🎣"};
   function renderBonusBar() {
     var b = me.bonus || {}, a = b.active, el = $("bonusbar"), h;
     if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(a.title) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
     else if (b.nextIn > 0) { h = '<span class="bc-ico">🎁</span><span class="bc-t">подарок через ' + hm(b.nextIn) + "</span>"; el.title = "Следующий подарок дня"; }
     else { h = '<span class="bc-ico gift-glow">🎁</span>Подарок ждёт!'; el.title = "Забрать бесплатный подарок дня"; }
-    el.className = "bonus-chip" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
+    el.className = "don-ext" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
     el.innerHTML = h;
   }
-  $("bonusbar").onclick = openDonate;
   function hm(ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); if (m === 60) { h++; m = 0; } return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); }
 
   // вкладка «Донат»: первая карточка — бесплатный подарок (бонус дня), дальше — пакеты

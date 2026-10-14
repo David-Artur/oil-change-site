@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css?v=6">
-<link rel="stylesheet" href="cabinet.css?v=6">
+<link rel="stylesheet" href="cabinet.css?v=8">
 </head>
 <body>
 <header class="cab-top">
@@ -82,8 +82,7 @@
       <button class="chip" data-tab="ach" role="tab">Ачивки</button>
       <button class="chip" data-tab="account" role="tab">Аккаунт</button>
       <button class="chip" data-tab="help" role="tab">Справка</button>
-      <button class="chip chip-don" data-tab="donate" role="tab"><span class="gift-glow" aria-hidden="true">🎁</span> Донат</button>
-      <button class="bonus-chip" id="bonusbar" type="button" aria-live="polite"></button>
+      <button class="chip chip-don" data-tab="donate" role="tab"><span class="don-main"><span class="gift-glow" aria-hidden="true">🎁</span> Донат</span><span class="don-ext" id="bonusbar" aria-live="polite"></span></button>
     </div>
     <div id="tab-profile" class="cab-tab">
     <div class="card cab-head">
@@ -125,6 +124,6 @@
 </main>
 
 <div class="toast" id="toast" role="status"></div>
-<script src="cabinet.js?v=7"></script>
+<script src="cabinet.js?v=9"></script>
 </body>
 </html>
