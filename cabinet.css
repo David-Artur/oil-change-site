@@ -31,7 +31,11 @@
 .cab-tabs { flex-wrap: wrap; overflow: visible; margin: 0 0 12px; position: sticky; top: 0; z-index: 40; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
 #tab-profile > .cab-head { margin-bottom: 14px; }
 .cab #cab-view { padding-top: 0; }
-#cab-view.on-donate .cab-bonusbar { display: none; }
+.bonus-chip { display: inline-flex; align-items: center; gap: 5px; font: 600 .82rem var(--font); color: var(--text); background: var(--gold-bg); border: 2px solid var(--gold); border-radius: 8px; padding: 4px 10px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.bonus-chip:hover { box-shadow: 0 0 10px rgba(247, 199, 60, .6); }
+.bonus-chip.ready { border-color: var(--grass); background: var(--grass-bg); }
+.bonus-chip .bc-ico { font-size: 1rem; line-height: 1; }
+.bonus-chip .bc-t { color: var(--soft); font-weight: 500; }
 .chip[aria-selected=true] { background: var(--grass); color: #fff; border-color: var(--grass); }
 .cab-tab { display: grid; gap: 14px; }
 .cab-tab[hidden], .cab [hidden] { display: none !important; }

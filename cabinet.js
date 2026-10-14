@@ -483,22 +483,17 @@
   };
 
   // ---------------------------------------------------------------- бонус дня + донат (всегда рядом, над вкладками)
+  // маленькая плашка в золотой рамке справа от вкладки «Донат»: что сейчас действует / подарок ждёт; клик — во вкладку «Донат»
+  var BONUS_ICO = {vigor: "⚡", miner: "⛏", legs: "👟", night: "🌙", trade: "💰", fish: "🎣"};
   function renderBonusBar() {
-    var b = me.bonus || {}, a = b.active, h = '<div class="bb-left">';
-    if (a) {
-      var left = Math.max(0, a.until - Date.now());
-      h += '<span class="bb-ico">🎁</span><div><b>' + esc(a.title) + '</b> <span class="cab-meta">— ' + esc(a.desc) + '</span><br><span class="cab-meta">действует ещё ' + hm(left) +
-        (b.nextIn > 0 ? " · следующий бонус дня через " + hm(b.nextIn) : "") + "</span></div>";
-    } else if (b.nextIn > 0) h += '<span class="bb-ico">🎁</span><div><b>Бонус дня получен</b><br><span class="cab-meta">следующий — через ' + hm(b.nextIn) + "</span></div>";
-    else h += '<span class="bb-ico pulse">🎁</span><div><b>Тебя ждёт бонус дня!</b><br><span class="cab-meta">случайный сюрприз — бесплатно</span></div>';
-    h += '</div><div class="bb-right">';
-    if (!a && !(b.nextIn > 0)) h += '<button class="btn green" type="button" id="bb-claim">🎁 Забрать бонус</button>';
-    h += '<button class="btn gold" type="button" id="bb-donate">💛 Поддержать сервер' + (b.gifted ? "" : ' <span class="bb-gift">+подарок</span>') + "</button></div>";
-    $("bonusbar").innerHTML = h;
-    var c = $("bb-claim");
-    if (c) c.onclick = function () { claimBonus(c); };
-    $("bb-donate").onclick = openDonate;
+    var b = me.bonus || {}, a = b.active, el = $("bonusbar"), h;
+    if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(a.title) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
+    else if (b.nextIn > 0) { h = '<span class="bc-ico">🎁</span><span class="bc-t">подарок через ' + hm(b.nextIn) + "</span>"; el.title = "Следующий подарок дня"; }
+    else { h = '<span class="bc-ico gift-glow">🎁</span>Подарок ждёт!'; el.title = "Забрать бесплатный подарок дня"; }
+    el.className = "bonus-chip" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
+    el.innerHTML = h;
   }
+  $("bonusbar").onclick = openDonate;
   function hm(ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); if (m === 60) { h++; m = 0; } return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); }
 
   // вкладка «Донат»: первая карточка — бесплатный подарок (бонус дня), дальше — пакеты
