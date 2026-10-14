@@ -184,6 +184,13 @@
 .don-tag { align-self: flex-start; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; background: var(--grass); color: #fff; }
 .don-tag.gold { background: var(--gold); color: #2a1b00; }
 .don-free .gift-big { font-size: 2.2rem; line-height: 1; margin-bottom: 4px; }
+.streak { display: flex; gap: 6px; margin: 4px 0 8px; }
+.streak .st { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 2px; border-radius: 8px; border: 2px dashed var(--line2); color: var(--soft); }
+.streak .st b { font-size: 1.15rem; }
+.streak .st small { font-size: .68rem; }
+.streak .st.done { border-style: solid; border-color: var(--grass); color: var(--grass); }
+.streak .st.now { border-style: solid; border-color: var(--gold); background: var(--gold-bg); color: var(--text); box-shadow: 0 0 10px rgba(247, 199, 60, .45); }
+.warn-t { color: var(--gold); }
 .don-hint { font-size: .8rem; color: var(--soft); margin: 6px 0 0; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .gift-glow, .bb-ico.pulse { animation: none; } }
 @media (max-width: 720px) {

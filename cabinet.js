@@ -566,7 +566,10 @@
   function plainTitle(t) { return String(t || "").replace(/^[^\p{L}\p{N}]+/u, ""); }   // сервер до 0.7.5 присылал «🎣 Рыбацкая удача» — без двойной иконки
   function renderBonusBar() {
     var b = me.bonus || {}, a = b.active, el = $("bonusbar"), h;
-    if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(plainTitle(a.title)) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
+    var acts = b.actives || (a ? [a] : []);
+    if (!(b.nextIn > 0) && acts.length) { h = '<span class="bc-ico gift-glow">🎁</span>Забери ×' + (b.nextCount || 1) + "!"; el.title = "Подарок дня ждёт"; }
+    else if (acts.length > 1) { h = '<span class="bc-ico">' + acts.map(function (x) { return BONUS_ICO[x.id] || "🎁"; }).join("") + "</span>Подарки ×" + acts.length + ' <span class="bc-t">· ещё ' + hm(Math.max(0, acts[0].until - Date.now())) + "</span>"; el.title = acts.map(function (x) { return plainTitle(x.title); }).join(", ") + " — подарки дня из «Доната»"; }
+    else if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(plainTitle(a.title)) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
     else if (b.nextIn > 0) { h = '<span class="bc-ico">🎁</span><span class="bc-t">подарок через ' + hm(b.nextIn) + "</span>"; el.title = "Следующий подарок дня"; }
     else { h = '<span class="bc-ico gift-glow">🎁</span>Подарок ждёт!'; el.title = "Забрать бесплатный подарок дня"; }
     el.className = "don-ext" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
@@ -588,11 +591,19 @@
     // бесплатная карточка
     h += '<div class="don-grid don-tab-grid"><div class="card don-card don-free"><span class="don-tag">Бесплатно · каждый день</span><div class="gift-big"><span class="gift-glow">🎁</span></div>' +
       '<h3>Подарок дня</h3><p class="don-price">0 ₽ <span>каждые 24 часа</span></p>' +
-      '<p class="cab-meta" style="flex:1">Случайный сюрприз: может выпасть предмет, а может — бонус на время. Что именно — узнаешь, когда заберёшь!</p>';
-    if (a) h += '<p class="cab-meta"><b>Сейчас: ' + (BONUS_ICO[a.id] || "") + " " + esc(plainTitle(a.title)) + "</b> — ещё " + hm(Math.max(0, a.until - Date.now())) + "</p>" +
-      (b.nextIn > 0 ? '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>" : "");
-    else if (b.nextIn > 0) h += '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>";
-    else h += '<button class="btn green" type="button" id="don-claim">🎁 Забрать бесплатно</button>';
+      '<p class="cab-meta">Случайный сюрприз: может выпасть предмет, а может — бонус на время. Что именно — узнаешь, когда заберёшь!</p>';
+    // серия дней: ×1 → ×2 → ×3 (владелец: «чтобы был смысл заходить каждый день»)
+    var max = b.maxStreak || 3, cur = b.streak || 0, nxt = b.nextCount || 1, ready = !(b.nextIn > 0);
+    var lit = ready ? nxt : Math.max(1, cur);
+    h += '<div class="streak" title="Заходи каждый день подряд">';
+    for (var i = 1; i <= max; i++) h += '<span class="st' + (i < lit ? " done" : i === lit ? " now" : "") + '"><b>×' + i + "</b><small>" + (i === 1 ? "1-й день" : i === max ? "с " + i + "-го" : i + "-й день") + "</small></span>";
+    h += "</div>";
+    h += '<p class="cab-meta" style="flex:1">Забирай каждый день подряд: 1-й день — 1 подарок, 2-й — 2, с 3-го — <b>3 сразу</b>. Пропустишь день — серия начнётся заново с ×1.' +
+      (ready && b.streakDeadline > 0 ? ' <b class="warn-t">Забери до ' + new Date(b.streakDeadline).toLocaleString("ru-RU", {hour: "2-digit", minute: "2-digit", day: "numeric", month: "short"}) + ", чтобы не потерять ×" + cur + ".</b>" : "") + "</p>";
+    var acts = b.actives || (a ? [a] : []);
+    if (acts.length) h += '<p class="cab-meta"><b>Сейчас действует:</b> ' + acts.map(function (x) { return (BONUS_ICO[x.id] || "🎁") + " " + esc(plainTitle(x.title)) + " — ещё " + hm(Math.max(0, x.until - Date.now())); }).join("; ") + "</p>";
+    if (ready) h += '<button class="btn green" type="button" id="don-claim">🎁 Забрать бесплатно ×' + nxt + "</button>";
+    else h += '<button class="btn" type="button" disabled>Следующий (×' + nxt + ") через " + hm(b.nextIn) + "</button>";
     h += "</div>";
     // пакеты
     if (!donTiers) h += '<p class="cab-meta">Загружаю пакеты…</p>';
