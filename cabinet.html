@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css?v=6">
-<link rel="stylesheet" href="cabinet.css?v=3">
+<link rel="stylesheet" href="cabinet.css?v=4">
 </head>
 <body>
 <header class="cab-top">
@@ -87,6 +87,7 @@
       </div>
       <button class="btn small" id="logout" type="button">Выйти</button>
     </div>
+    <div class="card cab-bonusbar" id="bonusbar" aria-live="polite"></div>
     <div class="chips cab-tabs" id="tabs" role="tablist" aria-label="Разделы кабинета">
       <button class="chip" data-tab="profile" role="tab">Профиль</button>
       <button class="chip" data-tab="claims" role="tab">Приваты</button>
@@ -105,6 +106,16 @@
     <div id="tab-help" class="cab-tab" hidden></div>
   </section>
 
+  <!-- окно «Поддержать сервер» -->
+  <div class="modal" id="don-modal" hidden>
+    <div class="card modal-box modal-wide">
+      <h2>💛 Поддержать сервер</h2>
+      <p class="cab-meta">Оплата пока не подключена — но нажми «Поддержать» на любом пакете: мы увидим, сколько людей хотят помочь, а тебе — <b>разовый подарок</b> за интерес. Пакеты — только внешний вид, деньгами здесь не побеждают.</p>
+      <div class="don-grid" id="don-list"><p class="cab-meta">Загружаю…</p></div>
+      <div class="cab-row"><button class="btn" type="button" id="don-close">Закрыть</button></div>
+    </div>
+  </div>
+
   <!-- окно «Продать» -->
   <div class="modal" id="sell-modal" hidden>
     <form class="card modal-box" id="sell-form">
@@ -120,6 +131,6 @@
 </main>
 
 <div class="toast" id="toast" role="status"></div>
-<script src="cabinet.js?v=3"></script>
+<script src="cabinet.js?v=4"></script>
 </body>
 </html>

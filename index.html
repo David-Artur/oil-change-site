@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 
@@ -55,6 +55,8 @@
       <a class="btn blue" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>
       <a class="btn map" href="http://mc.daviart.com:8100" target="_blank" rel="noopener">🗺 Карта мира <span class="live">онлайн</span></a>
       <a class="btn gold" href="cabinet.html" data-cab>👤 Кабинет</a>
+      <a class="btn bonus" href="#donate" data-cab>🎁 Бонус дня</a>
+      <a class="btn don" href="#donate">💛 Донат</a>
     </div>
   </div>
 </header>
@@ -177,9 +179,9 @@
   </section>
 
   <section id="donate">
-    <h2>💛 Поддержать сервер</h2>
-    <p class="lead">Сервер живёт на свои деньги — аренда, домен, время. Если хочешь помочь — выбери пакет. <b>Оплата пока не подключена</b>, но нажать «Поддержать» уже можно: мы видим, сколько людей хотят помочь, и в благодарность <b>бесплатно</b> даём бонус ×1.25 к прокачке на 24 часа. Нажимай раз в день — бонус продлится.</p>
-    <p class="don-status" id="donate-status"></p>
+    <h2>🎁 Бонус дня и 💛 донат</h2>
+    <p class="lead">Сервер живёт на свои деньги — аренда, домен, время. Если хочешь помочь — выбери пакет. <b>Оплата пока не подключена</b>, но нажать «Поддержать» уже можно: мы видим, сколько людей хотят помочь, а за первое нажатие дарим <b>разовый подарок</b> (+45 минут к бонусу дня). Пакеты — только внешний вид: за деньги на сервере не побеждают.</p>
+    <div class="card don-bonus" id="don-bonus"></div>
     <div class="don-grid" id="donate-list"><p class="empty">Загружаю пакеты…</p></div>
     <p class="card don-msg" id="donate-msg" role="status" hidden></p>
     <p class="lead" style="font-size:.88rem">Платные пакеты — <b>только внешний вид</b> (цвет ника, значки, частицы, титулы): деньгами здесь не побеждают, так требуют и правила Mojang для серверов. Бесплатный бонус за кнопку — просто наше «спасибо». Когда оплата заработает — объявим в Discord.</p>
@@ -211,6 +213,6 @@
 <script src="data.js?v=8"></script>
 <script src="viz.js?v=8"></script>
 <script src="app.js?v=8"></script>
-<script src="pages.js?v=1"></script>
+<script src="pages.js?v=2"></script>
 </body>
 </html>

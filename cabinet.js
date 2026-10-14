@@ -178,6 +178,7 @@
     $("me-clan").textContent = me.clan ? "[" + me.clan.tag + "]" : "нет";
     var n = (me.market && me.market.notices || []).length + (me.invite ? 1 : 0);
     var badge = $("tab-badge"); if (badge) { badge.textContent = n ? String(n) : ""; badge.hidden = !n; }
+    renderBonusBar();
     renderProfile();
     renderClaims();
     renderClan();
@@ -473,6 +474,48 @@
     act("/market", {action: "sell", slot: sellSlot, price: p});
   };
 
+  // ---------------------------------------------------------------- бонус дня + донат (всегда рядом, над вкладками)
+  function renderBonusBar() {
+    var b = me.bonus || {}, a = b.active, h = '<div class="bb-left">';
+    if (a) {
+      var left = Math.max(0, a.until - Date.now());
+      h += '<span class="bb-ico">🎁</span><div><b>' + esc(a.title) + '</b> <span class="cab-meta">— ' + esc(a.desc) + '</span><br><span class="cab-meta">действует ещё ' + hm(left) +
+        (b.nextIn > 0 ? " · следующий бонус дня через " + hm(b.nextIn) : "") + "</span></div>";
+    } else if (b.nextIn > 0) h += '<span class="bb-ico">🎁</span><div><b>Бонус дня получен</b><br><span class="cab-meta">следующий — через ' + hm(b.nextIn) + "</span></div>";
+    else h += '<span class="bb-ico pulse">🎁</span><div><b>Тебя ждёт бонус дня!</b><br><span class="cab-meta">случайный, на 1–3 часа — бесплатно</span></div>';
+    h += '</div><div class="bb-right">';
+    if (!a && !(b.nextIn > 0)) h += '<button class="btn green" type="button" id="bb-claim">🎁 Забрать бонус</button>';
+    h += '<button class="btn gold" type="button" id="bb-donate">💛 Поддержать сервер' + (b.gifted ? "" : ' <span class="bb-gift">+подарок</span>') + "</button></div>";
+    $("bonusbar").innerHTML = h;
+    var c = $("bb-claim");
+    if (c) c.onclick = function () { c.disabled = true; api("/bonus", {}).then(function (j) { toast(j.message || "", !j.ok); if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); } }); };
+    $("bb-donate").onclick = openDonate;
+  }
+  function hm(ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); if (m === 60) { h++; m = 0; } return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); }
+
+  function openDonate() {
+    $("don-modal").hidden = false;
+    api("/donate").then(function (d) {
+      var t = (d && d.tiers) || [];
+      $("don-list").innerHTML = t.length ? t.map(function (x) {
+        return '<div class="card don-card"><h3>' + esc(x.title) + '</h3><p class="don-price">' + esc(x.price) + " <span>" + esc(x.period) + "</span></p><ul>" +
+          (x.perks || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + '</ul><button class="btn gold" type="button" data-dtier="' + esc(x.id) + '">Поддержать</button></div>';
+      }).join("") : '<p class="cab-meta">Не удалось загрузить пакеты.</p>';
+      Array.prototype.forEach.call(document.querySelectorAll("[data-dtier]"), function (b) {
+        b.onclick = function () {
+          b.disabled = true;
+          api("/donate", {tier: b.getAttribute("data-dtier")}).then(function (j) {
+            toast(j.message || "Спасибо!", !j.ok);
+            $("don-modal").hidden = true;
+            if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); }
+          });
+        };
+      });
+    });
+  }
+  $("don-close").onclick = function () { $("don-modal").hidden = true; };
+  $("don-modal").onclick = function (e) { if (e.target === $("don-modal")) $("don-modal").hidden = true; };
+
   // ---------------------------------------------------------------- аккаунт
   function renderAccount() {
     var a = me.account || {}, h = "";
@@ -555,5 +598,6 @@
   // ---------------------------------------------------------------- старт
   var h0 = (location.hash || "").replace("#", "");
   if (TABS.indexOf(h0) >= 0) tab = h0;
+  if (h0 === "donate") setTimeout(function () { if (me) openDonate(); }, 1500);
   if (tok()) { show("load"); load(true); } else show("login");
 })();

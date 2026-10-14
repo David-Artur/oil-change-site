@@ -344,3 +344,10 @@ main > section.pg-on { animation: pgIn .25s ease; }
 .btn.map .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7dff6a; box-shadow: 0 0 0 0 rgba(125, 255, 106, .7); animation: livePulse 1.6s infinite; }
 @keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(125, 255, 106, .7); } 70% { box-shadow: 0 0 0 7px rgba(125, 255, 106, 0); } 100% { box-shadow: 0 0 0 0 rgba(125, 255, 106, 0); } }
 .nav a.nav-map { color: #1f8fb3; font-weight: 700; border-color: #1f8fb3; }
+
+/* бонус дня рядом с донатом */
+.btn.bonus { --b: #3d8a1e; --bh: #7fcf55; --bl: #23540f; color: #fff; }
+.btn.don { --b: #c43a6a; --bh: #f07aa3; --bl: #7a1f3f; color: #fff; }
+.don-bonus { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; margin: 0 0 14px; border-color: var(--gold); background: var(--gold-bg); }
+.don-bonus .t { font-weight: 700; }
+.don-bonus .s { color: var(--muted); font-size: .92rem; }

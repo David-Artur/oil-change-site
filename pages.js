@@ -104,14 +104,26 @@
     box.innerHTML = tiers.map(function (t) {
       return '<div class="card don-card' + (t.id === "flame" ? " don-best" : "") + '">' + (t.id === "flame" ? '<span class="don-tag">выбор игроков</span>' : "") +
         "<h3>" + esc(t.title) + '</h3><p class="don-price">' + esc(t.price) + ' <span>' + esc(t.period) + "</span></p><ul>" +
-        (t.perks || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + '</ul><button class="btn gold" type="button" data-tier="' + esc(t.id) + '">Поддержать</button></div>';
+        (t.perks || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + '</ul><button class="btn gold" type="button" data-tier="' + esc(t.id) + '">Поддержать' + (d && d.nick && d.bonus && !d.bonus.gifted ? ' <small>+подарок</small>' : '') + '</button></div>';
     }).join("");
-    if (st) {
-      if (d.nick && d.boostLeft > 0) { var h = Math.floor(d.boostLeft / 3600000), m = Math.floor(d.boostLeft % 3600000 / 60000); st.innerHTML = "✦ <b>" + esc(d.nick) + "</b>, твой бонус ×" + d.mult + " к прокачке действует ещё " + h + " ч " + m + " мин. Спасибо!"; }
-      else if (d.nick) st.innerHTML = "Ты вошёл как <b>" + esc(d.nick) + "</b> — нажми «Поддержать», и бонус ×" + d.mult + " к прокачке на " + d.hours + " ч твой.";
-      else st.innerHTML = 'Чтобы получить бонус ×' + d.mult + " к прокачке на " + d.hours + ' ч, сначала <a href="cabinet.html">войди в личный кабинет</a> (ник и пароль от сервера).';
-    }
-    Array.prototype.forEach.call(box.querySelectorAll("[data-tier]"), function (b) {
+    var bb = document.getElementById("don-bonus");
+    if (bb) {
+      var bo = d && d.bonus, hm = function (ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); };
+      var types = ["⚡ Бодрость", "⛏ Шахтёрская смена", "👟 Лёгкие ноги", "🌙 Ночное зрение", "💰 Удачный торг", "🎣 Рыбацкая удача"].join(" · ");
+      if (!d || !d.nick) bb.innerHTML = '<div><div class="t">🎁 Бесплатный бонус дня</div><div class="s">Каждый день — случайный бонус на 1–3 часа: ' + types + '. Забрать — в личном кабинете (ник и пароль от сервера).</div></div><a class="btn green" href="cabinet.html">Войти и забрать</a>';
+      else if (bo && bo.active) bb.innerHTML = '<div><div class="t">🎁 ' + esc(bo.active.title) + '</div><div class="s">' + esc(bo.active.desc) + " — ещё " + hm(bo.active.until - Date.now()) + (bo.nextIn > 0 ? ". Следующий бонус — через " + hm(bo.nextIn) : "") + "</div></div>";
+      else if (bo && bo.nextIn > 0) bb.innerHTML = '<div><div class="t">🎁 Бонус дня получен</div><div class="s">Следующий — через ' + hm(bo.nextIn) + ".</div></div>";
+      else bb.innerHTML = '<div><div class="t">🎁 Тебя ждёт бонус дня, ' + esc(d.nick) + '!</div><div class="s">Случайный, на 1–3 часа: ' + types + '.</div></div><button class="btn green" type="button" id="don-claim">🎁 Забрать бонус</button>';
+      var cl = document.getElementById("don-claim");
+      if (cl) cl.onclick = function () {
+        cl.disabled = true;
+        var hd = {"Content-Type": "application/json"}, t = tok(); if (t) hd.Authorization = "Bearer " + t;
+        fetch(API + "/bonus", {method: "POST", headers: hd, body: "{}"}).then(function (r) { return r.json(); }).then(function (j) {
+          var msg = document.getElementById("donate-msg"); if (msg) { msg.hidden = false; msg.textContent = j.message || ""; }
+          donateApi(null).then(renderDonate).catch(function () {});
+        });
+      };
+    }    Array.prototype.forEach.call(box.querySelectorAll("[data-tier]"), function (b) {
       b.onclick = function () {
         b.disabled = true;
         donateApi({tier: b.getAttribute("data-tier")}).then(function (j) {
