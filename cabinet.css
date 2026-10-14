@@ -128,6 +128,15 @@
 .don-card ul { margin: 8px 0 12px; padding-left: 18px; color: var(--muted); font-size: .9rem; flex: 1; }
 .don-price { margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--gold); }
 .don-price span { font-size: .82rem; font-weight: 500; color: var(--soft); }
+/* ---------- скин ---------- */
+.skin-card { margin-bottom: 14px; }
+.skin-wrap { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+#skin-prev { width: 96px; height: 192px; image-rendering: pixelated; background: repeating-conic-gradient(var(--card2) 0 25%, var(--bg) 0 50%) 0 0/16px 16px; border: 2px solid var(--line2); border-radius: 6px; flex: 0 0 auto; }
+.skin-form { flex: 1 1 260px; min-width: 0; }
+.skin-form label { display: block; font-weight: 600; margin-top: 8px; }
+.skin-form input[type=file], .skin-form input:not([type]) { display: block; width: 100%; margin-top: 6px; }
+.skin-form input:not([type]) { font: 600 1rem var(--font); padding: 9px 11px; border: 1px solid var(--line2); border-radius: 6px; background: var(--card2); color: var(--text); }
+.skin-var select { margin-left: 6px; }
 /* ---------- инвентарь и рынок как в Minecraft ---------- */
 .mcwin { background: #c6c6c6; color: #3f3f3f; border: 3px solid; border-color: #fff #555 #555 #fff; outline: 2px solid #000; border-radius: 3px; padding: 8px; margin: 10px 2px 6px; max-width: 520px; }
 .mcwin h4 { margin: 0 0 6px; font: 700 .9rem var(--font); color: #3f3f3f; }

@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css?v=7">
-<link rel="stylesheet" href="cabinet.css?v=10">
+<link rel="stylesheet" href="cabinet.css?v=11">
 </head>
 <body>
 <header class="cab-top">
@@ -98,6 +98,25 @@
       </div>
       <button class="btn small" id="logout" type="button">Выйти</button>
     </div>
+    <div class="card cab-card skin-card" id="skin-card" hidden>
+      <h2>Скин</h2>
+      <div class="skin-wrap">
+        <canvas id="skin-prev" width="128" height="256" aria-label="Как будет выглядеть скин"></canvas>
+        <div class="skin-form">
+          <div class="chips" id="skin-mode" role="tablist">
+            <button class="chip" type="button" data-sm="upload" aria-selected="true">Свой файл</button>
+            <button class="chip" type="button" data-sm="name" aria-selected="false">Скин по нику</button>
+            <button class="chip" type="button" data-sm="url" aria-selected="false">Ссылка</button>
+          </div>
+          <div data-sp="upload"><label>PNG-файл скина (64×64)<input type="file" id="skin-file" accept="image/png"></label></div>
+          <div data-sp="name" hidden><label>Ник лицензионного игрока — возьмём его скин<input id="skin-name" maxlength="16" autocapitalize="off" spellcheck="false" placeholder="например, Notch"></label></div>
+          <div data-sp="url" hidden><label>Ссылка на картинку скина (https://…png)<input id="skin-url" maxlength="300" placeholder="https://…/skin.png"></label></div>
+          <label class="skin-var">Руки <select id="skin-var" class="cab-sel"><option value="classic">обычные (4 пикселя)</option><option value="slim">тонкие (3 пикселя)</option></select></label>
+          <div class="cab-row"><button class="btn green" type="button" id="skin-set">Поставить скин</button><button class="btn" type="button" id="skin-reset">Вернуть обычный</button></div>
+          <p class="cab-meta" id="skin-msg">Скин увидят все игроки, даже без модов. Менять — раз в минуту. Готовые скины — на сайтах вроде namemc.com или minecraftskins.com: скачай PNG и загрузи сюда.</p>
+        </div>
+      </div>
+    </div>
     <div id="profile-body"></div>
     </div>
     <div id="tab-claims" class="cab-tab" hidden></div>
@@ -125,7 +144,7 @@
 
 <div class="toast" id="toast" role="status"></div>
 <script src="mc-icons.js?v=1"></script>
-<script src="cabinet.js?v=12"></script>
+<script src="cabinet.js?v=13"></script>
 <script src="ui.js?v=1"></script>
 </body>
 </html>

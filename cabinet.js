@@ -245,6 +245,7 @@
     renderAccount();
     renderHelp();
     renderDonate();
+    skinSetup();
     if (market) renderMarket(); else renderMarketShell();
     setTab(tab);
   }
@@ -705,6 +706,70 @@
       "<li><b>Рынок:</b> купить с сайта откуда угодно (предмет — на Склад, забрать в лобби), продать из инвентаря, когда ты в лобби (окно с ценой), снять свой лот, Склад и что продалось, пока тебя не было. В игре — <code>/market</code> из любого мира.</li>" +
       "<li><b>Аккаунт:</b> вход — ником и паролем от сервера (тем же, что в <code>/login</code>). Здесь же — смена пароля, почта для восстановления, Discord, доверенные адреса (вход в игру без /login), выход на других устройствах.</li>" +
       "<li><b>Безопасность:</b> пароль проверяет сервер, сайт его не хранит. 5 неверных паролей — вход для ника закрыт на 15 минут. Потерял телефон — в игре <code>/account logout</code> или кнопка во вкладке «Аккаунт».</li></ul></div>";
+  }
+
+  // ---------------------------------------------------------------- скин (SkinsRestorer, VPLand 0.7.7)
+  var skinMode = "upload", skinData = null, skinChecked = false;
+  function drawSkin(img) {
+    var c = $("skin-prev"), g = c.getContext("2d"), slim = $("skin-var").value === "slim", old = img.height === 32, k = 8;
+    g.imageSmoothingEnabled = false; g.clearRect(0, 0, c.width, c.height);
+    var part = function (sx, sy, w, h, dx, dy, flip) {
+      g.save();
+      if (flip) { g.translate((dx + w) * k, dy * k); g.scale(-1, 1); g.drawImage(img, sx, sy, w, h, 0, 0, w * k, h * k); }
+      else g.drawImage(img, sx, sy, w, h, dx * k, dy * k, w * k, h * k);
+      g.restore();
+    };
+    var aw = slim ? 3 : 4, ox = 4;   // фигура 16×32 «пикселей скина» по центру холста
+    part(8, 8, 8, 8, ox, 0); part(40, 8, 8, 8, ox, 0);                 // голова + шапка
+    part(20, 20, 8, 12, ox, 8);                                        // туловище
+    part(44, 20, aw, 12, ox - aw, 8);                                  // правая рука (слева на картинке)
+    if (old) part(44, 20, aw, 12, ox + 8, 8, true); else part(36, 52, aw, 12, ox + 8, 8);
+    part(4, 20, 4, 12, ox, 20);                                        // правая нога
+    if (old) part(4, 20, 4, 12, ox + 4, 20, true); else part(20, 52, 4, 12, ox + 4, 20);
+    if (!old) { part(20, 36, 8, 12, ox, 8); part(44, 36, aw, 12, ox - aw, 8); part(52, 52, aw, 12, ox + 8, 8); part(4, 36, 4, 12, ox, 20); part(4, 52, 4, 12, ox + 4, 20); }
+  }
+  function skinSetup() {
+    if (skinChecked) return; skinChecked = true;
+    api("/skin").then(function (j) {
+      if (!j.ok || !j.available) return;
+      $("skin-card").hidden = false;
+      Array.prototype.forEach.call(document.querySelectorAll("#skin-mode .chip"), function (b) {
+        b.onclick = function () {
+          skinMode = b.getAttribute("data-sm");
+          Array.prototype.forEach.call(document.querySelectorAll("#skin-mode .chip"), function (x) { x.setAttribute("aria-selected", x === b); });
+          Array.prototype.forEach.call(document.querySelectorAll("[data-sp]"), function (x) { x.hidden = x.getAttribute("data-sp") !== skinMode; });
+        };
+      });
+      var lastImg = null;
+      $("skin-file").onchange = function () {
+        var f = this.files && this.files[0]; skinData = null;
+        if (!f) return;
+        if (f.size > 32 * 1024) { $("skin-msg").textContent = "Файл больше 32 КБ — это точно скин?"; return; }
+        var rd = new FileReader();
+        rd.onload = function () {
+          var im = new Image();
+          im.onload = function () {
+            if (im.width !== 64 || (im.height !== 64 && im.height !== 32)) { $("skin-msg").textContent = "Скин должен быть 64×64 пикселя, а у файла " + im.width + "×" + im.height + "."; return; }
+            skinData = rd.result; lastImg = im; drawSkin(im); $("skin-msg").textContent = "Вот так он будет выглядеть. Нажми «Поставить скин».";
+          };
+          im.src = rd.result;
+        };
+        rd.readAsDataURL(f);
+      };
+      $("skin-var").onchange = function () { if (lastImg) drawSkin(lastImg); };
+      var send = function (body, btn) {
+        btn.disabled = true; $("skin-msg").textContent = "Ставлю скин… это может занять до 30 секунд.";
+        api("/skin", body).then(function (r) { btn.disabled = false; $("skin-msg").textContent = r.message || ""; toast(r.message || "", !r.ok); });
+      };
+      $("skin-set").onclick = function () {
+        var v = $("skin-var").value, b;
+        if (skinMode === "upload") { if (!skinData) { toast("Сначала выбери PNG-файл скина.", true); return; } b = {action: "upload", data: skinData, variant: v}; }
+        else if (skinMode === "name") b = {action: "name", name: $("skin-name").value.trim()};
+        else b = {action: "url", url: $("skin-url").value.trim(), variant: v};
+        send(b, this);
+      };
+      $("skin-reset").onclick = function () { if (confirm("Вернуть обычный скин?")) send({action: "reset"}, this); };
+    });
   }
 
   // ---------------------------------------------------------------- старт
