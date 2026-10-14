@@ -32,6 +32,7 @@
 .chip[aria-selected=true] { background: var(--grass); color: #fff; border-color: var(--grass); }
 .cab-tab { display: grid; gap: 14px; }
 .cab-tab[hidden], .cab [hidden] { display: none !important; }
+.cab-tab > *, .cab-cards > * { min-width: 0; }   /* grid не растягивается под широкую таблицу — у таблицы своя прокрутка */
 .cab-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .cab-card { padding: 16px; }
 .cab-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
@@ -90,6 +91,17 @@
 .cab-sel { font: 500 .95rem var(--font); padding: 8px 10px; min-height: 44px; border: 1px solid var(--line2); border-radius: 6px; background: var(--card2); color: var(--text); }
 .note-card { border-color: var(--gold); background: var(--gold-bg); }
 .lots td:first-child { white-space: normal; }
+.lbl2 { display: block; font-weight: 600; font-size: .92rem; margin: 10px 0 0; }
+.lbl2 input { display: block; width: 100%; margin-top: 6px; font: 500 1rem var(--font); padding: 10px 12px; border: 1px solid var(--line2); border-radius: 6px; background: var(--card2); color: var(--text); min-height: 44px; }
+.cab input[type=email], .cab input[type=password] { font: 500 1rem var(--font); padding: 10px 12px; border: 1px solid var(--line2); border-radius: 6px; background: var(--card2); color: var(--text); min-height: 44px; }
+.cab-row input[type=email] { flex: 1; min-width: 160px; }
+.sellslot { cursor: pointer; text-align: left; font: inherit; color: var(--text); }
+.sellslot:hover { border-color: var(--grass); background: var(--grass-bg); }
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; }
+.modal[hidden] { display: none !important; }
+.modal-box { width: 100%; max-width: 420px; padding: 18px; }
+.modal-box label { display: block; font-weight: 600; margin-top: 8px; }
+.modal-box input { display: block; width: 100%; margin-top: 6px; font: 600 1.2rem var(--font); padding: 10px 12px; border: 1px solid var(--line2); border-radius: 6px; background: var(--card2); color: var(--text); min-height: 48px; }
 @media (max-width: 720px) {
   .inv { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .cab-grid2 { grid-template-columns: 1fr; }

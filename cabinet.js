@@ -21,7 +21,7 @@
   var RANK = {3: "лидер", 2: "заместитель", 1: "участник"};
   var RANKS = {level: "Уровень", money: "Деньги", pvp: "PvP", mobs: "Мобы", time: "Время в игре", market: "Оборот Рынка", ach: "Ачивки"};
   var CATS = [["all", "Все"], ["res", "Ресурсы"], ["blocks", "Блоки"], ["tools", "Снаряжение"], ["magic", "Магия"], ["food", "Еда"], ["other", "Другое"]];
-  var TABS = ["profile", "claims", "clan", "market", "ach", "help"];
+  var TABS = ["profile", "claims", "clan", "market", "ach", "account", "help"];
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); }
@@ -73,8 +73,9 @@
     var m = $("login-msg");
     m.className = "cab-msg";
     m.textContent = "Проверяю…";
-    api("/login", {nick: $("f-nick").value.trim(), code: $("f-code").value.trim()}).then(function (j) {
+    api("/login", {nick: $("f-nick").value.trim(), password: $("f-pass").value}).then(function (j) {
       if (!j.ok) { m.textContent = j.message || "Не получилось."; return; }
+      $("f-pass").value = "";
       memTok = j.token;
       setTok(j.token);
       m.className = "cab-msg ok";
@@ -82,6 +83,30 @@
       load(true);
     });
   });
+
+  // ---------------------------------------------------------------- забыл пароль (код на привязанную почту)
+  function recMode(on) { $("login-form").hidden = on; $("recover-form").hidden = !on; $("rec-msg").textContent = ""; }
+  $("forgot-link").onclick = function (e) { e.preventDefault(); $("r-nick").value = $("f-nick").value; recMode(true); };
+  $("back-login").onclick = function (e) { e.preventDefault(); recMode(false); $("rec-step1").hidden = false; $("rec-step2").hidden = true; };
+  $("r-send").onclick = function () {
+    var m = $("rec-msg"); m.className = "cab-msg"; m.textContent = "Отправляю…";
+    api("/recover", {step: "request", nick: $("r-nick").value.trim(), email: $("r-email").value.trim()}).then(function (j) {
+      m.className = "cab-msg" + (j.ok ? " ok" : ""); m.textContent = j.message || "";
+      if (j.ok) { $("rec-step1").hidden = true; $("rec-step2").hidden = false; }
+    });
+  };
+  $("r-reset").onclick = function () {
+    var m = $("rec-msg"); m.className = "cab-msg";
+    if ($("r-pass").value !== $("r-pass2").value) { m.textContent = "Пароли не совпадают."; return; }
+    api("/recover", {step: "reset", nick: $("r-nick").value.trim(), code: $("r-code").value.trim(), password: $("r-pass").value}).then(function (j) {
+      m.textContent = j.message || "";
+      if (!j.ok) return;
+      m.className = "cab-msg ok";
+      memTok = j.token; setTok(j.token);
+      recMode(false);
+      load(true);
+    });
+  };
 
   $("logout").addEventListener("click", function () {
     api("/logout", {}).then(function () { memTok = null; setTok(null); me = null; stopSync(); show("login"); toast("Вы вышли из кабинета."); });
@@ -157,6 +182,7 @@
     renderClaims();
     renderClan();
     renderAch();
+    renderAccount();
     renderHelp();
     if (market) renderMarket(); else renderMarketShell();
     setTab(tab);
@@ -362,9 +388,21 @@
     h += '<div class="card cab-card"><h3>Мои лоты (' + mk.mine.length + ")</h3>" + (mk.mine.length ? mk.mine.map(function (l) {
       var left = Math.max(0, Math.round((l.expires - Date.now()) / 60000));
       return '<div class="mem"><span class="nm">' + item(l) + '</span><b>' + money(l.price) + '</b><span class="cab-meta">ещё ' + (left >= 60 ? Math.floor(left / 60) + " ч " : "") + (left % 60) + ' мин</span><button class="btn small" data-m="unlist" data-id="' + l.id + '">Снять</button></div>';
-    }).join("") : '<p class="cab-meta">Нет лотов. Выставить — в игре у NPC «Рынок»: предмет в руку → «Продать» (или <code>/market sell цена</code>).</p>') + "</div>";
-    h += '<div class="card cab-card"><h3>Склад (' + mk.storage.length + ')</h3><p class="cab-meta">Непроданное, снятое и купленное на сайте. Забрать — у NPC «Рынок» в лобби, вкладка «Склад».</p>' +
+    }).join("") : '<p class="cab-meta">Нет лотов. Выставить — ниже «Продать из инвентаря» (когда ты в лобби) или в игре: <code>/market</code>.</p>') + "</div>";
+    h += '<div class="card cab-card"><h3>Склад (' + mk.storage.length + ')</h3><p class="cab-meta">Непроданное, снятое и купленное (на сайте или через <code>/market</code> вне лобби). Забрать — в лобби: NPC «Рынок» или <code>/market</code> → «Склад».</p>' +
       (mk.storage.length ? mk.storage.map(function (s) { return '<div class="mem"><span class="nm">' + item(s) + "</span></div>"; }).join("") : '<p class="cab-meta">Пусто.</p>') + "</div>";
+    h += "</div>";
+    // продать из инвентаря — только в игре и в лобби
+    h += '<div class="card cab-card"><h2>Продать из инвентаря</h2>';
+    if (!me.online) h += '<p class="cab-meta">Зайди в игру и встань в <b>лобби</b> — здесь появится твой инвентарь, и любой предмет можно выставить в один клик.</p>';
+    else if (!me.inLobby) h += '<p class="cab-meta">Ты сейчас в мире «' + esc(me.where ? me.where.world : "?") + '». Продавать можно только из <b>лобби</b> — принеси товар туда (купить с сайта можно откуда угодно).</p>';
+    else {
+      var sellables = (me.inventory || []).map(function (x, i) { return {x: x, slot: i === 4 ? 40 : i - 5, i: i}; }).filter(function (o) { return o.i >= 4 && !o.x.empty; });
+      h += '<p class="cab-meta">Ты в лобби — нажми на предмет и назови цену. Лотов: ' + mk.mine.length + " из " + (me.maxLots || 5) + ", лот висит 48 ч, комиссия " + Math.round(mk.commission || 10) + "%.</p>" +
+        (sellables.length ? '<div class="inv">' + sellables.map(function (o) {
+          return '<button class="slot sellslot" type="button" data-sell="' + o.slot + '" data-name="' + esc(o.x.item) + '" data-amount="' + o.x.amount + '" data-mat="' + esc(o.x.material) + '"><span class="it">' + item(o.x) + "</span></button>";
+        }).join("") + "</div>" : '<p class="cab-meta">Инвентарь пуст.</p>');
+    }
     h += "</div>";
     // витрина
     h += '<div class="card cab-card"><h2>Витрина Рынка</h2><p class="cab-meta">Купить с сайта: деньги — сразу, предмет — на твой Склад (забрать у NPC). Комиссия ' + Math.round(mk.commission || 10) + '% платит продавец.</p>' +
@@ -399,6 +437,98 @@
         act("/market", {action: a, id: id});
       };
     });
+    Array.prototype.forEach.call(document.querySelectorAll("#tab-market [data-sell]"), function (b) {
+      b.onclick = function () { openSell(Number(b.getAttribute("data-sell")), b.getAttribute("data-name"), Number(b.getAttribute("data-amount")), b.getAttribute("data-mat")); };
+    });
+  }
+
+  // ---------------------------------------------------------------- окно «Продать»
+  var sellSlot = -1;
+  function avgFor(mat) {
+    if (!market) return 0;
+    var l = market.lots.filter(function (x) { return x.material === mat && x.avg > 0; });
+    return l.length ? l[0].avg : 0;
+  }
+  function openSell(slot, name, amount, mat) {
+    sellSlot = slot;
+    var avg = avgFor(mat);
+    $("sell-what").innerHTML = "<b>" + esc((name || mat).replace(/_/g, " ")) + (amount > 1 ? " ×" + amount : "") + "</b>" + (avg ? " · средняя цена за неделю — " + money(avg) + "/шт" : "");
+    $("sell-price").value = avg ? Math.max(1, Math.round(avg * amount)) : "";
+    updNet();
+    $("sell-modal").hidden = false;
+    setTimeout(function () { $("sell-price").focus(); }, 50);
+  }
+  function updNet() {
+    var p = Number($("sell-price").value) || 0, c = (me && me.market && me.market.commission) || 10;
+    $("sell-net").textContent = p > 0 ? "Тебе после комиссии " + Math.round(c) + "% — " + money(Math.round(p * (100 - c)) / 100) : "";
+  }
+  $("sell-price").oninput = updNet;
+  $("sell-cancel").onclick = function () { $("sell-modal").hidden = true; };
+  $("sell-modal").onclick = function (e) { if (e.target === $("sell-modal")) $("sell-modal").hidden = true; };
+  $("sell-form").onsubmit = function (e) {
+    e.preventDefault();
+    var p = Number($("sell-price").value);
+    if (!(p >= 1)) return;
+    $("sell-modal").hidden = true;
+    act("/market", {action: "sell", slot: sellSlot, price: p});
+  };
+
+  // ---------------------------------------------------------------- аккаунт
+  function renderAccount() {
+    var a = me.account || {}, h = "";
+    h += '<div class="cab-cards">';
+    // пароль
+    h += '<div class="card cab-card"><h2>Пароль</h2><p class="cab-meta">Один пароль — и для сайта, и для <code>/login</code> в игре. Сменишь здесь — сменится и там.</p>' +
+      '<form id="acc-pass" autocomplete="off"><label class="lbl2">Текущий пароль<input type="password" id="ap-old" maxlength="30" autocomplete="current-password"></label>' +
+      '<label class="lbl2">Новый пароль (6–30 символов)<input type="password" id="ap-new" maxlength="30" autocomplete="new-password"></label>' +
+      '<label class="lbl2">Ещё раз<input type="password" id="ap-new2" maxlength="30" autocomplete="new-password"></label>' +
+      '<div class="cab-row"><button class="btn green" type="submit">Сменить пароль</button></div></form></div>';
+    // почта
+    h += '<div class="card cab-card"><h2>Почта</h2>';
+    if (!a.mail) h += '<p class="cab-meta">⚠ Отправка писем на сервере пока не подключена — привязка почты скоро заработает.</p>';
+    if (a.email) h += '<p>Привязана: <b>' + esc(a.email) + '</b>' + (a.emailAt ? ' <span class="cab-meta">с ' + new Date(a.emailAt).toLocaleDateString("ru-RU") + "</span>" : "") + '</p><p class="cab-meta">Забудешь пароль — на неё придёт код восстановления.</p>';
+    else h += '<p class="cab-meta">Не привязана. Привяжи — и сможешь сам восстановить пароль, если забудешь.</p>';
+    if (a.emailPending) h += '<p class="cab-meta">Код отправлен на <b>' + esc(a.emailPending) + '</b> — введи его:</p><div class="cab-row"><input type="text" id="em-code" maxlength="6" inputmode="numeric" placeholder="123456"><button class="btn small green" data-acc="em-confirm">Подтвердить</button></div>';
+    h += '<div class="cab-row"><input type="email" id="em-new" maxlength="80" placeholder="' + (a.email ? "новая почта" : "твоя@почта.ру") + '"><button class="btn small" data-acc="em-add">' + (a.email ? "Сменить" : "Привязать") + "</button></div>";
+    if (a.email) h += '<div class="cab-row"><button class="btn small red" data-acc="em-remove">Отвязать почту</button></div>';
+    h += "</div>";
+    // Discord
+    h += '<div class="card cab-card"><h2>Discord</h2><p class="cab-meta">Для связи с администрацией (например, при восстановлении аккаунта). Подтверждение через Discord — позже.</p>' +
+      '<div class="cab-row"><input type="text" id="dc-name" maxlength="32" value="' + esc(a.discord || "") + '" placeholder="ник в Discord"><button class="btn small" data-acc="dc-save">Сохранить</button></div></div>';
+    h += "</div>";
+    // доверенные адреса
+    var tr = a.trusted || [];
+    h += '<div class="card cab-card"><h2>Доверенные адреса</h2><p class="cab-meta">Заходишь в игру с доверенного адреса — <b>/login не нужен</b>, сервер пустит сам. Добавляй только свои устройства и свою домашнюю сеть: ' +
+      'все, кто выходит в интернет через тот же роутер (семья, общежитие, кафе), получат доступ к твоему нику. На мобильном интернете адрес часто меняется.</p>' +
+      '<p class="cab-meta">Адрес, с которого открыт сайт: <b>' + esc(a.siteIp || "?") + "</b>" + (a.gameIp ? " · в игре сейчас: <b>" + esc(a.gameIp) + "</b>" + (a.gameIp === a.siteIp ? " (тот же)" : " (другой — добавь его)") : "") + "</p>" +
+      (tr.length ? tr.map(function (x) {
+        return '<div class="mem"><span class="nm">' + esc(x.label) + ' <span class="cab-meta">' + esc(x.ip) + "</span></span><span class=\"cab-meta\">добавлен " + new Date(x.added).toLocaleDateString("ru-RU") +
+          (x.used ? " · вход " + new Date(x.used).toLocaleString("ru-RU") : " · ещё не входил") + '</span><button class="btn small red" data-acc="tr-remove" data-ip="' + esc(x.ip) + '">Убрать</button></div>';
+      }).join("") : '<p class="cab-meta">Список пуст — при каждом входе нужен /login.</p>') +
+      '<div class="cab-row"><input type="text" id="tr-label" maxlength="24" placeholder="подпись: дом, телефон…"><button class="btn small green" data-acc="tr-add-site">Добавить этот адрес</button>' +
+      (a.gameIp && a.gameIp !== a.siteIp ? '<button class="btn small green" data-acc="tr-add-game">Добавить адрес из игры</button>' : "") + "</div></div>";
+    // сессии
+    h += '<div class="card cab-card"><h2>Входы на сайт</h2><p class="cab-meta">Открыто сессий: ' + (a.sessions || 1) + '. Каждая живёт 30 дней с последнего визита.</p><div class="cab-row"><button class="btn small" data-acc="logout-all">Выйти на всех других устройствах</button></div></div>';
+    $("tab-account").innerHTML = h;
+    $("acc-pass").onsubmit = function (e) {
+      e.preventDefault();
+      if ($("ap-new").value !== $("ap-new2").value) { toast("Новые пароли не совпадают.", true); return; }
+      act("/password", {old: $("ap-old").value, "new": $("ap-new").value}).then(function (j) { if (j.ok) ["ap-old", "ap-new", "ap-new2"].forEach(function (k) { var i = $(k); if (i) i.value = ""; }); });
+    };
+    Array.prototype.forEach.call(document.querySelectorAll("#tab-account [data-acc]"), function (b) {
+      b.onclick = function () {
+        var k = b.getAttribute("data-acc"), pw;
+        if (k === "em-add") act("/email", {action: "add", email: $("em-new").value.trim()});
+        else if (k === "em-confirm") act("/email", {action: "confirm", code: $("em-code").value.trim()});
+        else if (k === "em-remove") { pw = prompt("Чтобы отвязать почту, введи пароль:"); if (pw) act("/email", {action: "remove", password: pw}); }
+        else if (k === "dc-save") act("/discord", {name: $("dc-name").value.trim()});
+        else if (k === "tr-add-site" || k === "tr-add-game") {
+          pw = prompt("Подтверди паролем — после этого с этого адреса в игру без /login:");
+          if (pw) act("/trusted", {action: "add", ip: k === "tr-add-game" ? a.gameIp : "", label: $("tr-label").value.trim(), password: pw});
+        } else if (k === "tr-remove") { pw = prompt("Подтверди паролем, чтобы убрать адрес:"); if (pw) act("/trusted", {action: "remove", ip: b.getAttribute("data-ip"), password: pw}); }
+        else if (k === "logout-all") act("/logout-all", {});
+      };
+    });
   }
 
   function renderAch() {
@@ -417,8 +547,9 @@
       "<li><b>Профиль:</b> где ты сейчас, здоровье, снаряжение и инвентарь (когда в игре), дома по мирам, места в рейтингах, тело, все навыки, статистика.</li>" +
       "<li><b>Приваты:</b> название, друзья и их права, двери для гостей, взрывы, видимость на карте, кнопка «На карте». Расширить, уменьшить или удалить — только в игре, компасом.</li>" +
       "<li><b>Клан:</b> создать, вступить по приглашению, клан-чат (сообщения видят и в игре), звания, исключить, передать лидерство, банк и налог, список всех кланов.</li>" +
-      "<li><b>Рынок:</b> купить с сайта (предмет — на Склад, забрать у NPC «Рынок»), снять свой лот, посмотреть Склад и что продалось, пока тебя не было. Выставить на продажу — в игре.</li>" +
-      "<li><b>Безопасность:</b> вход — только кодом из игры (<code>/account</code>). Потерял телефон или вошёл на чужом компьютере — напиши в игре <code>/account logout</code>: выйдут все устройства. Сессия живёт 30 дней с последнего визита.</li></ul></div>";
+      "<li><b>Рынок:</b> купить с сайта откуда угодно (предмет — на Склад, забрать в лобби), продать из инвентаря, когда ты в лобби (окно с ценой), снять свой лот, Склад и что продалось, пока тебя не было. В игре — <code>/market</code> из любого мира.</li>" +
+      "<li><b>Аккаунт:</b> вход — ником и паролем от сервера (тем же, что в <code>/login</code>). Здесь же — смена пароля, почта для восстановления, Discord, доверенные адреса (вход в игру без /login), выход на других устройствах.</li>" +
+      "<li><b>Безопасность:</b> пароль проверяет сервер, сайт его не хранит. 5 неверных паролей — вход для ника закрыт на 15 минут. Потерял телефон — в игре <code>/account logout</code> или кнопка во вкладке «Аккаунт».</li></ul></div>";
   }
 
   // ---------------------------------------------------------------- старт

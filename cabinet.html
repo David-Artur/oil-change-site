@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css?v=6">
-<link rel="stylesheet" href="cabinet.css?v=2">
+<link rel="stylesheet" href="cabinet.css?v=3">
 </head>
 <body>
 <header class="cab-top">
@@ -27,31 +27,47 @@
   <!-- вход -->
   <section id="login-view" hidden>
     <h1>Личный кабинет</h1>
-    <p class="lead">Привяжи свой игровой ник к сайту — и управляй приватами и кланом прямо отсюда, смотри навыки, тело, статистику и ачивки. Пароль не нужен: вход — одноразовым кодом из игры.</p>
+    <p class="lead">Управляй персонажем, приватами, кланом и Рынком прямо с сайта. Вход — <b>твоим ником и тем же паролем, что в игре</b> (как в <code>/login</code>).</p>
     <div class="cab-grid2">
-      <form class="card cab-login" id="login-form" autocomplete="off">
-        <h2>Войти</h2>
-        <ol class="cab-steps">
-          <li>Зайди на сервер <b>daviart.com</b> и напиши в чат <code>/account</code></li>
-          <li>Игра покажет код из 6 знаков (действует 10 минут, один раз)</li>
-          <li>Введи сюда свой ник и этот код</li>
-        </ol>
-        <label>Ник в игре<input id="f-nick" name="nick" required maxlength="16" autocapitalize="off" spellcheck="false" placeholder="Steve"></label>
-        <label>Код из игры<input id="f-code" name="code" required maxlength="8" autocapitalize="characters" spellcheck="false" placeholder="AB3K7Q" inputmode="text"></label>
-        <button class="btn green" type="submit">Войти</button>
-        <p class="cab-msg" id="login-msg" role="alert"></p>
-      </form>
+      <div>
+        <form class="card cab-login" id="login-form">
+          <h2>Войти</h2>
+          <label>Ник в игре<input id="f-nick" name="username" required maxlength="16" autocapitalize="off" spellcheck="false" autocomplete="username" placeholder="Steve"></label>
+          <label>Пароль от сервера<input id="f-pass" name="password" type="password" required maxlength="30" autocomplete="current-password" placeholder="тот же, что в /login"></label>
+          <button class="btn green" type="submit">Войти</button>
+          <p class="cab-msg" id="login-msg" role="alert"></p>
+          <p class="cab-note"><a href="#" id="forgot-link">Забыл пароль?</a> · Ещё не играл? Зайди на сервер <b>daviart.com</b> и зарегистрируйся (<code>/register</code>).</p>
+        </form>
+        <form class="card cab-login" id="recover-form" hidden style="margin-top:14px">
+          <h2>Восстановить пароль</h2>
+          <p class="cab-meta" id="rec-hint">Работает, если к аккаунту привязана почта (в кабинете → «Аккаунт»). Иначе — <a href="recover.html">заявка администрации</a>.</p>
+          <div id="rec-step1">
+            <label>Ник<input id="r-nick" maxlength="16" autocapitalize="off" spellcheck="false" autocomplete="username"></label>
+            <label>Привязанная почта<input id="r-email" type="email" maxlength="80" autocomplete="email"></label>
+            <button class="btn" type="button" id="r-send">Прислать код на почту</button>
+          </div>
+          <div id="rec-step2" hidden>
+            <label>Код из письма<input id="r-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></label>
+            <label>Новый пароль<input id="r-pass" type="password" maxlength="30" autocomplete="new-password"></label>
+            <label>Ещё раз<input id="r-pass2" type="password" maxlength="30" autocomplete="new-password"></label>
+            <button class="btn green" type="button" id="r-reset">Сменить пароль и войти</button>
+          </div>
+          <p class="cab-msg" id="rec-msg" role="alert"></p>
+          <p class="cab-note"><a href="#" id="back-login">← ко входу</a></p>
+        </form>
+      </div>
       <div class="card cab-why">
         <h2>Что даёт аккаунт</h2>
         <ul>
           <li><b>Персонаж:</b> где ты сейчас, здоровье и сытость, снаряжение и инвентарь, дома по мирам (со ссылкой на карту), места в рейтингах, все 39 навыков, тело, статистика.</li>
           <li><b>Приваты:</b> переименовать, добавить и убрать друзей, права каждого (строить, сундуки, двери, управление), двери для гостей, взрывы, видимость на веб-карте, «показать на карте».</li>
           <li><b>Клан:</b> создать, пригласить игрока (даже если он не в сети), принять приглашение, <b>клан-чат с сайта</b>, исключить, назначить заместителя, передать лидерство, налог, банк, список всех кланов.</li>
-          <li><b>Рынок:</b> витрина с поиском, <b>покупка с сайта</b> (предмет — на Склад), снять свой лот, Склад, что продалось, пока тебя не было.</li>
+          <li><b>Рынок:</b> витрина с поиском, <b>покупка с сайта</b> (предмет — на Склад), <b>продажа из инвентаря</b>, когда ты в лобби, снять свой лот, Склад, что продалось, пока тебя не было.</li>
+          <li><b>Аккаунт:</b> сменить пароль (и в игре тоже), привязать почту для восстановления пароля, Discord для связи, <b>доверенные адреса</b> — с них в игру без <code>/login</code>.</li>
           <li><b>Синхронизация:</b> данные — прямо с сервера, обновляются сами каждые 20 секунд; изменения отсюда сразу в игре.</li>
           <li><b>Ачивки:</b> прогресс по каждой — забрать награду можно у Гида в лобби.</li>
         </ul>
-        <p class="cab-note">Безопасно: сайт не знает твоего пароля. Код может получить только тот, кто вошёл в игру под ником (а ник защищён паролем). Выйти на всех устройствах — <code>/account logout</code> в игре. Размер привата и его удаление — только в игре.</p>
+        <p class="cab-note">Безопасно: пароль проверяет сам сервер (AuthMe), сайт его не хранит, связь — по https. 5 неверных паролей — вход для ника закрывается на 15 минут. Выйти на всех устройствах — <code>/account logout</code> в игре или кнопка во вкладке «Аккаунт».</p>
       </div>
     </div>
   </section>
@@ -77,6 +93,7 @@
       <button class="chip" data-tab="clan" role="tab">Клан</button>
       <button class="chip" data-tab="market" role="tab">Рынок <span class="badge" id="tab-badge" hidden></span></button>
       <button class="chip" data-tab="ach" role="tab">Ачивки</button>
+      <button class="chip" data-tab="account" role="tab">Аккаунт</button>
       <button class="chip" data-tab="help" role="tab">Справка</button>
     </div>
     <div id="tab-profile" class="cab-tab"></div>
@@ -84,13 +101,25 @@
     <div id="tab-clan" class="cab-tab" hidden></div>
     <div id="tab-market" class="cab-tab" hidden></div>
     <div id="tab-ach" class="cab-tab" hidden></div>
+    <div id="tab-account" class="cab-tab" hidden></div>
     <div id="tab-help" class="cab-tab" hidden></div>
   </section>
+
+  <!-- окно «Продать» -->
+  <div class="modal" id="sell-modal" hidden>
+    <form class="card modal-box" id="sell-form">
+      <h2>Продать на Рынке</h2>
+      <p class="cab-meta" id="sell-what"></p>
+      <label>Цена за всё, $<input id="sell-price" type="number" min="1" step="1" required inputmode="numeric"></label>
+      <p class="cab-meta" id="sell-net"></p>
+      <div class="cab-row"><button class="btn green" type="submit">Выставить</button><button class="btn" type="button" id="sell-cancel">Отмена</button></div>
+    </form>
+  </div>
 
   <section id="load-view"><p class="empty">Загружаю…</p></section>
 </main>
 
 <div class="toast" id="toast" role="status"></div>
-<script src="cabinet.js?v=2"></script>
+<script src="cabinet.js?v=3"></script>
 </body>
 </html>
