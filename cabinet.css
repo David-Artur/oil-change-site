@@ -128,6 +128,51 @@
 .don-card ul { margin: 8px 0 12px; padding-left: 18px; color: var(--muted); font-size: .9rem; flex: 1; }
 .don-price { margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--gold); }
 .don-price span { font-size: .82rem; font-weight: 500; color: var(--soft); }
+/* ---------- инвентарь и рынок как в Minecraft ---------- */
+.mcwin { background: #c6c6c6; color: #3f3f3f; border: 3px solid; border-color: #fff #555 #555 #fff; outline: 2px solid #000; border-radius: 3px; padding: 8px; margin: 10px 2px 6px; max-width: 520px; }
+.mcwin h4 { margin: 0 0 6px; font: 700 .9rem var(--font); color: #3f3f3f; }
+.mcgrid { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); }
+.mc-hot { margin-top: 8px; }
+.mcs { position: relative; aspect-ratio: 1; min-width: 0; padding: 0; margin: 0; background: #8b8b8b; border: 2px solid; border-color: #373737 #fff #fff #373737; border-radius: 0;
+  display: flex; align-items: center; justify-content: center; container-type: inline-size; cursor: default; font: inherit; }
+.mcs:not(.empty) { cursor: pointer; }
+.mcs:not(.empty):hover, .mcs.sel { background: #a9a9a9; }
+.mcs.sel { outline: 2px solid #fff; outline-offset: -4px; }
+.mcs.sellable:hover { background: #b5c9a5; }
+.mcs.mine::before { content: ""; position: absolute; left: 2px; top: 2px; width: 6px; height: 6px; background: #3d8a1e; }
+.mcs.empty[data-ph]::after { content: ""; position: absolute; inset: 18%; opacity: .25; background: currentColor; -webkit-mask: var(--ph) center/contain no-repeat; mask: var(--ph) center/contain no-repeat; }
+.mcs[data-ph=helmet] { --ph: url(img/mc/item__empty_armor_slot_helmet.png); }
+.mcs[data-ph=chestplate] { --ph: url(img/mc/item__empty_armor_slot_chestplate.png); }
+.mcs[data-ph=leggings] { --ph: url(img/mc/item__empty_armor_slot_leggings.png); }
+.mcs[data-ph=boots] { --ph: url(img/mc/item__empty_armor_slot_boots.png); }
+.mcs[data-ph=shield] { --ph: url(img/mc/item__empty_armor_slot_shield.png); }
+.mci { width: 76%; height: 76%; background-size: 100% auto; background-repeat: no-repeat; image-rendering: pixelated; pointer-events: none; }
+.mci-x { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #555; }
+.mcs.ench .mci, .mcs.ench .mcb { filter: drop-shadow(0 0 2px #c77dff) drop-shadow(0 0 1px #a855f7); }
+.mcb { position: relative; width: 44cqw; height: 44cqw; transform-style: preserve-3d; transform: rotateX(-30deg) rotateY(-45deg); pointer-events: none; margin-top: 6cqw; }
+.mcb i { position: absolute; inset: 0; background-size: 100% auto; image-rendering: pixelated; backface-visibility: hidden; }
+.mcb .t { transform: rotateX(90deg) translateZ(22cqw); }
+.mcb .l { transform: translateZ(22cqw); filter: brightness(.8); }
+.mcb .r { transform: rotateY(90deg) translateZ(22cqw); filter: brightness(.6); }
+.mcc { position: absolute; right: 3%; bottom: 0; color: #fff; font: 700 clamp(.62rem, 32cqw, .95rem)/1 var(--font); text-shadow: 2px 2px 0 #3f3f3f; pointer-events: none; }
+.mcd { position: absolute; left: 12%; right: 12%; bottom: 9%; height: 3px; background: #000; pointer-events: none; }
+.mcd i { display: block; height: 2px; }
+.mc-top { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 8px; }
+.mc-armor { display: grid; grid-template-columns: 1fr; width: calc((100% - 0px) / 9 * 1); min-width: 30px; flex: 0 0 calc(100% / 9); }
+.mc-me { flex: 1; align-self: stretch; background: #000; color: #ddd; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: .85rem; border: 2px solid; border-color: #373737 #fff #fff #373737; min-width: 0; }
+.mc-me span { color: #9a9a9a; font-size: .75rem; }
+.mc-off { flex: 0 0 calc(100% / 9); }
+.mc-sellbox { flex: 0 0 calc(100% / 9 * 1.6); display: flex; flex-direction: column; align-items: center; gap: 3px; font-weight: 700; font-size: .72rem; }
+.mc-sellbox .mcs { width: 100%; border-color: #2f6b15 #9ee27a #9ee27a #2f6b15; background: #7fa86a; }
+.mc-sellbox .mcs.over { background: #b8e39f; }
+.mctip { position: fixed; z-index: 90; pointer-events: none; max-width: 260px; background: rgba(16, 0, 16, .94); border: 2px solid #2a0a5e; outline: 1px solid #100010; color: #aaa; padding: 5px 8px; font-size: .82rem; line-height: 1.35; display: flex; flex-direction: column; }
+.mctip[hidden] { display: none; }
+.mctip b { color: #fff; font-weight: 600; }
+.mctip b.aq { color: #55ffff; }
+.mc-pick { display: flex; gap: 12px; align-items: center; margin-top: 10px; padding: 10px; border: 2px solid var(--line2); border-radius: 8px; background: var(--card2); }
+.mc-pick .mcs.big { width: 64px; flex: 0 0 64px; }
+.mc-pick p { margin: 4px 0 8px; }
+
 /* вкладка «Донат»: золотая, с мерцающим подарком */
 .chip.chip-don { background: linear-gradient(135deg, #f7d154, #d9a21b); color: #3a2600; border-color: #b8860b; font-weight: 700; box-shadow: 0 0 10px rgba(247, 199, 60, .55); }
 .chip.chip-don[aria-selected=true] { background: linear-gradient(135deg, #ffe07a, #e8b02a); color: #2a1b00; border-color: #8a6100; box-shadow: 0 0 14px rgba(247, 199, 60, .85); }

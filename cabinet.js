@@ -32,6 +32,58 @@
   var memTok = null;
   function tok() { return memTok || getTok(); }
   function item(it) { return esc((it.item || it.material || "?").replace(/_/g, " ")) + (it.amount > 1 ? " ×" + it.amount : "") + (it.enchanted ? ' <span class="ench" title="Зачарован">✦</span>' : ""); }
+  // ---------------------------------------------------------------- предметы как в Minecraft (иконки и названия — mc-icons.js)
+  function mcName(it) {
+    var m = String(it.material || "").toLowerCase(), plain = m.replace(/_/g, " ");
+    return it.item && it.item !== plain ? it.item : ((window.MC_RU || {})[m] || plain || "?");
+  }
+  function mcIcon(mat) {
+    var I = (window.MC_ICONS || {})[String(mat || "").toLowerCase()], u = function (t) { return "background-image:url(img/mc/" + t + ".png)"; };
+    if (!I) return '<span class="mci mci-x">?</span>';
+    if (I[0] === "i") return '<span class="mci" style="' + u(I[1]) + '"></span>';
+    return '<span class="mcb"><i class="t" style="' + u(I[1]) + '"></i><i class="l" style="' + u(I[2]) + '"></i><i class="r" style="' + u(I[3]) + '"></i></span>';
+  }
+  // ячейка: it — предмет или пусто; extra — {cls, attrs, tip:[строки]}
+  function mcSlot(it, extra) {
+    extra = extra || {};
+    var empty = !it || it.empty, tip = "";
+    if (!empty) tip = [mcName(it) + (it.amount > 1 ? " ×" + it.amount : "")].concat(it.enchanted ? ["✦ зачарован"] : [], it.durability != null ? ["прочность " + it.durability + "%"] : [], extra.tip || []).join("\n");
+    var h = '<button type="button" class="mcs' + (empty ? " empty" : "") + (it && it.enchanted ? " ench" : "") + (extra.cls ? " " + extra.cls : "") + '"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") +
+      (empty && extra.ph ? ' data-ph="' + extra.ph + '"' : "") + (extra.attrs || "") + (empty && !extra.attrs ? " tabindex=\"-1\"" : "") + ">";
+    if (!empty) {
+      h += mcIcon(it.material) + (it.amount > 1 ? '<b class="mcc">' + it.amount + "</b>" : "");
+      if (it.durability != null && it.durability < 100) h += '<i class="mcd"><i style="width:' + Math.max(4, it.durability) + "%;background:hsl(" + Math.round(it.durability * 1.2) + ',90%,45%)"></i></i>';
+    }
+    return h + "</button>";
+  }
+  // окно инвентаря как в игре: броня + вторая рука, рюкзак 3×9, хотбар. sell=true — ячейки кликаются (продажа) и перетаскиваются
+  var ARMOR_PH = ["helmet", "chestplate", "leggings", "boots"];
+  function mcInventory(inv, sell) {
+    var at = function (x, i) {   // i — индекс в me.inventory (0–3 броня, 4 вторая рука, 5–13 хотбар, 14–40 рюкзак); слот игры: 40 — вторая рука, 0–35
+      var slot = i === 4 ? 40 : i - 5, can = sell && i >= 4 && x && !x.empty;
+      return mcSlot(x, {ph: i < 4 ? ARMOR_PH[i] : i === 4 ? "shield" : "", cls: can ? "sellable" : "",
+        attrs: can ? ' data-sell="' + slot + '" draggable="true"' : "", tip: can ? ["нажми — продать"] : []});
+    };
+    var cells = inv.map(at);
+    return '<div class="mcwin mcinv"><div class="mc-top"><div class="mc-armor">' + cells.slice(0, 4).join("") + '</div><div class="mc-me"><b>' + esc(me.nick) + "</b>" +
+      (me.where ? '<span>' + esc(me.where.world) + "</span>" : "") + '</div><div class="mc-off">' + cells[4] + "</div>" +
+      (sell ? '<div class="mc-sellbox"><span>Продать</span>' + mcSlot(null, {cls: "drop", attrs: ' id="mc-drop"'}) + "</div>" : "") + "</div>" +
+      '<div class="mcgrid">' + cells.slice(14).join("") + '</div><div class="mcgrid mc-hot">' + cells.slice(5, 14).join("") + "</div></div>";
+  }
+  // всплывающая подсказка (как в игре): мышь — при наведении, палец — по нажатию
+  var tipEl = document.createElement("div"); tipEl.className = "mctip"; tipEl.hidden = true; document.body.appendChild(tipEl);
+  function showTip(el) {
+    var t = el.getAttribute("data-tip"); if (!t) return;
+    var ls = t.split("\n");
+    tipEl.innerHTML = '<b class="' + (el.classList.contains("ench") ? "aq" : "") + '">' + esc(ls[0]) + "</b>" + ls.slice(1).map(function (l) { return "<span>" + esc(l) + "</span>"; }).join("");
+    tipEl.hidden = false;
+    var r = el.getBoundingClientRect(), w = tipEl.offsetWidth, hh = tipEl.offsetHeight;
+    var x = Math.min(window.innerWidth - w - 6, Math.max(6, r.right + 6)), y = r.top - hh - 6 < 6 ? r.bottom + 6 : r.top - hh - 6;
+    if (r.right + 6 + w > window.innerWidth) x = Math.max(6, r.left - w - 6);
+    tipEl.style.left = x + "px"; tipEl.style.top = y + "px";
+  }
+  document.addEventListener("mouseover", function (e) { var s = e.target.closest && e.target.closest("[data-tip]"); if (s) showTip(s); else tipEl.hidden = true; });
+  document.addEventListener("scroll", function () { tipEl.hidden = true; }, true);
   function mapLink(worldId, x, y, z, label) {
     var base = "https://mc.daviart.com/map";   // через Caddy: https + сжатие (прямой :8100 без сжатия грузится на телефоне очень долго)
     return '<a class="btn small" target="_blank" rel="noopener" href="' + esc(base) + "/#" + encodeURIComponent(worldId) + ":" + x + ":" + (y || 64) + ":" + z + ':120:0:0:0:0:perspective">' + (label || "🗺 На карте") + "</a>";
@@ -236,11 +288,7 @@
         keys.map(function (k) { return '<div class="skill"><span>' + esc(SKILLS[k] || k) + "</span><b>" + sk[k] + "</b>" + bar(sk[k]) + "</div>"; }).join("") + "</div></div>";
     }
     if (me.inventory) {
-      var inv = me.inventory;
-      var cell = function (x) { return '<div class="slot' + (x.empty ? " empty" : "") + '" title="' + esc(x.slot || "") + '">' + (x.empty ? "" : '<span class="it">' + item(x) + "</span>" + (x.durability != null ? bar(x.durability, x.durability < 20 ? "bad" : x.durability < 50 ? "warn" : "") : "")) + "</div>"; };
-      h += '<div class="card cab-card"><h2>Снаряжение и инвентарь</h2><h3>Надето</h3><div class="inv inv5">' + inv.slice(0, 5).map(cell).join("") + "</div>" +
-        '<h3 style="margin-top:12px">Хотбар</h3><div class="inv">' + inv.slice(5, 14).map(cell).join("") + "</div>" +
-        '<h3 style="margin-top:12px">Рюкзак</h3><div class="inv">' + inv.slice(14).map(cell).join("") + "</div></div>";
+      h += '<div class="card cab-card"><h2>Инвентарь</h2><p class="cab-meta">Как в игре: наведи (или нажми) на предмет — название и прочность. Продать — во вкладке «Рынок», когда ты в лобби.</p>' + mcInventory(me.inventory, false) + "</div>";
     } else h += '<div class="card cab-card"><h2>Снаряжение и инвентарь</h2><p class="cab-meta">Видно, когда ты в игре.</p></div>';
     $("profile-body").innerHTML = h;
   }
@@ -393,44 +441,38 @@
     if (!me) return;
     var mk = me.market || {mine: [], storage: [], notices: []}, h = "";
     if (mk.notices && mk.notices.length) h += '<div class="card cab-card note-card"><h2>Пока тебя не было</h2>' + mk.notices.map(function (n) { return '<p class="cab-meta">• ' + esc(n) + "</p>"; }).join("") + '<p class="cab-note">Эти сообщения придут и в игре при входе.</p></div>';
+    // ряд ячеек на 9 (как сундук), минимум один ряд
+    var rows9 = function (cells) { while (cells.length % 9 || !cells.length) cells.push(mcSlot(null)); return '<div class="mcgrid">' + cells.join("") + "</div>"; };
+    var leftOf = function (l) { var m = Math.max(0, Math.round((l.expires - Date.now()) / 60000)); return (m >= 60 ? Math.floor(m / 60) + " ч " : "") + (m % 60) + " мин"; };
     h += '<div class="cab-cards">';
-    h += '<div class="card cab-card"><h3>Мои лоты (' + mk.mine.length + ")</h3>" + (mk.mine.length ? mk.mine.map(function (l) {
-      var left = Math.max(0, Math.round((l.expires - Date.now()) / 60000));
-      return '<div class="mem"><span class="nm">' + item(l) + '</span><b>' + money(l.price) + '</b><span class="cab-meta">ещё ' + (left >= 60 ? Math.floor(left / 60) + " ч " : "") + (left % 60) + ' мин</span><button class="btn small" data-m="unlist" data-id="' + l.id + '">Снять</button></div>';
-    }).join("") : '<p class="cab-meta">Нет лотов. Выставить — ниже «Продать из инвентаря» (когда ты в лобби) или в игре: <code>/market</code>.</p>') + "</div>";
-    h += '<div class="card cab-card"><h3>Склад (' + mk.storage.length + ')</h3><p class="cab-meta">Непроданное, снятое и купленное (на сайте или через <code>/market</code> вне лобби). Забрать — в лобби: NPC «Рынок» или <code>/market</code> → «Склад».</p>' +
-      (mk.storage.length ? mk.storage.map(function (s) { return '<div class="mem"><span class="nm">' + item(s) + "</span></div>"; }).join("") : '<p class="cab-meta">Пусто.</p>') + "</div>";
+    h += '<div class="card cab-card"><h3>Мои лоты (' + mk.mine.length + " из " + (me.maxLots || 5) + ")</h3>" + '<div class="mcwin"><h4>Мои лоты</h4>' +
+      rows9(mk.mine.map(function (l) { return mcSlot(l, {attrs: ' data-pick="mine:' + l.id + '"', tip: [money(l.price), "ещё " + leftOf(l), "нажми — подробнее"]}); })) + "</div>" +
+      (mk.mine.length ? "" : '<p class="cab-meta">Пусто. Выставить — ниже, перетащи или нажми предмет (когда ты в лобби), или в игре: <code>/market</code>.</p>') + "</div>";
+    h += '<div class="card cab-card"><h3>Склад (' + mk.storage.length + ')</h3><div class="mcwin"><h4>Склад</h4>' + rows9(mk.storage.map(function (s) { return mcSlot(s, {tip: ["забрать — в лобби: NPC «Рынок» или /market"]}); })) + "</div>" +
+      '<p class="cab-meta">Непроданное, снятое и купленное. Забрать — в лобби: NPC «Рынок» или <code>/market</code> → «Склад».</p></div>';
     h += "</div>";
     // продать из инвентаря — только в игре и в лобби
     h += '<div class="card cab-card"><h2>Продать из инвентаря</h2>';
     if (!me.online) h += '<p class="cab-meta">Зайди в игру и встань в <b>лобби</b> — здесь появится твой инвентарь, и любой предмет можно выставить в один клик.</p>';
     else if (!me.inLobby) h += '<p class="cab-meta">Ты сейчас в мире «' + esc(me.where ? me.where.world : "?") + '». Продавать можно только из <b>лобби</b> — принеси товар туда (купить с сайта можно откуда угодно).</p>';
-    else {
-      var sellables = (me.inventory || []).map(function (x, i) { return {x: x, slot: i === 4 ? 40 : i - 5, i: i}; }).filter(function (o) { return o.i >= 4 && !o.x.empty; });
-      h += '<p class="cab-meta">Ты в лобби — нажми на предмет и назови цену. Лотов: ' + mk.mine.length + " из " + (me.maxLots || 5) + ", лот висит 48 ч, комиссия " + Math.round(mk.commission || 10) + "%.</p>" +
-        (sellables.length ? '<div class="inv">' + sellables.map(function (o) {
-          return '<button class="slot sellslot" type="button" data-sell="' + o.slot + '" data-name="' + esc(o.x.item) + '" data-amount="' + o.x.amount + '" data-mat="' + esc(o.x.material) + '"><span class="it">' + item(o.x) + "</span></button>";
-        }).join("") + "</div>" : '<p class="cab-meta">Инвентарь пуст.</p>');
-    }
+    else h += '<p class="cab-meta">Ты в лобби: <b>нажми на предмет</b> или <b>перетащи его в ячейку «Продать»</b> и назови цену. Лотов: ' + mk.mine.length + " из " + (me.maxLots || 5) + ", лот висит 48 ч, комиссия " + Math.round(mk.commission || 10) + "%.</p>" + mcInventory(me.inventory || [], true);
     h += "</div>";
     // витрина
     h += '<div class="card cab-card"><h2>Витрина Рынка</h2><p class="cab-meta">Купить с сайта: деньги — сразу, предмет — на твой Склад (забрать у NPC). Комиссия ' + Math.round(mk.commission || 10) + '% платит продавец.</p>' +
-      '<div class="cab-row"><input type="text" id="mk-q" placeholder="Поиск: diamond, книга…" value="' + esc(mkFilter.q) + '"><select id="mk-sort" class="cab-sel"><option value="new">сначала новые</option><option value="cheap">сначала дешёвые</option><option value="dear">сначала дорогие</option></select></div>' +
+      '<div class="cab-row"><input type="text" id="mk-q" placeholder="Поиск: алмаз, книга, ник…" value="' + esc(mkFilter.q) + '"><select id="mk-sort" class="cab-sel"><option value="new">сначала новые</option><option value="cheap">сначала дешёвые</option><option value="dear">сначала дорогие</option></select></div>' +
       '<div class="chips" id="mk-cats">' + CATS.map(function (c) { return '<button class="chip" data-cat="' + c[0] + '" aria-selected="' + (mkFilter.cat === c[0]) + '">' + c[1] + "</button>"; }).join("") + "</div>";
     if (!market) h += '<p class="cab-meta">Загружаю…</p>';
     else {
       var lots = market.lots.filter(function (l) {
-        return (mkFilter.cat === "all" || l.cat === mkFilter.cat) && (!mkFilter.q || (l.item + " " + l.material + " " + l.seller).toLowerCase().indexOf(mkFilter.q.toLowerCase()) >= 0);
+        return (mkFilter.cat === "all" || l.cat === mkFilter.cat) && (!mkFilter.q || (l.item + " " + l.material + " " + mcName(l) + " " + l.seller).toLowerCase().indexOf(mkFilter.q.toLowerCase()) >= 0);
       });
       if (mkFilter.sort === "cheap") lots.sort(function (a, b) { return a.price - b.price; });
       if (mkFilter.sort === "dear") lots.sort(function (a, b) { return b.price - a.price; });
-      h += lots.length ? '<div class="tablewrap"><table class="mtable lots"><thead><tr><th>Товар</th><th>Цена</th><th>Средняя</th><th>Продавец</th><th></th></tr></thead><tbody>' + lots.map(function (l) {
-        var mine = l.seller === me.nick;
-        return "<tr><td>" + item(l) + "</td><td><b>" + money(l.price) + "</b></td><td>" + (l.avg ? money(l.avg) + "/шт" : "—") + "</td><td>" + esc(l.seller) + "</td><td>" +
-          (mine ? '<button class="btn small" data-m="unlist" data-id="' + l.id + '">Снять</button>' : '<button class="btn small green" data-m="buy" data-id="' + l.id + '" data-p="' + l.price + '" data-n="' + esc(l.item) + '">Купить</button>') + "</td></tr>";
-      }).join("") + "</tbody></table></div>" : '<p class="cab-meta">Ничего не нашлось.</p>';
+      h += lots.length ? '<div class="mcwin mc-shop"><h4>Рынок · ' + lots.length + " " + (lots.length === 1 ? "лот" : "лотов") + "</h4>" + rows9(lots.map(function (l) {
+        return mcSlot(l, {cls: l.seller === me.nick ? "mine" : "", attrs: ' data-pick="lot:' + l.id + '"', tip: [money(l.price) + (l.avg ? " · средняя " + money(l.avg) + "/шт" : ""), "продавец " + l.seller, "нажми — купить"]});
+      })) + "</div>" : '<p class="cab-meta">Ничего не нашлось.</p>';
     }
-    h += "</div>";
+    h += '<div id="mk-pick"></div></div>';
     var hadFocus = document.activeElement && document.activeElement.id === "mk-q";
     $("tab-market").innerHTML = h;
     var q = $("mk-q"), so = $("mk-sort");
@@ -446,8 +488,44 @@
         act("/market", {action: a, id: id});
       };
     });
+    // продажа: нажать на предмет или перетащить его в ячейку «Продать»
+    var bySlot = function (s) { s = Number(s); var inv = me.inventory || []; return inv[s === 40 ? 4 : s + 5]; };
+    var sellFrom = function (s) { var x = bySlot(s); if (x && !x.empty) openSell(Number(s), mcName(x), x.amount, x.material); };
     Array.prototype.forEach.call(document.querySelectorAll("#tab-market [data-sell]"), function (b) {
-      b.onclick = function () { openSell(Number(b.getAttribute("data-sell")), b.getAttribute("data-name"), Number(b.getAttribute("data-amount")), b.getAttribute("data-mat")); };
+      b.onclick = function () { sellFrom(b.getAttribute("data-sell")); };
+      b.ondragstart = function (e) { e.dataTransfer.setData("text/plain", b.getAttribute("data-sell")); e.dataTransfer.effectAllowed = "move"; tipEl.hidden = true; };
+    });
+    var drop = $("mc-drop");
+    if (drop) {
+      drop.ondragover = function (e) { e.preventDefault(); drop.classList.add("over"); };
+      drop.ondragleave = function () { drop.classList.remove("over"); };
+      drop.ondrop = function (e) { e.preventDefault(); drop.classList.remove("over"); sellFrom(e.dataTransfer.getData("text/plain")); };
+      drop.onclick = function () { toast("Перетащи сюда предмет из инвентаря — или просто нажми на него."); };
+    }
+    // выбор лота → карточка с кнопкой «Купить» / «Снять»
+    Array.prototype.forEach.call(document.querySelectorAll("#tab-market [data-pick]"), function (b) {
+      b.onclick = function () {
+        var p = b.getAttribute("data-pick").split(":"), id = Number(p[1]);
+        var l = p[0] === "mine" ? mk.mine.filter(function (x) { return x.id === id; })[0] : (market.lots || []).filter(function (x) { return x.id === id; })[0];
+        if (!l) return;
+        var mine = p[0] === "mine" || l.seller === me.nick;
+        Array.prototype.forEach.call(document.querySelectorAll("#tab-market .mcs.sel"), function (x) { x.classList.remove("sel"); });
+        b.classList.add("sel");
+        var box = p[0] === "mine" ? b.closest(".cab-card") : $("mk-pick"), old = document.querySelector("#tab-market .mc-pick");
+        if (old) old.remove();
+        var d = document.createElement("div");
+        d.className = "mc-pick";
+        d.innerHTML = '<div class="mcs big' + (l.enchanted ? " ench" : "") + '">' + mcIcon(l.material) + (l.amount > 1 ? '<b class="mcc">' + l.amount + "</b>" : "") + "</div><div><b>" + esc(mcName(l)) + (l.amount > 1 ? " ×" + l.amount : "") + "</b>" +
+          '<p class="cab-meta">' + money(l.price) + (l.avg ? " · средняя за неделю " + money(l.avg) + "/шт" : "") + (l.seller ? " · продавец " + esc(l.seller) : "") + (l.expires ? " · ещё " + leftOf(l) : "") + "</p>" +
+          (mine ? '<button class="btn small" data-m2="unlist">Снять лот</button>' : '<button class="btn small green" data-m2="buy">Купить за ' + money(l.price) + "</button>") + "</div>";
+        box.appendChild(d);
+        d.querySelector("[data-m2]").onclick = function () {
+          var a = this.getAttribute("data-m2");
+          if (a === "buy" && !confirm("Купить «" + mcName(l) + "» за " + money(l.price) + "? Предмет ляжет на Склад Рынка.")) return;
+          if (a === "unlist" && !confirm("Снять лот? Предмет уйдёт на Склад.")) return;
+          act("/market", {action: a, id: id});
+        };
+      };
     });
   }
 
@@ -485,9 +563,10 @@
   // ---------------------------------------------------------------- бонус дня + донат (всегда рядом, над вкладками)
   // продолжение кнопки «Донат» (полупрозрачная часть той же кнопки): что сейчас действует / подарок ждёт; клик — во вкладку «Донат»
   var BONUS_ICO = {vigor: "⚡", miner: "⛏", legs: "👟", night: "🌙", trade: "💰", fish: "🎣"};
+  function plainTitle(t) { return String(t || "").replace(/^[^\p{L}\p{N}]+/u, ""); }   // сервер до 0.7.5 присылал «🎣 Рыбацкая удача» — без двойной иконки
   function renderBonusBar() {
     var b = me.bonus || {}, a = b.active, el = $("bonusbar"), h;
-    if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(a.title) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
+    if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(plainTitle(a.title)) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
     else if (b.nextIn > 0) { h = '<span class="bc-ico">🎁</span><span class="bc-t">подарок через ' + hm(b.nextIn) + "</span>"; el.title = "Следующий подарок дня"; }
     else { h = '<span class="bc-ico gift-glow">🎁</span>Подарок ждёт!'; el.title = "Забрать бесплатный подарок дня"; }
     el.className = "don-ext" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
@@ -510,7 +589,7 @@
     h += '<div class="don-grid don-tab-grid"><div class="card don-card don-free"><span class="don-tag">Бесплатно · каждый день</span><div class="gift-big"><span class="gift-glow">🎁</span></div>' +
       '<h3>Подарок дня</h3><p class="don-price">0 ₽ <span>каждые 24 часа</span></p>' +
       '<p class="cab-meta" style="flex:1">Случайный сюрприз: может выпасть предмет, а может — бонус на время. Что именно — узнаешь, когда заберёшь!</p>';
-    if (a) h += '<p class="cab-meta"><b>Сейчас: ' + esc(a.title) + "</b> — ещё " + hm(Math.max(0, a.until - Date.now())) + "</p>" +
+    if (a) h += '<p class="cab-meta"><b>Сейчас: ' + (BONUS_ICO[a.id] || "") + " " + esc(plainTitle(a.title)) + "</b> — ещё " + hm(Math.max(0, a.until - Date.now())) + "</p>" +
       (b.nextIn > 0 ? '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>" : "");
     else if (b.nextIn > 0) h += '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>";
     else h += '<button class="btn green" type="button" id="don-claim">🎁 Забрать бесплатно</button>';
