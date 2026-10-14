@@ -12,6 +12,7 @@ window.SITE = {
   version: "1.21.10",
   discord: "https://discord.gg/sTgZM8Kh",
   map: "http://mc.daviart.com:8100",
+  api: "https://mc.daviart.com/api",   // VPLand WebApi (кабинет, донат)
   statusApi: "https://api.mcsrvstat.us/3/daviart.com",
   leadersJson: "https://raw.githubusercontent.com/David-Artur/daviart-data/main/leaders.json",
   // Личный кабинет (cabinet.html): true — показывать ссылки. Включить, когда на сервере заработает https://mc.daviart.com/api (Caddy).
