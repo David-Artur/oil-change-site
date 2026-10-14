@@ -490,7 +490,7 @@
       h += '<span class="bb-ico">🎁</span><div><b>' + esc(a.title) + '</b> <span class="cab-meta">— ' + esc(a.desc) + '</span><br><span class="cab-meta">действует ещё ' + hm(left) +
         (b.nextIn > 0 ? " · следующий бонус дня через " + hm(b.nextIn) : "") + "</span></div>";
     } else if (b.nextIn > 0) h += '<span class="bb-ico">🎁</span><div><b>Бонус дня получен</b><br><span class="cab-meta">следующий — через ' + hm(b.nextIn) + "</span></div>";
-    else h += '<span class="bb-ico pulse">🎁</span><div><b>Тебя ждёт бонус дня!</b><br><span class="cab-meta">случайный, на 1–3 часа — бесплатно</span></div>';
+    else h += '<span class="bb-ico pulse">🎁</span><div><b>Тебя ждёт бонус дня!</b><br><span class="cab-meta">случайный сюрприз — бесплатно</span></div>';
     h += '</div><div class="bb-right">';
     if (!a && !(b.nextIn > 0)) h += '<button class="btn green" type="button" id="bb-claim">🎁 Забрать бонус</button>';
     h += '<button class="btn gold" type="button" id="bb-donate">💛 Поддержать сервер' + (b.gifted ? "" : ' <span class="bb-gift">+подарок</span>') + "</button></div>";
@@ -514,8 +514,8 @@
       ". Пакеты — только внешний вид: за деньги на сервере не побеждают.</p></div>";
     // бесплатная карточка
     h += '<div class="don-grid don-tab-grid"><div class="card don-card don-free"><span class="don-tag">Бесплатно · каждый день</span><div class="gift-big"><span class="gift-glow">🎁</span></div>' +
-      '<h3>Подарок дня</h3><p class="don-price">0 ₽ <span>на 1–3 часа</span></p><ul>' +
-      (b.types || []).map(function (x) { return "<li><b>" + esc(x.title) + "</b> — " + esc(x.desc) + "</li>"; }).join("") + "</ul>";
+      '<h3>Подарок дня</h3><p class="don-price">0 ₽ <span>каждые 24 часа</span></p>' +
+      '<p class="cab-meta" style="flex:1">Случайный сюрприз: может выпасть предмет, а может — бонус на время. Что именно — узнаешь, когда заберёшь!</p>';
     if (a) h += '<p class="cab-meta"><b>Сейчас: ' + esc(a.title) + "</b> — ещё " + hm(Math.max(0, a.until - Date.now())) + "</p>" +
       (b.nextIn > 0 ? '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>" : "");
     else if (b.nextIn > 0) h += '<button class="btn" type="button" disabled>Следующий через ' + hm(b.nextIn) + "</button>";

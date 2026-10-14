@@ -109,11 +109,11 @@
     var bb = document.getElementById("don-bonus");
     if (bb) {
       var bo = d && d.bonus, hm = function (ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); };
-      var types = ["⚡ Бодрость", "⛏ Шахтёрская смена", "👟 Лёгкие ноги", "🌙 Ночное зрение", "💰 Удачный торг", "🎣 Рыбацкая удача"].join(" · ");
-      if (!d || !d.nick) bb.innerHTML = '<div><div class="t">🎁 Бесплатный бонус дня</div><div class="s">Каждый день — случайный бонус на 1–3 часа: ' + types + '. Забрать — в личном кабинете (ник и пароль от сервера).</div></div><a class="btn green" href="cabinet.html">Войти и забрать</a>';
+      var surprise = "случайный сюрприз — может выпасть предмет, а может бонус на время";
+      if (!d || !d.nick) bb.innerHTML = '<div><div class="t">🎁 Бесплатный подарок дня</div><div class="s">Каждые 24 часа — ' + surprise + '. Забрать — в личном кабинете (ник и пароль от сервера).</div></div><a class="btn green" href="cabinet.html">Войти и забрать</a>';
       else if (bo && bo.active) bb.innerHTML = '<div><div class="t">🎁 ' + esc(bo.active.title) + '</div><div class="s">' + esc(bo.active.desc) + " — ещё " + hm(bo.active.until - Date.now()) + (bo.nextIn > 0 ? ". Следующий бонус — через " + hm(bo.nextIn) : "") + "</div></div>";
       else if (bo && bo.nextIn > 0) bb.innerHTML = '<div><div class="t">🎁 Бонус дня получен</div><div class="s">Следующий — через ' + hm(bo.nextIn) + ".</div></div>";
-      else bb.innerHTML = '<div><div class="t">🎁 Тебя ждёт бонус дня, ' + esc(d.nick) + '!</div><div class="s">Случайный, на 1–3 часа: ' + types + '.</div></div><button class="btn green" type="button" id="don-claim">🎁 Забрать бонус</button>';
+      else bb.innerHTML = '<div><div class="t">🎁 Тебя ждёт бонус дня, ' + esc(d.nick) + '!</div><div class="s">Тебя ждёт ' + surprise + '.</div></div><button class="btn green" type="button" id="don-claim">🎁 Забрать бонус</button>';
       var cl = document.getElementById("don-claim");
       if (cl) cl.onclick = function () {
         cl.disabled = true;
