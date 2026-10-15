@@ -150,6 +150,7 @@ code.cmdcopy:hover, code.cmdcopy:focus-visible { background: var(--grass-bg, rgb
 .world .pic.nether { background: repeating-conic-gradient(#6e1f1f 0 25%, #5a1818 0 50%) 0 0 / 16px 16px; }
 .world .pic.nether::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(255, 120, 20, .55)); }
 .world .pic.end { background: repeating-conic-gradient(#e6e1a8 0 25%, #d8d29a 0 50%) 0 0 / 16px 16px; }
+.world .pic.pixel { image-rendering: pixelated; }
 .world .pic.end::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, #120d1c 0 55%, transparent 55%); }
 .world .badge { position: absolute; z-index: 1; left: 10px; bottom: 10px; font-size: .8rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(10, 7, 4, .78); color: #fff; }
 .world .body { padding: 14px; min-width: 0; display: flex; flex-direction: column; gap: 10px; flex: 1; }

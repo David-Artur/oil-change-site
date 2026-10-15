@@ -32,10 +32,10 @@
   /* ---------- миры ---------- */
   var wl = $("worlds-list");
   if (wl && window.WORLDS) wl.innerHTML = WORLDS.map(function (w) {
-    var pic = w.img ? '<div class="pic" style="background-image:url(' + w.img + ')" role="img" aria-label="Карта местности у точки прибытия: ' + esc(w.name) + '">'
+    var pic = w.img ? '<div class="pic' + (w.pixel ? " pixel" : "") + '" style="background-image:url(' + w.img + ')" role="img" aria-label="' + esc(w.imgAlt || ("Карта местности у точки прибытия: " + w.name)) + '">'
                     : '<div class="pic ' + (w.art || "") + '" aria-hidden="true">';
     pic += '<span class="badge">' + esc(w.tag) + "</span></div>";
-    var st = [["Сложность", w.diff], ["PvP", w.pvp], ["Смерть: навыки", w.loss], ["Вещи при смерти", w.items],
+    var st = w.stats ? w.stats.slice() : [["Сложность", w.diff], ["PvP", w.pvp], ["Смерть: навыки", w.loss], ["Вещи при смерти", w.items],
               ["Приваты", w.claims ? "есть" : "нет"], ["Телепорт", w.tp || "—"]];
     if (w.grief) st.push(["Гриферство", w.grief, 1]);
     if (w.boom) st.push(["Взрывы", w.boom, 1]);
@@ -49,10 +49,10 @@
     return '<article class="card world tone-' + w.tone + '" id="w-' + w.id + '">' + pic + '<div class="body"><h3>' + esc(w.name) +
       ' <span class="lvl" title="Рекомендуемый уровень">ур. ' + esc(w.level) + "</span></h3>" + dl + notes + maplink + "</div></article>";
   }).join("");
-  // веб-карта: кнопки на каждый мир (+ лобби)
+  // веб-карта: кнопки на каждый мир (лобби — карточка в WORLDS, последняя)
   function mapUrl(id) { return S.map + "/#" + id + ":0:64:0:1500:0:0:0:1:flat"; }
   var mb = $("map-buttons");
-  if (mb && S.map) mb.innerHTML = [["world_lobby", "Лобби"]].concat((window.WORLDS || []).map(function (w) { return [w.map, w.name]; }))
+  if (mb && S.map) mb.innerHTML = (window.WORLDS || []).filter(function (w) { return w.map; }).map(function (w) { return [w.map, w.name]; })
     .map(function (x) { return '<a class="btn small" href="' + mapUrl(x[0]) + '" target="_blank" rel="noopener">' + esc(x[1]) + "</a>"; }).join("");
 
   /* Компас из Minecraft — пиксельная иконка 16×16 (d — обод, m — рамка, f — циферблат, r — стрелка, k — ось, g — хвост). */
