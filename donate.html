@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Игровая валюта — DaviArt Craft</title>
+<meta name="description" content="Купить игровые $ на DaviArt Craft: та же валюта, что зарабатывается в игре. Тратится у Заклинателя, Торговца, на Рынке и на приваты.">
+<meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://daviart.com/donate.html">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DaviArt Craft">
+<meta property="og:title" content="Игровая валюта — DaviArt Craft">
+<meta property="og:description" content="Игровые $ для DaviArt Craft: пакеты от 59 ₽. Та же валюта, что зарабатывается в игре.">
+<meta property="og:image" content="https://daviart.com/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css?v=4">
+<style>
+  .packs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 12px; margin: 14px 0; }
+  .pack { display: grid; gap: 6px; text-align: center; padding: 16px 12px; cursor: pointer; border: 2px solid transparent; }
+  .pack:focus-visible, .pack.sel { border-color: #d9a520; }
+  .pack .amt { font-size: 1.7rem; font-weight: 800; color: #d9a520; font-variant-numeric: tabular-nums; }
+  .pack .price { font-size: 1.15rem; font-weight: 700; }
+  .pack .bonus { font-size: .85rem; font-weight: 600; color: #3d8a1e; min-height: 1.2em; }
+  .pack .hint { font-size: .8rem; opacity: .75; }
+  .buy { display: grid; gap: 10px; }
+  .buy label { font-weight: 600; }
+  .buy input { font: inherit; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(127,127,127,.45); background: transparent; color: inherit; max-width: 320px; }
+  .soon { padding: 10px 12px; border-radius: 8px; background: rgba(217,165,32,.14); font-weight: 500; }
+  .tbl { overflow-x: auto; }
+  .tbl table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  .tbl th, .tbl td { text-align: left; padding: 7px 8px; border-bottom: 1px solid rgba(127,127,127,.25); vertical-align: top; }
+  .tbl td.num { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  #msg { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<header class="page-head">
+  <div class="wrap">
+    <img src="img/icon-192.png" alt="" width="44" height="44">
+    <a href="./">DaviArt Craft</a>
+    <a class="back" href="./">← На главную</a>
+  </div>
+</header>
+
+<main class="wrap" style="max-width:900px">
+  <section style="padding-top:28px">
+    <h2>Игровая валюта $</h2>
+    <p class="lead">Донат на DaviArt Craft — это только игровые доллары. <b>Та же валюта</b>, что игроки зарабатывают медью, голосами и ачивками: никаких особых привилегий, просто экономия времени.</p>
+  </section>
+
+  <section id="packs">
+    <h2>Пакеты</h2>
+    <p>Выбери пакет — чем больше, тем выгоднее. $1000 — это примерно 5–10 часов обычной игры.</p>
+    <div class="packs" id="packList" role="radiogroup" aria-label="Пакеты валюты"></div>
+
+    <div class="card buy">
+      <label for="nick">Твой ник в игре</label>
+      <input id="nick" type="text" maxlength="16" autocomplete="off" placeholder="Например, Steve" pattern="[A-Za-z0-9_]{3,16}">
+      <div class="soon">Оплата на сайте подключается. Пока купить можно через администратора в Discord: скопируй заявку и отправь её.</div>
+      <div class="ip-box codebox"><span class="addr" id="msg">Выбери пакет и впиши ник</span>
+        <button class="btn gold small" type="button" id="copyMsg">Копировать заявку</button></div>
+      <div class="actions" style="margin-top:0">
+        <a class="btn blue" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Открыть Discord</a>
+      </div>
+      <p class="note-mail">Деньги приходят на ник, когда ты зайдёшь на сервер. Почта для вопросов: <b>dav.art.iva@gmail.com</b></p>
+    </div>
+  </section>
+
+  <section id="spend">
+    <h2>На что потратить $</h2>
+    <div class="card">
+      <h3>✦ Заклинатель (лобби, ПКМ)</h3>
+      <p>Чары на персонажа. Повторная покупка продлевает, до 2 часов.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Чары</th><th>Что даёт</th><th>Время</th><th>Цена</th></tr></thead>
+        <tbody>
+          <tr><td>Железные кости</td><td>новые раны частей тела не появляются</td><td>30 мин</td><td class="num">$300</td></tr>
+          <tr><td>Внутренний огонь</td><td>холод не мешает: ни дебафа, ни обморожений</td><td>30 мин</td><td class="num">$150</td></tr>
+          <tr><td>Ледяная кровь</td><td>жара не мешает: ни дебафа, ни перегрева</td><td>30 мин</td><td class="num">$150</td></tr>
+          <tr><td>Каменная кожа</td><td>весь урон меньше на 20%</td><td>10 мин</td><td class="num">$250</td></tr>
+          <tr><td>Огнеупор</td><td>огонь и лава не обжигают</td><td>5 мин</td><td class="num">$200</td></tr>
+          <tr><td>Исцеление</td><td>все раны заживают сразу</td><td>сразу</td><td class="num">$200</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <ul class="card plist">
+      <li><b>Торговец</b> (лобби): книги чар, зелья, редкости — от $10 до $8000, витрина меняется каждые 2 часа.</li>
+      <li><b>Рынок</b> (лобби, <code>/market</code>): вещи других игроков.</li>
+      <li><b>Приваты</b>: расширение — $1 за блок объёма. <b>Кланы</b>: банк клана и клановые приваты.</li>
+      <li><b>Телепорты</b> по миру и на место смерти (<code>/return</code>) — по цене мира.</li>
+    </ul>
+  </section>
+
+  <section id="free">
+    <h2>Или заработай бесплатно</h2>
+    <ul class="card plist">
+      <li><b>Медь</b> — Скупщику в лобби: $1 за сырую медь, $9 за блок.</li>
+      <li><b>Голоса</b> за сервер на мониторингах — $25 за каждый, до $100 в день: <code>/vote</code>.</li>
+      <li><b>Приведи друга</b> — $1000, когда друг дорастёт до 10 уровня. Друг в первый час игры вводит <code>/ref ТвойНик</code> и получает прокачку ×2 до 10 уровня. Твой код: <code>/ref code</code>.</li>
+      <li><b>Ачивки</b> у Гида — от $25 до $200.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Важно</h2>
+    <ul class="card plist">
+      <li>Валюта игровая: её нельзя вывести или обменять на настоящие деньги.</li>
+      <li>Купленные $ — такие же, как заработанные: их можно потерять при смерти в PvP (10% баланса) и потратить на Рынке.</li>
+      <li>Возврат — если валюта не пришла на ник. Пиши в Discord.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+(function () {
+  var PACKS = [
+    { amt: 500, rub: 59, bonus: '' },
+    { amt: 1000, rub: 99, bonus: '' },
+    { amt: 3000, rub: 279, bonus: '+7% выгоднее' },
+    { amt: 6000, rub: 499, bonus: '+20% выгоднее' },
+    { amt: 15000, rub: 1190, bonus: '+25% выгоднее' }
+  ];
+  var list = document.getElementById('packList'), nick = document.getElementById('nick'), msg = document.getElementById('msg');
+  var sel = 1;
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function render() {
+    list.innerHTML = '';
+    PACKS.forEach(function (p, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'card pack' + (i === sel ? ' sel' : '');
+      b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', i === sel ? 'true' : 'false');
+      b.innerHTML = '<span class="amt">$' + fmt(p.amt) + '</span><span class="price">' + p.rub + ' ₽</span>'
+        + '<span class="bonus">' + p.bonus + '</span><span class="hint">' + (p.rub / p.amt * 1000).toFixed(0) + ' ₽ за $1000</span>';
+      b.addEventListener('click', function () { sel = i; render(); update(); });
+      list.appendChild(b);
+    });
+  }
+  function update() {
+    var n = (nick.value || '').trim(), p = PACKS[sel];
+    var okNick = /^[A-Za-z0-9_]{3,16}$/.test(n);
+    msg.textContent = okNick ? 'Хочу купить $' + fmt(p.amt) + ' за ' + p.rub + ' ₽ на ник ' + n + ' (DaviArt Craft)'
+      : 'Впиши ник (латиница, цифры, _ ; 3–16 символов)';
+  }
+  nick.addEventListener('input', update);
+  document.getElementById('copyMsg').addEventListener('click', function () {
+    var t = msg.textContent, btn = this;
+    function done() { btn.textContent = 'Скопировано'; setTimeout(function () { btn.textContent = 'Копировать заявку'; }, 1500); }
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () {});
+  });
+  render(); update();
+})();
+</script>
+</body>
+</html>
