@@ -209,7 +209,15 @@
   .cab-kpis { gap: 14px; }
 }
 
-/* У215: «Приведи друга» в профиле */
+/* У218: «Подарок дня» — на кнопке «Бонусы» (подпись) и вверху вкладки «Бонусы» */
+.chip-bonus .bn-ext { margin-left: 6px; padding-left: 8px; border-left: 1px solid var(--line2); font-weight: 600; font-size: .82rem; white-space: nowrap; }
+.chip-bonus .bn-ext:empty { display: none; }
+.chip-bonus .bn-ext .bc-ico { font-size: 1rem; line-height: 1; }
+.chip-bonus .bn-ext .bc-t { color: var(--soft); font-weight: 500; }
+.bn-gift { margin-bottom: 14px; }
+.bn-gift .don-sub:first-child { margin-top: 4px; }
+
+/* У217 (бывш. У215): «Приведи друга» в профиле */
 .ref-card { margin-top: 14px; border-color: var(--gold); background: var(--gold-bg); }
 .ref-card h2 { margin: 0 0 8px; }
 .ref-code { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0 0; }

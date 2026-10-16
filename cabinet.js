@@ -189,7 +189,7 @@
     try { history.replaceState(null, "", "#" + t); } catch (e) { }
     if (t === "market" && !market) loadMarket();
     if (t === "clan" && !clansAll) loadClans();
-    if (t === "donate" && me) { renderDonate(); if (window.DShop && $("cab-votes")) DShop.votes($("cab-votes"), me.nick); }
+    if (t === "donate" && me) renderDonate();
     if (t === "bonus" && me) loadBonus();
   }
 
@@ -571,51 +571,61 @@
     act("/market", {action: "sell", slot: sellSlot, price: p});
   };
 
-  // ---------------------------------------------------------------- бонус дня + донат (всегда рядом, над вкладками)
-  // продолжение кнопки «Донат» (полупрозрачная часть той же кнопки): что сейчас действует / подарок ждёт; клик — во вкладку «Донат»
+  // ---------------------------------------------------------------- подарок дня (подпись на кнопке «Бонусы»)
+  // У218 (2026-10-16): подпись «+$25 за голос» / действующий подарок — на кнопке «🎁 Бонусы» (раньше — продолжение кнопки «Донат»)
   var BONUS_ICO = {vigor: "⚡", miner: "⛏", legs: "👟", night: "🌙", trade: "💰", fish: "🎣"};
   function plainTitle(t) { return String(t || "").replace(/^[^\p{L}\p{N}]+/u, ""); }   // сервер до 0.7.5 присылал «🎣 Рыбацкая удача» — без двойной иконки
   function renderBonusBar() {
     var b = me.bonus || {}, a = b.active, el = $("bonusbar"), h;
     var acts = b.actives || (a ? [a] : []);
-    // У208.2 (2026-10-16): «Подарок дня» теперь = $25 за голос (вкладка «Донат»); старый случайный бонус больше не предлагаем —
+    // У208.2 (2026-10-16): «Подарок дня» теперь = $25 за голос (с У218 — вкладка «Бонусы»); старый случайный бонус больше не предлагаем —
     // показываем только ещё действующий (взятый раньше), иначе — подсказку про голоса.
-    if (!acts.length) { el.className = "don-ext ready"; el.innerHTML = '<span class="bc-t">+$25 за голос</span>'; el.title = "Подарок дня — голосуй за сервер"; return; }
-    if (acts.length > 1) { h = '<span class="bc-ico">' + acts.map(function (x) { return BONUS_ICO[x.id] || "🎁"; }).join("") + "</span>Подарки ×" + acts.length + ' <span class="bc-t">· ещё ' + hm(Math.max(0, acts[0].until - Date.now())) + "</span>"; el.title = acts.map(function (x) { return plainTitle(x.title); }).join(", ") + " — подарки дня из «Доната»"; }
-    else if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(plainTitle(a.title)) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
+    if (!el) return;
+    if (!acts.length) { el.className = "bn-ext ready"; el.innerHTML = '<span class="bc-t">+$25 за голос</span>'; el.title = "Подарок дня — голосуй за сервер"; return; }
+    if (acts.length > 1) { h = '<span class="bc-ico">' + acts.map(function (x) { return BONUS_ICO[x.id] || "🎁"; }).join("") + "</span>Подарки ×" + acts.length + ' <span class="bc-t">· ещё ' + hm(Math.max(0, acts[0].until - Date.now())) + "</span>"; el.title = acts.map(function (x) { return plainTitle(x.title); }).join(", ") + " — подарки дня"; }
+    else if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(plainTitle(a.title)) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня"; }
     else if (b.nextIn > 0) { h = '<span class="bc-ico">🎁</span><span class="bc-t">подарок через ' + hm(b.nextIn) + "</span>"; el.title = "Следующий подарок дня"; }
     else { h = '<span class="bc-ico gift-glow">🎁</span>Подарок ждёт!'; el.title = "Забрать бесплатный подарок дня"; }
-    el.className = "don-ext" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
+    el.className = "bn-ext" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
     el.innerHTML = h;
   }
   function hm(ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); if (m === 60) { h++; m = 0; } return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); }
 
-  // вкладка «Донат»: первая карточка — бесплатный подарок (бонус дня), дальше — пакеты
+  // вкладка «Донат»: только пакеты игровой валюты (подарок дня за голоса — во вкладке «Бонусы», У218)
   function openDonate() { setTab("donate"); var t = $("tabs"); if (t && t.scrollIntoView) t.scrollIntoView({behavior: "smooth", block: "start"}); }
   function loadDonate() { donLoading = true; return api("/donate").then(function (d) { donLoading = false; donTiers = (d && d.tiers) || []; renderDonate(); }); }
   function claimBonus(btn) {
     btn.disabled = true;
     api("/bonus", {}).then(function (j) { toast(j.message || "", !j.ok); if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); renderDonate(); } else btn.disabled = false; });
   }
-  // У208.2 (2026-10-16): «Донат» = бесплатные $ за голоса (карточки площадок) + пакеты игровой валюты (оплата lava.top) — shop.js.
-  // Рисуется один раз (кабинет обновляется каждые 20 с — форма оплаты не должна сбрасываться); отметки голосов — раз в минуту.
-  var donVoteTimer = null;
+  // У208.2 (2026-10-16): пакеты игровой валюты (оплата lava.top) — shop.js. У218: голоса («Подарок дня») — во вкладке «Бонусы».
+  // Рисуется один раз (кабинет обновляется каждые 20 с — форма оплаты не должна сбрасываться).
   function renderDonate() {
     var box = $("tab-donate");
     if (!box || !me) return;
-    if (!$("cab-votes")) {
+    if (!$("cab-packs")) {
       box.innerHTML = '<div class="card cab-card"><h2>💛 Донат</h2><p class="cab-meta">Игровые $ — те же, что зарабатываются в игре: у Заклинателя, Торговца, на Рынке. ' +
-        'Получай их <b>бесплатно за голоса</b> за сервер — или купи пакет. Валюта приходит на ник <b>' + esc(me.nick) + '</b>.</p></div>' +
-        '<h3 class="don-sub">🎁 Подарок дня: голосуй за сервер — $25 за каждый голос</h3><div id="cab-votes"><p class="cab-meta">Загружаю площадки…</p></div>' +
+        'Купи пакет — валюта придёт на ник <b>' + esc(me.nick) + '</b>. Бесплатные $ (подарок дня за голоса и другие) — во вкладке <a href="#bonus" data-go="bonus">«🎁 Бонусы»</a>.</p></div>' +
         '<h3 class="don-sub">💰 Пакеты игровой валюты</h3><div id="cab-packs"><p class="cab-meta">Загружаю пакеты…</p></div>' +
         '<p class="cab-meta">Оплата — картой, СБП, зарубежной картой или PayPal (lava.top). <a href="oferta.html" target="_blank" rel="noopener">Условия покупки и возврата</a>.</p>';
-      if (window.DShop) {
-        DShop.votes($("cab-votes"), me.nick);
-        DShop.packs($("cab-packs"), function () { return me.nick; }, {askNick: false});
-      } else $("cab-votes").innerHTML = '<p class="cab-meta">Не загрузился модуль доната — обнови страницу.</p>';
+      var go = box.querySelector("[data-go]");
+      if (go) go.onclick = function (e) { e.preventDefault(); setTab("bonus"); };
+      if (window.DShop) DShop.packs($("cab-packs"), function () { return me.nick; }, {askNick: false});
+      else $("cab-packs").innerHTML = '<p class="cab-meta">Не загрузился модуль доната — обнови страницу.</p>';
     }
-    if (!donVoteTimer && window.DShop) donVoteTimer = setInterval(function () {
-      if (!document.hidden && tab === "donate" && $("cab-votes")) DShop.votes($("cab-votes"), me.nick);
+  }
+
+  // У218: «Подарок дня» (голоса за сервер, $25 за голос — DShop.votes) — всегда в самом верху вкладки «Бонусы»; отметки — раз в минуту
+  var giftVoteTimer = null;
+  function giftHtml() {
+    return '<h3 class="don-sub">🎁 Подарок дня: голосуй за сервер — $25 за каждый голос</h3><div id="cab-votes"><p class="cab-meta">Загружаю площадки…</p></div>';
+  }
+  function renderGift() {
+    if (!$("cab-votes") || !me) return;
+    if (window.DShop) DShop.votes($("cab-votes"), me.nick);
+    else $("cab-votes").innerHTML = '<p class="cab-meta">Не загрузился модуль голосования — обнови страницу.</p>';
+    if (!giftVoteTimer && window.DShop) giftVoteTimer = setInterval(function () {
+      if (!document.hidden && tab === "bonus" && $("cab-votes")) DShop.votes($("cab-votes"), me.nick);
     }, 60000);
   }
 
@@ -657,13 +667,17 @@
       else { toast((j && j.error) || "Не получилось.", true); if (b) b.disabled = false; }
     });
   }
+  // У218: вкладка = «Подарок дня» сверху (#bn-gift, рисуется один раз) + бонусы VPBonus ниже (#bn-rest, перерисовываются)
   function loadBonus() {
-    var box = $("tab-bonus");
-    if (!box.innerHTML) box.innerHTML = '<div class="card cab-card"><p class="cab-meta">Загружаю бонусы…</p></div>';
+    var tabBox = $("tab-bonus");
+    if (!$("bn-rest")) {
+      tabBox.innerHTML = '<div id="bn-gift" class="bn-gift">' + giftHtml() + '</div><div id="bn-rest"><div class="card cab-card"><p class="cab-meta">Загружаю бонусы…</p></div></div>';
+      renderGift();
+    }
     bonusStatus().then(renderBonus);
   }
   function renderBonus(d) {
-    var box = $("tab-bonus");
+    var box = $("bn-rest") || $("tab-bonus");
     if (!d || !d.ok) { box.innerHTML = '<div class="card cab-card"><p class="cab-meta">' + esc((d && d.error) || "Не удалось загрузить.") + "</p></div>"; return; }
     var STATE = {done: ["✔ Получено", "bn-done"], wait: ["⏳ Получишь, когда наиграешь " + d.needPlay + " мин (сейчас " + d.played + ")", "bn-wait"],
       todo: ["Ещё не выполнено", "bn-todo"], join: ["Зайди на наш Discord-сервер — и бонус придёт", "bn-wait"], off: ["Скоро заработает", "bn-off"], info: ["", "bn-info"],
@@ -684,7 +698,7 @@
       b.onclick = function () {
         var k = b.getAttribute("data-bn");
         if (k === "account") return setTab("account");
-        if (k === "donate") return setTab("donate");
+        if (k === "donate") { var g = $("bn-gift"); if (g && g.scrollIntoView) g.scrollIntoView({behavior: "smooth", block: "start"}); return; }   // У218: голоса — вверху этой вкладки
         dcLink(b);
       };
     });
