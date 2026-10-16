@@ -588,7 +588,8 @@
   function renderDonate() {
     var b = me.bonus || {}, a = b.active, h = '<div class="card cab-card"><h2>💛 Донат и подарки</h2><p class="cab-meta">Первая карточка — <b>бесплатный подарок</b>, забирай каждый день. ' +
       'Оплата пакетов пока не подключена — но нажми «Поддержать»: мы увидим, сколько людей хотят помочь' + (b.gifted ? "" : ", а тебе — <b>разовый подарок</b> +45 минут к бонусу") +
-      ". Пакеты — только внешний вид: за деньги на сервере не побеждают.</p></div>";
+      ". Пакеты ниже — внешний вид.</p>" +
+      '<p style="margin:10px 0 0"><a class="btn gold" href="donate.html">💰 Купить игровую валюту $</a> <span class="cab-meta">от 59 ₽ · тратится у Заклинателя, Торговца, на Рынке</span></p></div>';
     // бесплатная карточка
     h += '<div class="don-grid don-tab-grid"><div class="card don-card don-free"><span class="don-tag">Бесплатно · каждый день</span><div class="gift-big"><span class="gift-glow">🎁</span></div>' +
       '<h3>Подарок дня</h3><p class="don-price">0 ₽ <span>каждые 24 часа</span></p>' +
