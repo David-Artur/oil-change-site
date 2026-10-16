@@ -422,3 +422,6 @@ main > section.pg-on { animation: pgIn .25s ease; }
 .pf-agree { font-weight: 500 !important; display: flex; gap: 8px; align-items: flex-start; }
 .pf-err { color: var(--red); font-weight: 600; margin: 0; }
 .don-sub { margin: 18px 0 8px; font-size: 1.15rem; }
+.cur-switch { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.cur-switch button { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 2px solid var(--line2); background: transparent; color: var(--text); cursor: pointer; min-height: 40px; }
+.cur-switch button.sel { border-color: var(--gold); background: var(--gold-bg); }

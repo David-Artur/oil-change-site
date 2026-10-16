@@ -46,16 +46,22 @@
   function packs(el, getNick, opts) {
     if (!el) return;
     opts = opts || {};
-    var data = null, sel = null, msel = 0;
+    var data = null, sel = null, msel = 0, cur = get("daviart-cur") || "RUB";
+    var CUR = [{id: "RUB", label: "₽ Рубли"}, {id: "USD", label: "$ Доллары"}, {id: "EUR", label: "€ Евро"}];
+    function ms() { return (data.methods || []).filter(function (m) { return m.currency === cur; }); }
+    function priceOf(p) { return cur === "RUB" ? fmt(p.rub) + " ₽" : cur === "EUR" ? "€" + Number(p.eur || 0).toFixed(2) : "$" + Number(p.usd).toFixed(2); }
     json(PAY + "/packs").then(function (d) { data = d; draw(); }).catch(function () {
       el.innerHTML = '<p class="empty">Оплата сейчас недоступна — сервер не отвечает. Попробуй позже или напиши в <a href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>.</p>';
     });
     function draw() {
       if (!data || !data.packs || !data.packs.length) { el.innerHTML = '<p class="empty">Пакеты не загрузились.</p>'; return; }
-      var h = '<div class="don-grid">';
+      if (!ms().length) cur = "RUB";
+      var h = '<div class="cur-switch" role="radiogroup" aria-label="Валюта оплаты">';
+      CUR.forEach(function (c) { if (data.methods.some(function (m) { return m.currency === c.id; })) h += '<button type="button" data-cur="' + c.id + '" role="radio" aria-checked="' + (c.id === cur) + '" class="' + (c.id === cur ? "sel" : "") + '">' + c.label + "</button>"; });
+      h += '</div><div class="don-grid">';
       data.packs.forEach(function (p, i) {
         h += '<div class="card don-card pack-card' + (sel === i ? " sel" : "") + (p.bonus ? " don-best" : "") + '">' + (p.bonus ? '<span class="don-tag">' + esc(p.bonus) + " выгоднее</span>" : "") +
-          '<h3>$' + fmt(p.coins) + ' <small>игровой валюты</small></h3><p class="don-price">' + fmt(p.rub) + ' ₽ <span>или $' + Number(p.usd).toFixed(2) + "</span></p>" +
+          '<h3>$' + fmt(p.coins) + ' <small>игровой валюты</small></h3><p class="don-price">' + priceOf(p) + "</p>" +
           '<button class="btn gold" type="button" data-pack="' + i + '"' + (data.enabled ? "" : " disabled") + ">" + (data.enabled ? "Купить" : "Скоро") + "</button></div>";
       });
       h += "</div>";
@@ -65,18 +71,19 @@
         b.onclick = function () { sel = +b.getAttribute("data-pack"); draw(); var f = el.querySelector(".pay-form"); if (f && f.scrollIntoView) f.scrollIntoView({behavior: "smooth", block: "center"}); };
       });
       Array.prototype.forEach.call(el.querySelectorAll("[data-m]"), function (b) { b.onclick = function () { msel = +b.getAttribute("data-m"); keep(); draw(); }; });
+      Array.prototype.forEach.call(el.querySelectorAll("[data-cur]"), function (b) { b.onclick = function () { keep(); cur = b.getAttribute("data-cur"); put("daviart-cur", cur); msel = 0; draw(); }; });
       var f = el.querySelector(".pay-form");
       if (f) f.addEventListener("submit", submit);
       var x = el.querySelector("[data-close]"); if (x) x.onclick = function () { sel = null; draw(); };
     }
     function keep() { var n = el.querySelector("#pf-nick"), m = el.querySelector("#pf-email"); if (n) put("daviart-nick", n.value.trim()); if (m) put("daviart-email", m.value.trim()); }
     function form() {
-      var p = data.packs[sel], m = data.methods[msel] || data.methods[0], rub = m.currency === "RUB";
+      var p = data.packs[sel], list = ms();
       var nick = getNick ? getNick() : "";
-      var h = '<form class="card pay-form" novalidate><div class="pf-head"><b>$' + fmt(p.coins) + "</b> за " + (rub ? fmt(p.rub) + " ₽" : "$" + Number(p.usd).toFixed(2)) +
+      var h = '<form class="card pay-form" novalidate><div class="pf-head"><b>$' + fmt(p.coins) + "</b> за " + priceOf(p) +
         (nick && !opts.askNick ? " · на ник <b>" + esc(nick) + "</b>" : "") + '<button type="button" class="pf-x" data-close aria-label="Закрыть">✕</button></div>';
       h += '<div class="pf-methods" role="radiogroup" aria-label="Способ оплаты">';
-      data.methods.forEach(function (x, i) { h += '<button type="button" class="' + (i === msel ? "sel" : "") + '" data-m="' + i + '" role="radio" aria-checked="' + (i === msel) + '">' + esc(x.title) + "</button>"; });
+      list.forEach(function (x, i) { h += '<button type="button" class="' + (i === msel ? "sel" : "") + '" data-m="' + i + '" role="radio" aria-checked="' + (i === msel) + '">' + esc(x.title) + "</button>"; });
       h += "</div>";
       if (opts.askNick || !nick) h += '<label for="pf-nick">Ник в игре</label><input id="pf-nick" maxlength="16" autocomplete="username" value="' + esc(nick || get("daviart-nick") || "") + '" placeholder="Например, Steve">';
       h += '<label for="pf-email">Почта — для чека</label><input id="pf-email" type="email" maxlength="200" autocomplete="email" value="' + esc(get("daviart-email") || "") + '" placeholder="you@mail.ru">';
@@ -96,7 +103,7 @@
       if (!el.querySelector("#pf-agree").checked) return fail("Отметь согласие с условиями покупки.");
       keep(); err.hidden = true; btn.disabled = true; btn.textContent = "Создаём счёт…";
       json(PAY + "/create", {method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({nick: nick, email: email, pack: data.packs[sel].id, method: data.methods[msel].id})})
+        body: JSON.stringify({nick: nick, email: email, pack: data.packs[sel].id, method: (ms()[msel] || ms()[0]).id})})
         .then(function (d) { if (d && d.ok && d.url) { put("daviart-order", d.id); location.href = d.url; } else fail((d && d.error) || "Не получилось создать счёт."); })
         .catch(function () { fail("Сервер не отвечает — попробуй позже."); });
     }

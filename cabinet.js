@@ -568,8 +568,10 @@
   function renderBonusBar() {
     var b = me.bonus || {}, a = b.active, el = $("bonusbar"), h;
     var acts = b.actives || (a ? [a] : []);
-    if (!(b.nextIn > 0) && acts.length) { h = '<span class="bc-ico gift-glow">🎁</span>Забери ×' + (b.nextCount || 1) + "!"; el.title = "Подарок дня ждёт"; }
-    else if (acts.length > 1) { h = '<span class="bc-ico">' + acts.map(function (x) { return BONUS_ICO[x.id] || "🎁"; }).join("") + "</span>Подарки ×" + acts.length + ' <span class="bc-t">· ещё ' + hm(Math.max(0, acts[0].until - Date.now())) + "</span>"; el.title = acts.map(function (x) { return plainTitle(x.title); }).join(", ") + " — подарки дня из «Доната»"; }
+    // У208.2 (2026-10-16): «Подарок дня» теперь = $25 за голос (вкладка «Донат»); старый случайный бонус больше не предлагаем —
+    // показываем только ещё действующий (взятый раньше), иначе — подсказку про голоса.
+    if (!acts.length) { el.className = "don-ext ready"; el.innerHTML = '<span class="bc-t">+$25 за голос</span>'; el.title = "Подарок дня — голосуй за сервер"; return; }
+    if (acts.length > 1) { h = '<span class="bc-ico">' + acts.map(function (x) { return BONUS_ICO[x.id] || "🎁"; }).join("") + "</span>Подарки ×" + acts.length + ' <span class="bc-t">· ещё ' + hm(Math.max(0, acts[0].until - Date.now())) + "</span>"; el.title = acts.map(function (x) { return plainTitle(x.title); }).join(", ") + " — подарки дня из «Доната»"; }
     else if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(plainTitle(a.title)) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня из «Доната»"; }
     else if (b.nextIn > 0) { h = '<span class="bc-ico">🎁</span><span class="bc-t">подарок через ' + hm(b.nextIn) + "</span>"; el.title = "Следующий подарок дня"; }
     else { h = '<span class="bc-ico gift-glow">🎁</span>Подарок ждёт!'; el.title = "Забрать бесплатный подарок дня"; }
@@ -594,7 +596,7 @@
     if (!$("cab-votes")) {
       box.innerHTML = '<div class="card cab-card"><h2>💛 Донат</h2><p class="cab-meta">Игровые $ — те же, что зарабатываются в игре: у Заклинателя, Торговца, на Рынке. ' +
         'Получай их <b>бесплатно за голоса</b> за сервер — или купи пакет. Валюта приходит на ник <b>' + esc(me.nick) + '</b>.</p></div>' +
-        '<h3 class="don-sub">🎁 Бесплатно: голосуй за сервер</h3><div id="cab-votes"><p class="cab-meta">Загружаю площадки…</p></div>' +
+        '<h3 class="don-sub">🎁 Подарок дня: голосуй за сервер — $25 за каждый голос</h3><div id="cab-votes"><p class="cab-meta">Загружаю площадки…</p></div>' +
         '<h3 class="don-sub">💰 Пакеты игровой валюты</h3><div id="cab-packs"><p class="cab-meta">Загружаю пакеты…</p></div>' +
         '<p class="cab-meta">Оплата — картой, СБП, зарубежной картой или PayPal (lava.top). <a href="oferta.html" target="_blank" rel="noopener">Условия покупки и возврата</a>.</p>';
       if (window.DShop) {
