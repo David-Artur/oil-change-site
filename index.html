@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -55,8 +55,8 @@
       <a class="btn blue" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>
       <a class="btn map" href="https://mc.daviart.com/map/" target="_blank" rel="noopener">🗺 Карта мира <span class="live">онлайн</span></a>
       <a class="btn gold" href="cabinet.html" data-cab>👤 Кабинет</a>
-      <a class="btn bonus" href="#donate" data-cab>🎁 Бонус дня</a>
-      <a class="btn don" href="donate.html">💛 Донат</a>
+      <a class="btn bonus" href="cabinet.html" data-cab>🎁 Бонус дня</a>
+      <a class="btn don" href="#donate">💛 Донат</a>
     </div>
   </div>
 </header>
@@ -86,7 +86,7 @@
     <a href="#rules">Правила</a>
     <a href="#soon">Скоро</a>
     <a href="#faq">Вопросы</a>
-    <a href="donate.html" class="nav-don">💛 Донат</a>
+    <a href="#donate" class="nav-don">💛 Донат</a>
     <a href="partners.html">Партнёрам</a>
   </div>
 </nav>
@@ -179,16 +179,14 @@
   </section>
 
   <section id="donate">
-    <h2>🎁 Бонус дня и 💛 донат</h2>
-    <p class="lead">Сервер живёт на свои деньги — аренда, домен, время. Если хочешь помочь — выбери пакет. <b>Оплата пока не подключена</b>, но нажать «Поддержать» уже можно: мы видим, сколько людей хотят помочь, а за первое нажатие дарим <b>разовый подарок</b> (+45 минут к бонусу дня). Пакеты — только внешний вид: за деньги на сервере не побеждают.</p>
-    <div class="card hl" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="min-width:0;flex:1 1 260px"><h3 style="margin:0 0 4px">💰 Игровая валюта $</h3><p style="margin:0">Та же валюта, что зарабатывается в игре: у Заклинателя, Торговца, на Рынке. Пакеты от <b>59 ₽</b>.</p></div>
-      <a class="btn gold" href="donate.html">Купить $</a>
-    </div>
-    <div class="card don-bonus" id="don-bonus"></div>
-    <div class="don-grid" id="donate-list"><p class="empty">Загружаю пакеты…</p></div>
-    <p class="card don-msg" id="donate-msg" role="status" hidden></p>
-    <p class="lead" style="font-size:.88rem">Пакеты выше — <b>внешний вид</b> (цвет ника, значки, частицы, титулы). Игровые $ — на <a href="donate.html">отдельной странице</a>. Бесплатный бонус за кнопку — просто наше «спасибо». Когда оплата на сайте заработает — объявим в Discord.</p>
+    <h2>💛 Донат</h2>
+    <p class="lead">Игровая валюта $ — та же, что зарабатывается в игре: у Заклинателя, Торговца, на Рынке. Её можно получить <b>бесплатно</b> за голоса за сервер — или купить пакетом.</p>
+    <h3 style="margin:18px 0 8px;font-size:1.2rem">🎁 Бесплатно: голосуй за сервер</h3>
+    <div class="don-nick"><label for="don-nick">Твой ник</label><input id="don-nick" maxlength="16" autocomplete="username" placeholder="Например, Steve"></div>
+    <div id="vote-cards"><p class="empty">Загружаю площадки…</p></div>
+    <h3 style="margin:26px 0 8px;font-size:1.2rem">💰 Пакеты игровой валюты</h3>
+    <div id="pack-cards"><p class="empty">Загружаю пакеты…</p></div>
+    <p class="lead" style="font-size:.88rem;margin-top:12px">Оплата — картой, через СБП, зарубежной картой или PayPal (платёжная платформа lava.top). <a href="oferta.html">Условия покупки и возврата</a>.</p>
   </section>
 
   <section id="faq">
@@ -217,7 +215,8 @@
 <script src="data.js?v=14"></script>
 <script src="viz.js?v=8"></script>
 <script src="app.js?v=10"></script>
-<script src="pages.js?v=6"></script>
+<script src="shop.js?v=1"></script>
+<script src="pages.js?v=7"></script>
 <script src="ui.js?v=1"></script>
 </body>
 </html>

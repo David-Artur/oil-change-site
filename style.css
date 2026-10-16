@@ -397,3 +397,28 @@ main > section.pg-on { animation: pgIn .25s ease; }
 .don-bonus { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; margin: 0 0 14px; border-color: var(--gold); background: var(--gold-bg); }
 .don-bonus .t { font-weight: 700; }
 .don-bonus .s { color: var(--muted); font-size: .92rem; }
+
+/* ---- Донат (У208.2, shop.js): голоса за $ и пакеты валюты ---- */
+.don-tag.green { background: var(--grass); }
+.vote-card.voted { border-color: var(--grass); background: var(--grass-bg); }
+.vote-ok { margin: 6px 0 0; font-weight: 600; color: var(--grass); }
+.vote-card:not(.voted) .vote-ok { color: var(--muted); }
+.vote-card .btn { margin-top: auto; }
+.vote-note { margin: 10px 0 0; font-size: .9rem; color: var(--muted); max-width: 70ch; }
+.vote-bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; margin: 8px 0 0; }
+.vote-bar i { display: block; height: 100%; background: var(--grass); }
+.don-nick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.don-nick input, .pay-form input:not([type=checkbox]) { font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line2); background: var(--card); color: var(--text); max-width: 300px; width: 100%; }
+.pack-card h3 small { font-size: .8rem; font-weight: 500; color: var(--soft); }
+.pack-card .btn { margin-top: 12px; }
+.pack-card.sel { outline: 3px solid var(--gold); outline-offset: 2px; }
+.pay-form { margin-top: 14px; padding: 16px; display: grid; gap: 10px; max-width: 520px; }
+.pay-form label { font-weight: 600; }
+.pf-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 1.05rem; }
+.pf-x { border: 0; background: transparent; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; }
+.pf-methods { display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-methods button { font: inherit; font-weight: 600; padding: 8px 12px; border-radius: 8px; border: 2px solid var(--line2); background: transparent; color: var(--text); cursor: pointer; min-height: 40px; }
+.pf-methods button.sel { border-color: var(--gold); background: var(--gold-bg); }
+.pf-agree { font-weight: 500 !important; display: flex; gap: 8px; align-items: flex-start; }
+.pf-err { color: var(--red); font-weight: 600; margin: 0; }
+.don-sub { margin: 18px 0 8px; font-size: 1.15rem; }

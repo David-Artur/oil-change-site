@@ -36,7 +36,14 @@
   .tbl table { border-collapse: collapse; width: 100%; font-size: .95rem; }
   .tbl th, .tbl td { text-align: left; padding: 7px 8px; border-bottom: 1px solid rgba(127,127,127,.25); vertical-align: top; }
   .tbl td.num { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
-  #msg { white-space: pre-wrap; }
+  .methods { display: flex; flex-wrap: wrap; gap: 8px; }
+  .methods button { font: inherit; font-weight: 600; padding: 9px 14px; border-radius: 8px; border: 2px solid rgba(127,127,127,.4); background: transparent; color: inherit; cursor: pointer; min-height: 42px; }
+  .methods button.sel { border-color: #d9a520; background: rgba(217,165,32,.14); }
+  .agree { font-weight: 500 !important; display: flex; gap: 8px; align-items: flex-start; }
+  .agree input { margin-top: 4px; }
+  .sum { font-size: 1.05rem; font-weight: 700; margin: 0; }
+  .err { color: #c0392b; font-weight: 600; margin: 0; }
+  #payBtn:disabled { opacity: .55; cursor: wait; }
 </style>
 </head>
 <body>
@@ -59,17 +66,21 @@
     <p>Выбери пакет — чем больше, тем выгоднее. $1000 — это примерно 5–10 часов обычной игры.</p>
     <div class="packs" id="packList" role="radiogroup" aria-label="Пакеты валюты"></div>
 
-    <div class="card buy">
+    <div class="card soon" id="result" role="status" hidden></div>
+
+    <form class="card buy" id="buyForm" novalidate>
       <label for="nick">Твой ник в игре</label>
-      <input id="nick" type="text" maxlength="16" autocomplete="off" placeholder="Например, Steve" pattern="[A-Za-z0-9_]{3,16}">
-      <div class="soon">Оплата на сайте подключается. Пока купить можно через администратора в Discord: скопируй заявку и отправь её.</div>
-      <div class="ip-box codebox"><span class="addr" id="msg">Выбери пакет и впиши ник</span>
-        <button class="btn gold small" type="button" id="copyMsg">Копировать заявку</button></div>
-      <div class="actions" style="margin-top:0">
-        <a class="btn blue" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Открыть Discord</a>
-      </div>
-      <p class="note-mail">Деньги приходят на ник, когда ты зайдёшь на сервер. Почта для вопросов: <b>dav.art.iva@gmail.com</b></p>
-    </div>
+      <input id="nick" name="nick" type="text" maxlength="16" autocomplete="username" placeholder="Например, Steve" required>
+      <label for="email">Почта — для чека</label>
+      <input id="email" name="email" type="email" maxlength="200" autocomplete="email" placeholder="you@mail.ru" required>
+      <span style="font-weight:600">Способ оплаты</span>
+      <div class="methods" id="methodList" role="radiogroup" aria-label="Способ оплаты"></div>
+      <label class="agree"><input type="checkbox" id="agree"> Я согласен с <a href="oferta.html" target="_blank" rel="noopener">условиями покупки и возврата</a></label>
+      <p class="sum" id="sum"></p>
+      <button class="btn gold" type="submit" id="payBtn">Оплатить</button>
+      <p class="err" id="err" role="alert" hidden></p>
+      <p class="note-mail">Валюта приходит на ник сама через минуту после оплаты (если ты не в игре — при входе). Вопросы — <a href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a> или <b>dav.art.iva@gmail.com</b>.</p>
+    </form>
   </section>
 
   <section id="spend">
@@ -119,41 +130,102 @@
 
 <script>
 (function () {
+  var API = 'https://mc.daviart.com/pay';
+  // запасной список (если сервер не ответил — пакеты всё равно видны)
   var PACKS = [
-    { amt: 500, rub: 59, bonus: '' },
-    { amt: 1000, rub: 99, bonus: '' },
-    { amt: 3000, rub: 279, bonus: '+7% выгоднее' },
-    { amt: 6000, rub: 499, bonus: '+20% выгоднее' },
-    { amt: 15000, rub: 1190, bonus: '+25% выгоднее' }
+    { id: 'p500', coins: 500, rub: 59, usd: 0.70, bonus: '' },
+    { id: 'p1000', coins: 1000, rub: 99, usd: 1.18, bonus: '' },
+    { id: 'p3000', coins: 3000, rub: 279, usd: 3.32, bonus: '+7%' },
+    { id: 'p6000', coins: 6000, rub: 499, usd: 6.99, bonus: '+20%' },
+    { id: 'p15000', coins: 15000, rub: 1190, usd: 14.99, bonus: '+25%' }
   ];
-  var list = document.getElementById('packList'), nick = document.getElementById('nick'), msg = document.getElementById('msg');
-  var sel = 1;
-  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  var METHODS = [
+    { id: 'card', title: 'Карта (рубли)', currency: 'RUB' }, { id: 'sbp', title: 'СБП (рубли)', currency: 'RUB' },
+    { id: 'foreign', title: 'Зарубежная карта ($)', currency: 'USD' }, { id: 'paypal', title: 'PayPal ($)', currency: 'USD' }
+  ];
+  var enabled = true, sel = 1, msel = 0;
+  var $ = function (id) { return document.getElementById(id); };
+  var list = $('packList'), mlist = $('methodList'), nick = $('nick'), email = $('email');
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function money(n) { return Number(n) % 1 === 0 ? String(n) : Number(n).toFixed(2); }
+  function cur() { return METHODS[msel].currency; }
+  function price(p) { return cur() === 'RUB' ? fmt(p.rub) + ' ₽' : '$' + money(p.usd); }
   function render() {
     list.innerHTML = '';
     PACKS.forEach(function (p, i) {
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'card pack' + (i === sel ? ' sel' : '');
       b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', i === sel ? 'true' : 'false');
-      b.innerHTML = '<span class="amt">$' + fmt(p.amt) + '</span><span class="price">' + p.rub + ' ₽</span>'
-        + '<span class="bonus">' + p.bonus + '</span><span class="hint">' + (p.rub / p.amt * 1000).toFixed(0) + ' ₽ за $1000</span>';
-      b.addEventListener('click', function () { sel = i; render(); update(); });
+      b.innerHTML = '<span class="amt">$' + fmt(p.coins) + '</span><span class="price">' + price(p) + '</span>'
+        + '<span class="bonus">' + (p.bonus ? p.bonus + ' выгоднее' : '') + '</span>';
+      b.addEventListener('click', function () { sel = i; render(); });
       list.appendChild(b);
     });
+    mlist.innerHTML = '';
+    METHODS.forEach(function (m, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = i === msel ? 'sel' : ''; b.textContent = m.title;
+      b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', i === msel ? 'true' : 'false');
+      b.addEventListener('click', function () { msel = i; render(); });
+      mlist.appendChild(b);
+    });
+    var p = PACKS[sel];
+    $('sum').textContent = 'К оплате: ' + price(p) + ' → на ник придёт $' + fmt(p.coins);
+    $('payBtn').disabled = !enabled;
+    if (!enabled) showErr('Оплата временно недоступна — напиши в Discord.');
   }
-  function update() {
-    var n = (nick.value || '').trim(), p = PACKS[sel];
-    var okNick = /^[A-Za-z0-9_]{3,16}$/.test(n);
-    msg.textContent = okNick ? 'Хочу купить $' + fmt(p.amt) + ' за ' + p.rub + ' ₽ на ник ' + n + ' (DaviArt Craft)'
-      : 'Впиши ник (латиница, цифры, _ ; 3–16 символов)';
-  }
-  nick.addEventListener('input', update);
-  document.getElementById('copyMsg').addEventListener('click', function () {
-    var t = msg.textContent, btn = this;
-    function done() { btn.textContent = 'Скопировано'; setTimeout(function () { btn.textContent = 'Копировать заявку'; }, 1500); }
-    if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () {});
+  function showErr(t) { var e = $('err'); e.textContent = t; e.hidden = !t; }
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  nick.value = load('daviart-nick') || '';
+  email.value = load('daviart-email') || '';
+
+  fetch(API + '/packs').then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.packs && d.packs.length) PACKS = d.packs;
+    if (d && d.methods && d.methods.length) METHODS = d.methods;
+    enabled = !!(d && d.enabled);
+    if (sel >= PACKS.length) sel = 0;
+    render();
+  }).catch(function () { render(); });
+
+  $('buyForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var n = nick.value.trim(), m = email.value.trim();
+    if (!/^[A-Za-z0-9_]{3,16}$/.test(n)) return showErr('Ник: латиница, цифры и _, от 3 до 16 символов.');
+    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(m)) return showErr('Укажи почту — на неё придёт чек.');
+    if (!$('agree').checked) return showErr('Отметь согласие с условиями покупки.');
+    showErr('');
+    var btn = $('payBtn'); btn.disabled = true; btn.textContent = 'Создаём счёт…';
+    store('daviart-nick', n); store('daviart-email', m);
+    fetch(API + '/create', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick: n, email: m, pack: PACKS[sel].id, method: METHODS[msel].id }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.ok && d.url) { store('daviart-order', d.id); location.href = d.url; return; }
+        showErr((d && d.error) || 'Не получилось создать счёт.'); btn.disabled = false; btn.textContent = 'Оплатить';
+      })
+      .catch(function () { showErr('Сервер не отвечает — попробуй позже или напиши в Discord.'); btn.disabled = false; btn.textContent = 'Оплатить'; });
   });
-  render(); update();
+
+  // возврат со страницы оплаты: ?paid=1 | ?fail=1 | ?cancel=1
+  var q = location.search, id = load('daviart-order'), res = $('result');
+  function say(t) { res.textContent = t; res.hidden = false; res.scrollIntoView({ block: 'center' }); }
+  if (/fail=1/.test(q)) say('Оплата не прошла. Деньги не списаны — попробуй ещё раз или выбери другой способ.');
+  else if (/cancel=1/.test(q)) say('Оплата отменена.');
+  else if (/paid=1/.test(q)) {
+    say('Проверяем оплату…');
+    var tries = 0;
+    (function poll() {
+      if (!id) return say('Спасибо! Валюта придёт на ник в течение минуты (если ты не в игре — при входе).');
+      fetch(API + '/status?id=' + encodeURIComponent(id)).then(function (r) { return r.json(); }).then(function (d) {
+        if (d && d.ok && d.credited) { store('daviart-order', null); return say('Готово! $' + fmt(d.coins) + ' начислено на ник ' + d.nick + '. Спасибо за поддержку ♥'); }
+        if (d && d.ok && d.status === 'paid') return say('Оплата получена! $' + fmt(d.coins) + ' придут на ник ' + d.nick + ', как только ты зайдёшь в игру.');
+        if (++tries < 20) { say('Ждём подтверждение от платёжной системы… (' + tries + ')'); return setTimeout(poll, 3000); }
+        say('Оплата ещё обрабатывается. Валюта придёт автоматически; если её нет через 15 минут — напиши в Discord, номер заказа: ' + id);
+      }).catch(function () { if (++tries < 20) setTimeout(poll, 3000); });
+    })();
+  }
+  render();
 })();
 </script>
 </body>

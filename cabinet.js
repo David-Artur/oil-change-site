@@ -181,7 +181,7 @@
     try { history.replaceState(null, "", "#" + t); } catch (e) { }
     if (t === "market" && !market) loadMarket();
     if (t === "clan" && !clansAll) loadClans();
-    if (t === "donate" && !donTiers && !donLoading && me) loadDonate();
+    if (t === "donate" && me) { renderDonate(); if (window.DShop && $("cab-votes")) DShop.votes($("cab-votes"), me.nick); }
   }
 
   // ---------------------------------------------------------------- синхронизация
@@ -585,49 +585,26 @@
     btn.disabled = true;
     api("/bonus", {}).then(function (j) { toast(j.message || "", !j.ok); if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); renderDonate(); } else btn.disabled = false; });
   }
+  // У208.2 (2026-10-16): «Донат» = бесплатные $ за голоса (карточки площадок) + пакеты игровой валюты (оплата lava.top) — shop.js.
+  // Рисуется один раз (кабинет обновляется каждые 20 с — форма оплаты не должна сбрасываться); отметки голосов — раз в минуту.
+  var donVoteTimer = null;
   function renderDonate() {
-    var b = me.bonus || {}, a = b.active, h = '<div class="card cab-card"><h2>💛 Донат и подарки</h2><p class="cab-meta">Первая карточка — <b>бесплатный подарок</b>, забирай каждый день. ' +
-      'Оплата пакетов пока не подключена — но нажми «Поддержать»: мы увидим, сколько людей хотят помочь' + (b.gifted ? "" : ", а тебе — <b>разовый подарок</b> +45 минут к бонусу") +
-      ". Пакеты ниже — внешний вид.</p>" +
-      '<p style="margin:10px 0 0"><a class="btn gold" href="donate.html">💰 Купить игровую валюту $</a> <span class="cab-meta">от 59 ₽ · тратится у Заклинателя, Торговца, на Рынке</span></p></div>';
-    // бесплатная карточка
-    h += '<div class="don-grid don-tab-grid"><div class="card don-card don-free"><span class="don-tag">Бесплатно · каждый день</span><div class="gift-big"><span class="gift-glow">🎁</span></div>' +
-      '<h3>Подарок дня</h3><p class="don-price">0 ₽ <span>каждые 24 часа</span></p>' +
-      '<p class="cab-meta">Случайный сюрприз: может выпасть предмет, а может — бонус на время. Что именно — узнаешь, когда заберёшь!</p>';
-    // серия дней: ×1 → ×2 → ×3 (владелец: «чтобы был смысл заходить каждый день»)
-    var max = b.maxStreak || 3, cur = b.streak || 0, nxt = b.nextCount || 1, ready = !(b.nextIn > 0);
-    var lit = ready ? nxt : Math.max(1, cur);
-    h += '<div class="streak" title="Заходи каждый день подряд">';
-    for (var i = 1; i <= max; i++) h += '<span class="st' + (i < lit ? " done" : i === lit ? " now" : "") + '"><b>×' + i + "</b><small>" + (i === 1 ? "1-й день" : i === max ? "с " + i + "-го" : i + "-й день") + "</small></span>";
-    h += "</div>";
-    h += '<p class="cab-meta" style="flex:1">Забирай каждый день подряд: 1-й день — 1 подарок, 2-й — 2, с 3-го — <b>3 сразу</b>. Пропустишь день — серия начнётся заново с ×1.' +
-      (ready && b.streakDeadline > 0 ? ' <b class="warn-t">Забери до ' + new Date(b.streakDeadline).toLocaleString("ru-RU", {hour: "2-digit", minute: "2-digit", day: "numeric", month: "short"}) + ", чтобы не потерять ×" + cur + ".</b>" : "") + "</p>";
-    var acts = b.actives || (a ? [a] : []);
-    if (acts.length) h += '<p class="cab-meta"><b>Сейчас действует:</b> ' + acts.map(function (x) { return (BONUS_ICO[x.id] || "🎁") + " " + esc(plainTitle(x.title)) + " — ещё " + hm(Math.max(0, x.until - Date.now())); }).join("; ") + "</p>";
-    if (ready) h += '<button class="btn green" type="button" id="don-claim">🎁 Забрать бесплатно ×' + nxt + "</button>";
-    else h += '<button class="btn" type="button" disabled>Следующий (×' + nxt + ") через " + hm(b.nextIn) + "</button>";
-    h += "</div>";
-    // пакеты
-    if (!donTiers) h += '<p class="cab-meta">Загружаю пакеты…</p>';
-    else if (!donTiers.length) h += '<p class="cab-meta">Не удалось загрузить пакеты.</p>';
-    else h += donTiers.map(function (x) {
-      return '<div class="card don-card"><span class="don-tag gold">Пакет</span><h3>' + esc(x.title) + '</h3><p class="don-price">' + esc(x.price) + " <span>" + esc(x.period) + "</span></p><ul>" +
-        (x.perks || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + '</ul><button class="btn gold" type="button" data-dtier="' + esc(x.id) + '">💛 Поддержать</button>' +
-        (b.gifted ? "" : '<p class="don-hint">🎁 за первое нажатие — подарок</p>') + "</div>";
-    }).join("");
-    $("tab-donate").innerHTML = h + "</div>";
-    var c = $("don-claim"); if (c) c.onclick = function () { claimBonus(c); };
-    Array.prototype.forEach.call(document.querySelectorAll("[data-dtier]"), function (btn) {
-      btn.onclick = function () {
-        btn.disabled = true;
-        api("/donate", {tier: btn.getAttribute("data-dtier")}).then(function (j) {
-          toast(j.message || "Спасибо!", !j.ok);
-          if (j.bonus) { me.bonus = j.bonus; renderBonusBar(); }
-          renderDonate();
-        });
-      };
-    });
-    if (!donTiers && !donLoading && tab === "donate") loadDonate();
+    var box = $("tab-donate");
+    if (!box || !me) return;
+    if (!$("cab-votes")) {
+      box.innerHTML = '<div class="card cab-card"><h2>💛 Донат</h2><p class="cab-meta">Игровые $ — те же, что зарабатываются в игре: у Заклинателя, Торговца, на Рынке. ' +
+        'Получай их <b>бесплатно за голоса</b> за сервер — или купи пакет. Валюта приходит на ник <b>' + esc(me.nick) + '</b>.</p></div>' +
+        '<h3 class="don-sub">🎁 Бесплатно: голосуй за сервер</h3><div id="cab-votes"><p class="cab-meta">Загружаю площадки…</p></div>' +
+        '<h3 class="don-sub">💰 Пакеты игровой валюты</h3><div id="cab-packs"><p class="cab-meta">Загружаю пакеты…</p></div>' +
+        '<p class="cab-meta">Оплата — картой, СБП, зарубежной картой или PayPal (lava.top). <a href="oferta.html" target="_blank" rel="noopener">Условия покупки и возврата</a>.</p>';
+      if (window.DShop) {
+        DShop.votes($("cab-votes"), me.nick);
+        DShop.packs($("cab-packs"), function () { return me.nick; }, {askNick: false});
+      } else $("cab-votes").innerHTML = '<p class="cab-meta">Не загрузился модуль доната — обнови страницу.</p>';
+    }
+    if (!donVoteTimer && window.DShop) donVoteTimer = setInterval(function () {
+      if (!document.hidden && tab === "donate" && $("cab-votes")) DShop.votes($("cab-votes"), me.nick);
+    }, 60000);
   }
 
   // ---------------------------------------------------------------- аккаунт

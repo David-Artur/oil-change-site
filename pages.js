@@ -85,57 +85,18 @@
   });
   window.addEventListener("popstate", function () { go((location.hash || "").slice(1), false, false); });
 
-  // ---------------------------------------------------------------- Донат: пакеты с сервера, «Поддержать»
-  var S = window.SITE || {};
-  var API = S.api || "https://mc.daviart.com/api";
-  var TOKEN_KEY = "daviart.cabinet.token";
-  function tok() { try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; } }
-  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); }
-  function donateApi(body) {
-    var h = {"Content-Type": "application/json"}, t = tok();
-    if (t) h.Authorization = "Bearer " + t;
-    return fetch(API + "/donate", {method: body ? "POST" : "GET", headers: h, body: body ? JSON.stringify(body) : undefined}).then(function (r) { return r.json(); });
+  // ---------------------------------------------------------------- Донат (У208.2): голоса за $ и пакеты валюты — shop.js
+  if (window.DShop) {
+    var dn = document.getElementById("don-nick"), vc = document.getElementById("vote-cards"), pc = document.getElementById("pack-cards");
+    var nk = function () { return dn ? dn.value.trim() : ""; };
+    var okNick = function (n) { return /^[A-Za-z0-9_]{3,16}$/.test(n); };
+    try { if (dn) dn.value = localStorage.getItem("daviart-nick") || ""; } catch (e) {}
+    var refresh = function () { var n = nk(); DShop.votes(vc, okNick(n) ? n : ""); };
+    var tmr = null;
+    if (dn) dn.addEventListener("input", function () { clearTimeout(tmr); tmr = setTimeout(function () { try { localStorage.setItem("daviart-nick", nk()); } catch (e) {} refresh(); }, 600); });
+    if (vc) { refresh(); setInterval(function () { if (!document.hidden && okNick(nk())) refresh(); }, 60000); }
+    if (pc) DShop.packs(pc, nk, {askNick: true});
   }
-  function renderDonate(d) {
-    var box = document.getElementById("donate-list"), st = document.getElementById("donate-status");
-    if (!box) return;
-    var tiers = (d && d.tiers) || [];
-    if (!tiers.length) { box.innerHTML = '<p class="empty">Не удалось загрузить пакеты — сервер не отвечает. Попробуй позже.</p>'; return; }
-    box.innerHTML = tiers.map(function (t) {
-      return '<div class="card don-card' + (t.id === "flame" ? " don-best" : "") + '">' + (t.id === "flame" ? '<span class="don-tag">выбор игроков</span>' : "") +
-        "<h3>" + esc(t.title) + '</h3><p class="don-price">' + esc(t.price) + ' <span>' + esc(t.period) + "</span></p><ul>" +
-        (t.perks || []).map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + '</ul><button class="btn gold" type="button" data-tier="' + esc(t.id) + '">Поддержать' + (d && d.nick && d.bonus && !d.bonus.gifted ? ' <small>+подарок</small>' : '') + '</button></div>';
-    }).join("");
-    var bb = document.getElementById("don-bonus");
-    if (bb) {
-      var bo = d && d.bonus, hm = function (ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); };
-      var surprise = "случайный сюрприз — может выпасть предмет, а может бонус на время. Заходи каждый день подряд: ×1 → ×2 → с 3-го дня ×3 подарка сразу";
-      if (!d || !d.nick) bb.innerHTML = '<div><div class="t">🎁 Бесплатный подарок дня</div><div class="s">Каждые 24 часа — ' + surprise + '. Забрать — в личном кабинете (ник и пароль от сервера).</div></div><a class="btn green" href="cabinet.html">Войти и забрать</a>';
-      else if (bo && bo.active) bb.innerHTML = '<div><div class="t">🎁 ' + esc(String(bo.active.title).replace(/^[^\p{L}\p{N}]+/u, "")) + '</div><div class="s">' + esc(bo.active.desc) + " — ещё " + hm(bo.active.until - Date.now()) + (bo.nextIn > 0 ? ". Следующий бонус — через " + hm(bo.nextIn) : "") + "</div></div>";
-      else if (bo && bo.nextIn > 0) bb.innerHTML = '<div><div class="t">🎁 Бонус дня получен</div><div class="s">Следующий — через ' + hm(bo.nextIn) + ".</div></div>";
-      else bb.innerHTML = '<div><div class="t">🎁 Тебя ждёт бонус дня, ' + esc(d.nick) + '!</div><div class="s">Тебя ждёт ' + surprise + '.</div></div><button class="btn green" type="button" id="don-claim">🎁 Забрать бонус</button>';
-      var cl = document.getElementById("don-claim");
-      if (cl) cl.onclick = function () {
-        cl.disabled = true;
-        var hd = {"Content-Type": "application/json"}, t = tok(); if (t) hd.Authorization = "Bearer " + t;
-        fetch(API + "/bonus", {method: "POST", headers: hd, body: "{}"}).then(function (r) { return r.json(); }).then(function (j) {
-          var msg = document.getElementById("donate-msg"); if (msg) { msg.hidden = false; msg.textContent = j.message || ""; }
-          donateApi(null).then(renderDonate).catch(function () {});
-        });
-      };
-    }    Array.prototype.forEach.call(box.querySelectorAll("[data-tier]"), function (b) {
-      b.onclick = function () {
-        b.disabled = true;
-        donateApi({tier: b.getAttribute("data-tier")}).then(function (j) {
-          var msg = document.getElementById("donate-msg");
-          if (msg) { msg.hidden = false; msg.textContent = j.message || "Спасибо!"; msg.scrollIntoView({behavior: "smooth", block: "center"}); }
-          b.disabled = false;
-          donateApi(null).then(renderDonate).catch(function () {});
-        }).catch(function () { b.disabled = false; var msg = document.getElementById("donate-msg"); if (msg) { msg.hidden = false; msg.textContent = "Сервер не отвечает — попробуй позже."; } });
-      };
-    });
-  }
-  if (document.getElementById("donate-list") && window.fetch) donateApi(null).then(renderDonate).catch(function () { renderDonate(null); });
 
   // ---------------------------------------------------------------- старт
   setTimeout(labelFoot, 0);
