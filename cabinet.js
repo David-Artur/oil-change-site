@@ -90,6 +90,14 @@
   }
   function ago(t) { var s = Math.max(0, Math.round((Date.now() - t) / 1000)); return s < 60 ? s + " с" : Math.round(s / 60) + " мин"; }
 
+  // У215: скопировать «/ref <ник>» для друга
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest || !e.target.closest("#ref-copy") || !me) return;
+    var t = "/ref " + me.nick;
+    var ok = function () { toast("Скопировано: " + t + " — отправь другу"); }, no = function () { toast("Скажи другу написать в игре: " + t); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(ok, no); else no();
+  });
+
   var toastT;
   function toast(msg, bad) {
     var t = $("toast");
@@ -230,6 +238,7 @@
   // ---------------------------------------------------------------- отрисовка
   function render() {
     $("me-nick").textContent = me.nick;
+    if ($("ref-cmd")) $("ref-cmd").textContent = "/ref " + me.nick;   // У215: «Приведи друга» — код = ник
     $("me-dot").className = "dot" + (me.online ? " on" : "");
     $("me-online").textContent = me.online ? "в игре сейчас" + (me.where ? " · " + me.where.world : "") : (me.lastSeen ? "был в игре " + new Date(me.lastSeen).toLocaleString("ru-RU") : "");
     $("me-bal").textContent = money(me.balance);

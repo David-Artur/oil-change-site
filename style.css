@@ -425,3 +425,8 @@ main > section.pg-on { animation: pgIn .25s ease; }
 .cur-switch { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .cur-switch button { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 2px solid var(--line2); background: transparent; color: var(--text); cursor: pointer; min-height: 40px; }
 .cur-switch button.sel { border-color: var(--gold); background: var(--gold-bg); }
+
+/* У215: большая кнопка (партнёры → личный кабинет) и контакт владельца */
+.btn.xl { min-height: 64px; padding: 12px 22px; font-size: clamp(1.1rem, 4.5vw, 1.35rem); width: 100%; }
+.contact-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0; }
+.contact-row .nick { font-family: var(--mono); font-weight: 700; font-size: 1.2rem; color: var(--gold); word-break: break-all; }

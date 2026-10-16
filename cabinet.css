@@ -208,3 +208,10 @@
   .cab-title { display: none; }
   .cab-kpis { gap: 14px; }
 }
+
+/* У215: «Приведи друга» в профиле */
+.ref-card { margin-top: 14px; border-color: var(--gold); background: var(--gold-bg); }
+.ref-card h2 { margin: 0 0 8px; }
+.ref-code { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0 0; }
+.ref-code code { font-family: var(--mono); font-weight: 700; font-size: clamp(1.15rem, 5vw, 1.5rem); color: #ffd64a; background: #120d09; border: 3px solid #000; box-shadow: inset 0 0 0 2px #5a4a39; padding: 6px 12px; word-break: break-all; }
+.ref-card .ref-pro { margin-top: 14px; width: 100%; }
