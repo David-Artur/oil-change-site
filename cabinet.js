@@ -666,7 +666,8 @@
     var box = $("tab-bonus");
     if (!d || !d.ok) { box.innerHTML = '<div class="card cab-card"><p class="cab-meta">' + esc((d && d.error) || "Не удалось загрузить.") + "</p></div>"; return; }
     var STATE = {done: ["✔ Получено", "bn-done"], wait: ["⏳ Получишь, когда наиграешь " + d.needPlay + " мин (сейчас " + d.played + ")", "bn-wait"],
-      todo: ["Ещё не выполнено", "bn-todo"], join: ["Зайди на наш Discord-сервер — и бонус придёт", "bn-wait"], off: ["Скоро заработает", "bn-off"], info: ["", "bn-info"]};
+      todo: ["Ещё не выполнено", "bn-todo"], join: ["Зайди на наш Discord-сервер — и бонус придёт", "bn-wait"], off: ["Скоро заработает", "bn-off"], info: ["", "bn-info"],
+      used: ["Роль выдана · этот Discord уже давал бонус другому игроку — $ не начисляются", "bn-done"]};
     var h = '<div class="card cab-card"><h2>🎁 Бесплатные бонусы</h2><p class="cab-meta">Выполняй — и $ приходят на счёт сами. Разовые бонусы — после ' + d.needPlay +
       " минут игры (защита от твинков). В игре — <code>/bonuses</code>.</p></div><div class=\"bn-list\">";
     d.items.forEach(function (it) {
@@ -693,8 +694,10 @@
     if (!m) return;
     var MSG = {ok: "Discord привязан — бонус начислен, роль выдана!", join: "Discord привязан. Зайди на наш Discord-сервер, потом нажми «Проверить ещё раз».",
       young: "Аккаунт Discord слишком новый (нужно 7+ дней).", taken: "Этот Discord уже привязан к другому игроку.", already: "У тебя уже привязан другой Discord.",
+      changed: "Discord сменён — роли и ник перенесены на новый аккаунт. Бонус $250 уже был получен раньше.",
+      cooldown: "Сменить Discord можно раз в 7 дней — попробуй позже.",
       cancel: "Привязка отменена.", expired: "Ссылка устарела — нажми «Привязать Discord» ещё раз.", error: "Discord не ответил — попробуй позже."};
-    setTimeout(function () { toast(MSG[m[1]] || "Готово.", !(m[1] === "ok" || m[1] === "join")); }, 800);
+    setTimeout(function () { toast(MSG[m[1]] || "Готово.", !(m[1] === "ok" || m[1] === "join" || m[1] === "changed")); }, 800);
     try { history.replaceState(null, "", location.pathname + "#bonus"); } catch (e) { }
   })();
 
@@ -733,7 +736,15 @@
       h += '<p>✔ Привязан: <b>' + esc(dcu) + '</b></p>' +
         (dci && dci.state === "join" ? '<p class="cab-meta">Зайди на наш Discord-сервер — и придут $250 и роль.</p><div class="cab-row"><a class="btn small" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Наш Discord-сервер</a>' +
           '<button class="btn small blue" type="button" data-acc="dc-link">Проверить ещё раз</button></div>'
-          : '<p class="cab-meta">Роль в Discord показывает твой уровень и обновляется сама. Через этот Discord администрация свяжется с тобой.</p>');
+          : '<p class="cab-meta">Роль в Discord показывает твой уровень и обновляется сама. Через этот Discord администрация свяжется с тобой.</p>' +
+            (dci && dci.state === "used" ? '<p class="cab-meta">Этот Discord уже давал бонус другому игроку — роль есть, $250 повторно не начисляются.</p>' : ""));
+      // У214: сменить Discord — роли переедут на новый, $250 второй раз не придут
+      var days = bonusData && bonusData.discordChangeDays || 0;
+      h += '<details class="dc-manual"><summary class="cab-meta">Сменить Discord</summary>' +
+        '<p class="cab-meta">Войдёшь в другой аккаунт Discord — роли и ник переедут на него, со старого снимутся. На странице Discord нажми «Не вы?» / смени аккаунт, чтобы выбрать другой. Бонус $250 за Discord — один раз, повторно не начисляется. ' +
+        'Менять можно раз в 7 дней.</p>' +
+        (days ? '<p class="cab-meta">Следующая смена — через ' + days + " дн.</p>" : '<div class="cab-row"><button class="btn small" type="button" data-acc="dc-change">Войти в другой Discord</button></div>') +
+        "</details>";
     } else {
       h += '<p class="cab-meta">Привяжи Discord одной кнопкой — получишь <b>$250</b>, роль по уровню персонажа, и администрация сможет с тобой связаться.</p>' +
         '<div class="cab-row"><button class="btn blue" type="button" data-acc="dc-link">Привязать Discord (+$250 и роль)</button></div>' +
@@ -770,6 +781,7 @@
         else if (k === "em-remove") { pw = prompt("Чтобы отвязать почту, введи пароль:"); if (pw) act("/email", {action: "remove", password: pw}); }
         else if (k === "dc-save") act("/discord", {name: $("dc-name").value.trim()});
         else if (k === "dc-link") dcLink(b);
+        else if (k === "dc-change") { if (confirm("Сменить привязанный Discord? Роли переедут на новый аккаунт, $250 второй раз не начисляются. Следующая смена — через 7 дней.")) dcLink(b); }
         else if (k === "tr-add-site" || k === "tr-add-game") {
           pw = prompt("Подтверди паролем — после этого с этого адреса в игру без /login:");
           if (pw) act("/trusted", {action: "add", ip: k === "tr-add-game" ? a.gameIp : "", label: $("tr-label").value.trim(), password: pw});
