@@ -87,7 +87,7 @@
       h += "</div>";
       if (opts.askNick || !nick) h += '<label for="pf-nick">Ник в игре</label><input id="pf-nick" maxlength="16" autocomplete="username" value="' + esc(nick || get("daviart-nick") || "") + '" placeholder="Например, Steve">';
       h += '<label for="pf-email">Почта — для чека</label><input id="pf-email" type="email" maxlength="200" autocomplete="email" value="' + esc(get("daviart-email") || "") + '" placeholder="you@mail.ru">';
-      h += '<label class="pf-agree"><input type="checkbox" id="pf-agree"> Согласен с <a href="oferta.html" target="_blank" rel="noopener">условиями покупки и возврата</a></label>';
+      h += '<label class="pf-agree"><input type="checkbox" id="pf-agree"> Согласен с <a href="oferta.html" target="_blank" rel="noopener">условиями покупки</a> и <a href="privacy.html" target="_blank" rel="noopener">политикой конфиденциальности</a></label>';
       h += '<button class="btn gold" type="submit" id="pf-pay">Оплатить</button><p class="pf-err" id="pf-err" role="alert" hidden></p>';
       h += '<p class="vote-note">$ придут на ник через минуту после оплаты (не в игре — при входе).</p></form>';
       return h;

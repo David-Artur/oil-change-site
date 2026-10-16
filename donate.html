@@ -75,7 +75,7 @@
       <input id="email" name="email" type="email" maxlength="200" autocomplete="email" placeholder="you@mail.ru" required>
       <span style="font-weight:600">Способ оплаты</span>
       <div class="methods" id="methodList" role="radiogroup" aria-label="Способ оплаты"></div>
-      <label class="agree"><input type="checkbox" id="agree"> Я согласен с <a href="oferta.html" target="_blank" rel="noopener">условиями покупки и возврата</a></label>
+      <label class="agree"><input type="checkbox" id="agree"> Я согласен с <a href="oferta.html" target="_blank" rel="noopener">условиями покупки</a> и <a href="privacy.html" target="_blank" rel="noopener">политикой конфиденциальности</a></label>
       <p class="sum" id="sum"></p>
       <button class="btn gold" type="submit" id="payBtn">Оплатить</button>
       <p class="err" id="err" role="alert" hidden></p>
@@ -228,5 +228,6 @@
   render();
 })();
 </script>
+<script src="consent.js?v=1"></script>
 </body>
 </html>
