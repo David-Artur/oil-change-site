@@ -625,10 +625,42 @@
     return fetch(BONUS_API + path, {method: post ? "POST" : "GET", headers: {"Authorization": "Bearer " + tok(), "Content-Type": "application/json"}, body: post ? "{}" : undefined})
       .then(function (r) { return r.json(); }).catch(function () { return {ok: false, error: "Сервер бонусов не отвечает — попробуй позже."}; });
   }
+  // У213: один источник состояния Discord для «Бонусов» и «Аккаунта»
+  var bonusData = null, bonusAt = 0, dcSaved = false;
+  function bonusStatus() {
+    return bonusFetch("/status").then(function (d) {
+      if (d && d.ok) { bonusData = d; bonusAt = Date.now(); dcSync(); }
+      return d;
+    });
+  }
+  function dcItem() {
+    var it = null;
+    (bonusData && bonusData.items || []).forEach(function (x) { if (x.id === "discord") it = x; });
+    return it;
+  }
+  function dcUser() {
+    if (bonusData && bonusData.discordUser) return bonusData.discordUser;
+    var it = dcItem(), m = it && it.note && /^Привязан: (.+)$/.exec(it.note);
+    return m ? m[1] : "";
+  }
+  // привязал через Discord — этот же ник сам становится «ником для связи»
+  function dcSync() {
+    var u = dcUser(), a = me && me.account || {};
+    if (!u || dcSaved || a.discord === u) return;
+    dcSaved = true;
+    api("/discord", {name: u}).then(function (j) { if (j && j.ok) load(false); });
+  }
+  function dcLink(b) {
+    if (b) b.disabled = true;
+    bonusFetch("/discord/start", true).then(function (j) {
+      if (j && j.ok && j.url) location.href = j.url;
+      else { toast((j && j.error) || "Не получилось.", true); if (b) b.disabled = false; }
+    });
+  }
   function loadBonus() {
     var box = $("tab-bonus");
     if (!box.innerHTML) box.innerHTML = '<div class="card cab-card"><p class="cab-meta">Загружаю бонусы…</p></div>';
-    bonusFetch("/status").then(renderBonus);
+    bonusStatus().then(renderBonus);
   }
   function renderBonus(d) {
     var box = $("tab-bonus");
@@ -652,8 +684,7 @@
         var k = b.getAttribute("data-bn");
         if (k === "account") return setTab("account");
         if (k === "donate") return setTab("donate");
-        b.disabled = true;
-        bonusFetch("/discord/start", true).then(function (j) { if (j && j.ok && j.url) location.href = j.url; else { toast((j && j.error) || "Не получилось.", true); b.disabled = false; } });
+        dcLink(b);
       };
     });
   }
@@ -668,7 +699,16 @@
   })();
 
   // ---------------------------------------------------------------- аккаунт
+  var bonusLoading = false;
   function renderAccount() {
+    if (Date.now() - bonusAt > 60000 && !bonusLoading) {   // состояние привязки Discord — не чаще раза в минуту
+      bonusLoading = true;
+      var was = dcUser() + "|" + ((dcItem() || {}).state || "");
+      bonusStatus().then(function () {
+        bonusLoading = false; bonusAt = Date.now();
+        if (dcUser() + "|" + ((dcItem() || {}).state || "") !== was) renderAccount();
+      });
+    }
     var a = me.account || {}, h = "";
     h += '<div class="cab-cards">';
     // пароль
@@ -686,9 +726,22 @@
     h += '<div class="cab-row"><input type="email" id="em-new" maxlength="80" placeholder="' + (a.email ? "новая почта" : "твоя@почта.ру") + '"><button class="btn small" data-acc="em-add">' + (a.email ? "Сменить" : "Привязать") + "</button></div>";
     if (a.email) h += '<div class="cab-row"><button class="btn small red" data-acc="em-remove">Отвязать почту</button></div>';
     h += "</div>";
-    // Discord
-    h += '<div class="card cab-card"><h2>Discord</h2><p class="cab-meta">Для связи с администрацией (например, при восстановлении аккаунта). Подтверждение через Discord — позже.</p>' +
-      '<div class="cab-row"><input type="text" id="dc-name" maxlength="32" value="' + esc(a.discord || "") + '" placeholder="ник в Discord"><button class="btn small" data-acc="dc-save">Сохранить</button></div></div>';
+    // Discord (У213): главное — кнопка привязки (та же, что в «Бонусах»); ручной ник — отдельно, только для связи
+    var dci = dcItem(), dcu = dcUser();
+    h += '<div class="card cab-card"><h2>Discord</h2>';
+    if (dcu) {
+      h += '<p>✔ Привязан: <b>' + esc(dcu) + '</b></p>' +
+        (dci && dci.state === "join" ? '<p class="cab-meta">Зайди на наш Discord-сервер — и придут $250 и роль.</p><div class="cab-row"><a class="btn small" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Наш Discord-сервер</a>' +
+          '<button class="btn small blue" type="button" data-acc="dc-link">Проверить ещё раз</button></div>'
+          : '<p class="cab-meta">Роль в Discord показывает твой уровень и обновляется сама. Через этот Discord администрация свяжется с тобой.</p>');
+    } else {
+      h += '<p class="cab-meta">Привяжи Discord одной кнопкой — получишь <b>$250</b>, роль по уровню персонажа, и администрация сможет с тобой связаться.</p>' +
+        '<div class="cab-row"><button class="btn blue" type="button" data-acc="dc-link">Привязать Discord (+$250 и роль)</button></div>' +
+        '<details class="dc-manual"><summary class="cab-meta">Или просто указать ник для связи (без бонуса)</summary>' +
+        '<p class="cab-meta">Ник, вписанный руками, никто не проверяет — поэтому бонус и роль даёт только кнопка выше.</p>' +
+        '<div class="cab-row"><input type="text" id="dc-name" maxlength="32" value="' + esc(a.discord || "") + '" placeholder="ник в Discord"><button class="btn small" data-acc="dc-save">Сохранить</button></div></details>';
+    }
+    h += "</div>";
     h += "</div>";
     // доверенные адреса
     var tr = a.trusted || [];
@@ -716,6 +769,7 @@
         else if (k === "em-confirm") act("/email", {action: "confirm", code: $("em-code").value.trim()});
         else if (k === "em-remove") { pw = prompt("Чтобы отвязать почту, введи пароль:"); if (pw) act("/email", {action: "remove", password: pw}); }
         else if (k === "dc-save") act("/discord", {name: $("dc-name").value.trim()});
+        else if (k === "dc-link") dcLink(b);
         else if (k === "tr-add-site" || k === "tr-add-game") {
           pw = prompt("Подтверди паролем — после этого с этого адреса в игру без /login:");
           if (pw) act("/trusted", {action: "add", ip: k === "tr-add-game" ? a.gameIp : "", label: $("tr-label").value.trim(), password: pw});

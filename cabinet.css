@@ -225,3 +225,6 @@
 .bn-done { border-color: var(--grass); } .bn-done .bn-st { color: var(--grass); }
 .bn-wait .bn-st { color: var(--warn); } .bn-todo .bn-st, .bn-off .bn-st { color: var(--muted); }
 .bn-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+/* У213: Discord в «Аккаунте» — ручной ник спрятан под ссылку */
+.dc-manual{margin-top:12px}
+.dc-manual summary{cursor:pointer;text-decoration:underline dotted}
