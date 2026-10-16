@@ -21,7 +21,7 @@
   var RANK = {3: "лидер", 2: "заместитель", 1: "участник"};
   var RANKS = {level: "Уровень", money: "Деньги", pvp: "PvP", mobs: "Мобы", time: "Время в игре", market: "Оборот Рынка", ach: "Ачивки"};
   var CATS = [["all", "Все"], ["res", "Ресурсы"], ["blocks", "Блоки"], ["tools", "Снаряжение"], ["magic", "Магия"], ["food", "Еда"], ["other", "Другое"]];
-  var TABS = ["profile", "claims", "clan", "market", "ach", "account", "help", "donate"];
+  var TABS = ["profile", "claims", "clan", "market", "ach", "account", "help", "bonus", "donate"];
   var donTiers = null, donLoading = false;
 
   function $(id) { return document.getElementById(id); }
@@ -190,6 +190,7 @@
     if (t === "market" && !market) loadMarket();
     if (t === "clan" && !clansAll) loadClans();
     if (t === "donate" && me) { renderDonate(); if (window.DShop && $("cab-votes")) DShop.votes($("cab-votes"), me.nick); }
+    if (t === "bonus" && me) loadBonus();
   }
 
   // ---------------------------------------------------------------- синхронизация
@@ -617,6 +618,54 @@
       if (!document.hidden && tab === "donate" && $("cab-votes")) DShop.votes($("cab-votes"), me.nick);
     }, 60000);
   }
+
+  // ---------------------------------------------------------------- бонусы (У209, VPBonus: https://mc.daviart.com/bonus)
+  var BONUS_API = "https://mc.daviart.com/bonus";
+  function bonusFetch(path, post) {
+    return fetch(BONUS_API + path, {method: post ? "POST" : "GET", headers: {"Authorization": "Bearer " + tok(), "Content-Type": "application/json"}, body: post ? "{}" : undefined})
+      .then(function (r) { return r.json(); }).catch(function () { return {ok: false, error: "Сервер бонусов не отвечает — попробуй позже."}; });
+  }
+  function loadBonus() {
+    var box = $("tab-bonus");
+    if (!box.innerHTML) box.innerHTML = '<div class="card cab-card"><p class="cab-meta">Загружаю бонусы…</p></div>';
+    bonusFetch("/status").then(renderBonus);
+  }
+  function renderBonus(d) {
+    var box = $("tab-bonus");
+    if (!d || !d.ok) { box.innerHTML = '<div class="card cab-card"><p class="cab-meta">' + esc((d && d.error) || "Не удалось загрузить.") + "</p></div>"; return; }
+    var STATE = {done: ["✔ Получено", "bn-done"], wait: ["⏳ Получишь, когда наиграешь " + d.needPlay + " мин (сейчас " + d.played + ")", "bn-wait"],
+      todo: ["Ещё не выполнено", "bn-todo"], join: ["Зайди на наш Discord-сервер — и бонус придёт", "bn-wait"], off: ["Скоро заработает", "bn-off"], info: ["", "bn-info"]};
+    var h = '<div class="card cab-card"><h2>🎁 Бесплатные бонусы</h2><p class="cab-meta">Выполняй — и $ приходят на счёт сами. Разовые бонусы — после ' + d.needPlay +
+      " минут игры (защита от твинков). В игре — <code>/bonuses</code>.</p></div><div class=\"bn-list\">";
+    d.items.forEach(function (it) {
+      var st = STATE[it.state] || STATE.todo, act = "";
+      if (it.action === "account" && it.state === "todo") act = '<button class="btn small" type="button" data-bn="account">Открыть «Аккаунт»</button>';
+      if (it.action === "discord" && (it.state === "todo" || it.state === "join")) act = '<button class="btn small blue" type="button" data-bn="discord">' + (it.state === "join" ? "Проверить ещё раз" : "Привязать Discord") + "</button>" +
+        (it.state === "join" ? ' <a class="btn small" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Наш Discord-сервер</a>' : "");
+      if (it.action === "donate") act = '<button class="btn small" type="button" data-bn="donate">Голосовать</button>';
+      h += '<div class="card bn-item ' + st[1] + '"><div class="bn-main"><b>' + esc(it.title) + '</b><span class="bn-amt">' + esc(it.amount) + "</span></div>" +
+        (st[0] ? '<p class="bn-st">' + esc(st[0]) + "</p>" : "") + (it.note ? '<p class="cab-meta">' + esc(it.note) + "</p>" : "") + (act ? '<div class="bn-act">' + act + "</div>" : "") + "</div>";
+    });
+    box.innerHTML = h + "</div>";
+    Array.prototype.forEach.call(box.querySelectorAll("[data-bn]"), function (b) {
+      b.onclick = function () {
+        var k = b.getAttribute("data-bn");
+        if (k === "account") return setTab("account");
+        if (k === "donate") return setTab("donate");
+        b.disabled = true;
+        bonusFetch("/discord/start", true).then(function (j) { if (j && j.ok && j.url) location.href = j.url; else { toast((j && j.error) || "Не получилось.", true); b.disabled = false; } });
+      };
+    });
+  }
+  (function discordReturn() {
+    var m = /[?&]discord=([a-z]+)/.exec(location.search);
+    if (!m) return;
+    var MSG = {ok: "Discord привязан — бонус начислен, роль выдана!", join: "Discord привязан. Зайди на наш Discord-сервер, потом нажми «Проверить ещё раз».",
+      young: "Аккаунт Discord слишком новый (нужно 7+ дней).", taken: "Этот Discord уже привязан к другому игроку.", already: "У тебя уже привязан другой Discord.",
+      cancel: "Привязка отменена.", expired: "Ссылка устарела — нажми «Привязать Discord» ещё раз.", error: "Discord не ответил — попробуй позже."};
+    setTimeout(function () { toast(MSG[m[1]] || "Готово.", !(m[1] === "ok" || m[1] === "join")); }, 800);
+    try { history.replaceState(null, "", location.pathname + "#bonus"); } catch (e) { }
+  })();
 
   // ---------------------------------------------------------------- аккаунт
   function renderAccount() {

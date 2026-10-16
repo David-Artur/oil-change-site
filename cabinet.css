@@ -215,3 +215,13 @@
 .ref-code { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0 0; }
 .ref-code code { font-family: var(--mono); font-weight: 700; font-size: clamp(1.15rem, 5vw, 1.5rem); color: #ffd64a; background: #120d09; border: 3px solid #000; box-shadow: inset 0 0 0 2px #5a4a39; padding: 6px 12px; word-break: break-all; }
 .ref-card .ref-pro { margin-top: 14px; width: 100%; }
+
+/* ---- У209 Бонусы ---- */
+.bn-list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); margin-top: 12px; }
+.bn-item { padding: 14px; display: grid; gap: 6px; align-content: start; }
+.bn-main { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; }
+.bn-amt { font-weight: 800; color: var(--gold); white-space: nowrap; }
+.bn-st { margin: 0; font-weight: 600; font-size: .92rem; }
+.bn-done { border-color: var(--grass); } .bn-done .bn-st { color: var(--grass); }
+.bn-wait .bn-st { color: var(--warn); } .bn-todo .bn-st, .bn-off .bn-st { color: var(--muted); }
+.bn-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
