@@ -21,7 +21,8 @@
   var RANK = {3: "лидер", 2: "заместитель", 1: "участник"};
   var RANKS = {level: "Уровень", money: "Деньги", pvp: "PvP", mobs: "Мобы", time: "Время в игре", market: "Оборот Рынка", ach: "Ачивки"};
   var CATS = [["all", "Все"], ["res", "Ресурсы"], ["blocks", "Блоки"], ["tools", "Снаряжение"], ["magic", "Магия"], ["food", "Еда"], ["other", "Другое"]];
-  var TABS = ["profile", "claims", "clan", "market", "ach", "account", "help", "bonus", "donate"];
+  var TABS = ["profile", "claims", "clan", "market", "voice", "ach", "account", "help", "bonus", "donate"];
+  var voiceMounted = false;   // У236: голосовой чат (voice.js)
   var donTiers = null, donLoading = false;
 
   function $(id) { return document.getElementById(id); }
@@ -191,6 +192,11 @@
     if (t === "clan" && !clansAll) loadClans();
     if (t === "donate" && me) renderDonate();
     if (t === "bonus" && me) loadBonus();
+    if (t === "voice" && !voiceMounted) {
+      voiceMounted = true;
+      if (window.VPVoice) window.VPVoice.mount($("tab-voice"), {api: api, toast: toast});
+      else $("tab-voice").innerHTML = '<div class="card cab-card"><p class="cab-meta">Не загрузился модуль голосового чата — обнови страницу.</p></div>';
+    }
   }
 
   // ---------------------------------------------------------------- синхронизация
