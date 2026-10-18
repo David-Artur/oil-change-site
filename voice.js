@@ -208,7 +208,9 @@
   function poll() {
     if (!on) return;
     var t0 = Date.now();
-    opt.api("/voice", {action: "poll", speaking: speaking}).then(function (j) {
+    // У244: с кем связь установлена — сервер ставит ✔ в панели игры, только если связь есть у обоих
+    var linked = Object.keys(peers).filter(function (n) { var p = peers[n]; return p.pc && p.pc.connectionState === "connected"; });
+    opt.api("/voice", {action: "poll", speaking: speaking, linked: linked}).then(function (j) {
       if (!on) return;
       if (j && !j.offline) {   // сервер ответил (даже ошибкой) — связь до него есть
         var tn = Date.now(), prev = lastOk || joinedAt;
