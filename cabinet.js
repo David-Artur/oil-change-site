@@ -341,7 +341,10 @@
           var cb = function (p) { return '<td><input type="checkbox" data-perm="' + p + '" data-nick="' + esc(m.name) + '"' + (m[p] ? " checked" : "") + (p === "manager" && !own ? " disabled" : dis) + "></td>"; };
           return "<tr><td>" + esc(m.name) + "</td>" + cb("build") + cb("containers") + cb("access") + cb("manager") +
             (mgr ? '<td><button class="btn small red" data-rm="' + esc(m.name) + '" title="Убрать из привата">✕</button></td>' : "") + "</tr>";
-        }).join("") + "</tbody></table></div>";
+        }).join("") + "</tbody></table></div>" +
+        // 2026-10-18 (владелец): каждая галочка — сама по себе («строить» больше не открывает сундуки и двери)
+        '<p class="cab-meta">Каждая галочка работает отдельно: <b>Стр.</b> — ставить и ломать блоки; <b>Сунд.</b> — сундуки, бочки, печи, воронки, животные; ' +
+        '<b>Дв.</b> — двери, люки, кнопки, рычаги, кровати; <b>Упр.</b> — может добавлять и убирать людей. Галочку сняли — сразу нельзя.</p>';
     } else h += '<p class="cab-meta">Пока никого. Добавь друга — он сможет строить и открывать сундуки.</p>';
     if (mgr) h += '<div class="cab-row"><input type="text" data-f="nick" maxlength="16" placeholder="Ник друга" aria-label="Ник"><button class="btn small green" data-a="add">Добавить</button></div>';
     if (c.clan) h += '<p class="cab-note">Клан-приват: все участники клана строят тут и так; здесь — только гости со стороны.</p>';
