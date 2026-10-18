@@ -346,3 +346,20 @@ body.hm-noscroll { overflow: hidden; }
 .cab-fold[open] > summary { margin-bottom: 8px; }
 .cab-sec { font-size: 1.05rem; margin: 14px 2px 8px; }
 .cab-sec:first-child { margin-top: 4px; }
+.hm-dot.b { background: #3a9bff; } .hm-fr { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(127,127,127,.15); flex-wrap: wrap; } .hm-fr b { min-width: 0; } .hm-fr .cab-meta { flex: 1 1 auto; } .hm-fr .btn.small { padding: 3px 9px; } .hm-fr .hm-x { padding: 2px 8px; opacity: .6; } .hm-fr.req { background: rgba(247,199,60,.12); border-radius: 8px; padding: 6px 8px; } .hm-friends .hm-chat-form { margin-top: 8px; }
+
+/* 2026-10-18 (владелец): радар крупно — во всю ширину телефона; кнопка «⤢» — на весь экран; масштаб − / + */
+.hm .hm-rwrap { max-width: 440px; width: 100%; }
+.hm .hm-radar canvas { max-width: none; }
+.hm-rbtns { flex-wrap: wrap; align-items: center; }
+.hm-rbtns .btn { min-width: 38px; min-height: 34px; }
+.hm-zl { min-width: 64px; text-align: center; font-weight: 700; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.hm-rclose { display: none; }
+.hm-radar.full { position: fixed; inset: 0; z-index: 70; margin: 0; border-radius: 0; border: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: calc(10px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom)); background: var(--bg, #111); }
+.hm-radar.full .hm-rwrap { max-width: none; width: min(96vw, calc(100vh - 210px), calc(100dvh - 210px)); }
+.hm-radar.full .hm-rclose { display: block; position: absolute; top: calc(8px + env(safe-area-inset-top)); right: 10px; z-index: 2; }
+.hm-radar.full .hm-rbtns .btn { min-height: 42px; min-width: 46px; font-size: 1rem; }
+.hm-radar.full .hm-note, .hm-radar.full .hm-info { max-width: 96vw; }
+.chip.chip-reload { flex: none; padding: 5px 10px; } .map-over { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: var(--bg, #111); padding-top: env(safe-area-inset-top); } .map-over[hidden] { display: none; } .map-over-top { display: flex; align-items: center; gap: 8px; padding: 8px 10px; } .map-over-top b { flex: 1; } .map-over-top .btn { min-height: 40px; } .map-over-top .btn.red { background: #b4321f; color: #fff; } .map-over iframe { flex: 1; width: 100%; border: 0; }
+.hm .card.cab-card.hm-radar.full { margin: 0; border-radius: 0; height: 100vh; height: 100dvh; box-sizing: border-box; }

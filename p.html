@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Игрок — DaviArt Craft</title>
+<meta name="description" content="Страница игрока сервера DaviArt Craft: скин, уровень, навыки, клан, ачивки.">
+<meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<meta property="og:type" content="profile">
+<meta property="og:site_name" content="DaviArt Craft">
+<meta property="og:title" content="Игрок DaviArt Craft">
+<meta property="og:image" content="https://daviart.com/img/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/style.css?v=4">
+<style>
+  .pp { max-width: 720px; margin: 0 auto; padding: 18px 16px 48px; }
+  .pp-card { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 18px; align-items: center; }
+  @media (max-width: 520px) { .pp-card { grid-template-columns: 110px minmax(0, 1fr); gap: 12px; } }
+  .pp-skin { width: 100%; height: auto; image-rendering: pixelated; filter: drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
+  .pp h1 { margin: 0; font-size: 1.7rem; overflow-wrap: anywhere; }
+  .pp .sub { margin: 4px 0 0; color: var(--soft, #888); }
+  .pp .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #8a8a8a; margin-right: 6px; vertical-align: middle; }
+  .pp .dot.on { background: #3fd25e; box-shadow: 0 0 8px #3fd25e; }
+  .pp .lvl { display: inline-block; margin-top: 10px; font-weight: 800; font-size: 1.15rem; }
+  .pp .badge-alley { display: inline-block; margin: 8px 0 0; padding: 4px 10px; border-radius: 999px; background: linear-gradient(135deg, #f7d154, #d9a21b); color: #3a2600; font-weight: 700; font-size: .9rem; }
+  .pp-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 16px 0; }
+  .pp-stats div { background: var(--card2, rgba(127,127,127,.08)); border: 1px solid var(--line, rgba(127,127,127,.2)); border-radius: 12px; padding: 10px 12px; }
+  .pp-stats span { display: block; font-size: .8rem; color: var(--soft, #888); }
+  .pp-stats b { font-size: 1.1rem; }
+  .pp-skill { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; margin: 8px 0; }
+  .pp-skill i { grid-column: 1 / -1; height: 7px; border-radius: 4px; background: rgba(127,127,127,.2); overflow: hidden; }
+  .pp-skill i u { display: block; height: 100%; background: linear-gradient(90deg, #3fd25e, #f7c73c); }
+  .pp-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .pp-empty { text-align: center; padding: 48px 0; }
+</style>
+</head>
+<body>
+<header class="page-head">
+  <div class="wrap">
+    <img src="/img/icon-192.png" alt="" width="44" height="44">
+    <a href="/">DaviArt Craft</a>
+    <a class="back" href="/cabinet.html">Кабинет</a>
+  </div>
+</header>
+<main class="pp" id="pp"><p class="pp-empty">Загружаю…</p></main>
+<script>
+(function () {
+  "use strict";
+  var API = "https://mc.daviart.com/api";
+  var qs = new URLSearchParams(location.search);
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && qs.get("api")) API = qs.get("api");
+  var nick = (qs.get("n") || "").replace(/[^A-Za-z0-9_]/g, "").slice(0, 16);
+  var SKILLS = {"walk":"Ходьба","sprint":"Бег","sneak":"Ходьба вприсядку","jump":"Прыжок в высоту","fall":"Падение","swim":"Плавание","swim_fast":"Быстрое плавание",
+    "wade":"Ходьба в воде","breath":"Дыхание","riding":"Верховая езда","minecart":"Вагонетка","strength":"Сила удара","crit":"Критический удар","reach":"Дальность удара",
+    "knockback":"Отбрасывание","shield":"Блок щитом","defense":"Защита","regen":"Регенерация здоровья","throwing":"Метание","suffocation_res":"Стойкость к удушью",
+    "fire_res":"Стойкость к огню","poison_res":"Стойкость к ядам","mining":"Ломание блоков","ore_yield":"Добыча ресурсов","farming":"Фермерство","stomach":"Крепкий желудок",
+    "injury_res":"Стойкость к травмам","adrenaline":"Адреналин","stamina":"Выносливость","second_wind":"Второе дыхание","stealth":"Скрытность","glide":"Полёт",
+    "hardiness":"Акклиматизация","cold_tol":"Морозостойкость","heat_tol":"Жаростойкость","wet_res":"Привычка к сырости","first_aid":"Первая помощь","fishing":"Рыбалка","build":"Строительство"};
+  var box = document.getElementById("pp");
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); }
+  function ago(t) { if (!t) return "давно"; var m = Math.floor((Date.now() - t) / 60000); return m < 60 ? m + " мин назад" : m < 1440 ? Math.floor(m / 60) + " ч назад" : Math.floor(m / 1440) + " дн назад"; }
+  if (!nick) { box.innerHTML = '<div class="pp-empty"><h2>Чья страница?</h2><p>Адрес вида <code>daviart.com/p/Ник</code>. Свою ссылку можно взять в игре командой <code>/profile</code>.</p><a class="btn green" href="/">На главную</a></div>'; return; }
+  document.title = nick + " — DaviArt Craft";
+  fetch(API + "/public?nick=" + encodeURIComponent(nick)).then(function (r) { return r.json(); }).then(render).catch(function () {
+    box.innerHTML = '<div class="pp-empty"><h2>Сервер не отвечает</h2><p>Попробуй через минуту — возможно, идёт перезапуск.</p></div>';
+  });
+
+  function render(j) {
+    if (!j || !j.ok) { box.innerHTML = '<div class="pp-empty"><h2>' + esc(j && j.message || "Игрок не найден") + '</h2><a class="btn green" href="/">На главную</a></div>'; return; }
+    document.title = j.nick + " — уровень " + j.level + " · DaviArt Craft";
+    var h = '<div class="pp-card"><canvas class="pp-skin" id="pp-skin" width="160" height="320" aria-label="Скин ' + esc(j.nick) + '"></canvas><div>' +
+      "<h1>" + esc(j.nick) + "</h1>" +
+      '<p class="sub"><span class="dot' + (j.online ? " on" : "") + '"></span>' + (j.online ? "в игре сейчас" + (j.world ? " · " + esc(j.world) : "") : "был в игре " + ago(j.lastSeen)) + "</p>" +
+      '<div class="lvl">⭐ Уровень персонажа ' + j.level + "</div>" +
+      (j.alley ? '<div><span class="badge-alley">' + (j.alley <= 3 ? ["🥇", "🥈", "🥉"][j.alley - 1] + " " : "🏆 ") + "#" + j.alley + " в Аллее славы</span></div>" : "") +
+      (j.clan ? '<p class="sub">Клан: <b>[' + esc(j.clan.tag) + "]</b> " + esc(j.clan.name) + "</p>" : "") + "</div></div>";
+    var hrs = j.playMinutes != null ? Math.floor(j.playMinutes / 60) + " ч " + (j.playMinutes % 60) + " мин" : "—";
+    h += '<div class="pp-stats"><div><span>В игре</span><b>' + hrs + "</b></div>" +
+      "<div><span>Ачивки</span><b>" + (j.ach != null ? j.ach + " из " + j.achTotal : "—") + "</b></div>" +
+      "<div><span>Убито мобов</span><b>" + (j.mobKills != null ? j.mobKills : "—") + "</b></div>" +
+      "<div><span>На сервере с</span><b>" + (j.firstPlayed ? new Date(j.firstPlayed).toLocaleDateString("ru-RU") : "—") + "</b></div></div>";
+    if (j.skills && j.skills.length) h += '<div class="card cab-card" style="padding:12px 14px"><h3 style="margin:0 0 4px">Лучшие навыки</h3>' + j.skills.map(function (s) {
+      return '<div class="pp-skill"><span>' + esc(SKILLS[s.id] || s.id) + "</span><b>" + s.level + '</b><i><u style="width:' + Math.min(100, s.level) + '%"></u></i></div>';
+    }).join("") + "</div>";
+    h += '<div class="pp-actions"><button class="btn green" type="button" id="pp-share">📤 Поделиться</button><a class="btn" href="/">Играть: daviart.com</a></div>';
+    box.innerHTML = h;
+    document.getElementById("pp-share").onclick = function () {
+      var url = "https://daviart.com/p/" + j.nick, text = j.nick + " — уровень " + j.level + " на DaviArt Craft";
+      if (navigator.share) navigator.share({title: text, url: url}).catch(function () { });
+      else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { alert("Ссылка скопирована: " + url); });
+    };
+    drawSkin(j.skin, j.slim);
+  }
+
+  // скин спереди (2D): голова, тело, руки, ноги + второй слой; нет своего — стандартный
+  function drawSkin(url, slim) {
+    var c = document.getElementById("pp-skin"), g = c.getContext("2d"), img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function () {
+      var s = 10, aw = slim ? 3 : 4, old = img.height === 32;
+      g.imageSmoothingEnabled = false;
+      var part = function (sx, sy, w, hh, dx, dy) { g.drawImage(img, sx, sy, w, hh, dx * s, dy * s, w * s, hh * s); };
+      var ox = (16 - (8 + 2 * aw)) / 2 + aw;   // тело по центру холста 16 «пикселей» шириной
+      part(8, 8, 8, 8, ox, 0); part(40, 8, 8, 8, ox, 0);                 // голова + шляпа
+      part(20, 20, 8, 12, ox, 8); if (!old) part(20, 36, 8, 12, ox, 8);   // тело + куртка
+      part(44, 20, aw, 12, ox - aw, 8); if (!old) part(44, 36, aw, 12, ox - aw, 8);   // правая рука
+      if (old) { g.save(); g.scale(-1, 1); g.drawImage(img, 44, 20, aw, 12, -(ox + 8 + aw) * s, 8 * s, aw * s, 12 * s); g.restore(); }
+      else { part(36, 52, aw, 12, ox + 8, 8); part(52, 52, aw, 12, ox + 8, 8); }   // левая рука
+      part(4, 20, 4, 12, ox, 20); if (!old) part(4, 36, 4, 12, ox, 20);   // правая нога
+      if (old) { g.save(); g.scale(-1, 1); g.drawImage(img, 4, 20, 4, 12, -(ox + 8) * s, 20 * s, 4 * s, 12 * s); g.restore(); }
+      else { part(20, 52, 4, 12, ox + 4, 20); part(4, 52, 4, 12, ox + 4, 20); }
+    };
+    img.onerror = function () { if (url) drawSkin(null, slim); };
+    img.src = url || (slim ? "https://textures.minecraft.net/texture/7cb3ba52ddd5cc82c0b050c3f920f87da36add80165846f479079663805433db" : "https://textures.minecraft.net/texture/31f477eb1a7beee631c2ca64d06f8f68fa93a3386d04452ab27f43acdf1b60cb");
+  }
+})();
+</script>
+<script src="/ui.js?v=1"></script>
+<script src="/consent.js?v=1"></script>
+</body>
+</html>

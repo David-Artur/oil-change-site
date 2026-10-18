@@ -175,7 +175,7 @@
     api("/logout", {}).then(function () { memTok = null; setTok(null); me = null; stopSync(); show("login"); toast("Вы вышли из кабинета."); });
   });
 
-  Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip"), function (b) {
+  Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip[data-tab]"), function (b) {
     b.addEventListener("click", function () {
       setTab(b.getAttribute("data-tab"));
       var v = $("cab-view"), y = v ? v.getBoundingClientRect().top + window.scrollY : 0;   // прокручено вниз — к началу вкладки
@@ -186,7 +186,7 @@
   function setTab(t) {
     t = OLD_TABS[t] || t;
     tab = t;
-    Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip"), function (b) { b.setAttribute("aria-selected", b.getAttribute("data-tab") === t); });
+    Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip[data-tab]"), function (b) { b.setAttribute("aria-selected", b.getAttribute("data-tab") === t); });
     TABS.forEach(function (x) { $("tab-" + x).hidden = x !== t; });
     $("cab-view").classList.toggle("on-donate", t === "donate");   // на «Донате» полоса бонуса не дублирует карточку
     try { history.replaceState(null, "", "#" + t); } catch (e) { }
@@ -896,6 +896,40 @@
     });
   }
 
+
+  // ---------------------------------------------------------------- 2026-10-18 (владелец): кнопка «обновить» и веб-карта внутри кабинета с крестиком
+  // (в режиме «приложения» на телефоне ссылка на карту открывалась на весь экран без возможности вернуться)
+  (function () {
+    var rb = document.getElementById("reload-btn");
+    if (rb) rb.onclick = function () { rb.disabled = true; location.reload(); };
+    var over = null;
+    function closeMap(fromBack) {
+      if (!over || over.hidden) return;
+      over.hidden = true; over.querySelector("iframe").src = "about:blank"; document.body.classList.remove("hm-noscroll");
+      if (!fromBack && history.state && history.state.vpMap) history.back();
+    }
+    function openMap(url) {
+      if (!over) {
+        over = document.createElement("div");
+        over.className = "map-over";
+        over.innerHTML = '<div class="map-over-top"><b>🗺 Карта мира</b><a class="btn small" target="_blank" rel="noopener" id="map-ext">В браузере ↗</a>' +
+          '<button class="btn small red" type="button" id="map-close">✕ Закрыть</button></div><iframe title="Карта мира" allow="fullscreen" referrerpolicy="no-referrer"></iframe>';
+        document.body.appendChild(over);
+        over.querySelector("#map-close").onclick = function () { closeMap(false); };
+        window.addEventListener("popstate", function () { closeMap(true); });   // жест «назад» — закрыть карту
+      }
+      over.querySelector("#map-ext").href = url;
+      over.querySelector("iframe").src = url;
+      over.hidden = false; document.body.classList.add("hm-noscroll");
+      try { history.pushState({vpMap: 1}, ""); } catch (e) { }
+    }
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="https://mc.daviart.com/map"]');
+      if (!a || a.id === "map-ext") return;
+      e.preventDefault();
+      openMap(a.href);
+    });
+  })();
   // ---------------------------------------------------------------- старт
   var h0 = (location.hash || "").replace("#", "");
   h0 = OLD_TABS[h0] || h0;   // старые адреса (#profile, #clan, #bonus, #voice …) → объединённые вкладки
