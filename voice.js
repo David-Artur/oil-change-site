@@ -4,9 +4,9 @@
  * Подключение: window.VPVoice.mount(элемент, {api: fn(path, body) → Promise<json>, toast: fn(msg, bad)}). */
 (function () {
   "use strict";
-  var POLL_MS = 400, GONE_MS = 4000, NEAR = 4;
+  var POLL_MS = 400, GONE_MS = 15000, NEAR = 4, STUCK_MS = 20000;   // 2026-10-18: телефон/VPN — терпеливее
   var box = null, opt = null;
-  var on = false, pollT = null, myName = "", range = 32, iceServers = [{urls: "stun:stun.l.google.com:19302"}];
+  var on = false, pollT = null, myName = "", range = 100, iceServers = [{urls: "stun:stun.l.google.com:19302"}];
   var ctx = null, local = null, analyser = null, speaking = false, micOn = true, ptt = false, pttDown = false;
   var peers = {};      // ник → {pc, gain, el, d, seen, speaking, muted, pending: [ICE], made}
   var lastState = null, wakeLock = null;
@@ -123,7 +123,7 @@
       applyMic();
       try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () { }); } catch (e) { }
       draw();
-      poll();
+      startTicker();
       meter();
     }).catch(function () {
       m.textContent = "Нет доступа к микрофону. Разреши его в настройках браузера для daviart.com и нажми ещё раз.";
@@ -132,7 +132,7 @@
 
   function leave(tell) {
     on = false;
-    clearTimeout(pollT);
+    stopTicker(); polling = false;
     Object.keys(peers).forEach(drop);
     if (local) local.getTracks().forEach(function (t) { t.stop(); });
     local = null;
@@ -168,13 +168,37 @@
   }
 
   // ---------------------------------------------------------------- опрос сервера
+  // 2026-10-18: опрос по тикам фонового Web Worker — в свёрнутой вкладке/на фоне браузер почти не замедляет его (обычный setTimeout — до раза в минуту)
+  var ticker = null, polling = false, lastPoll = 0;
+  function startTicker() {
+    stopTicker();
+    try {
+      var src = "setInterval(function(){postMessage(1)}," + POLL_MS + ")";
+      ticker = new Worker(URL.createObjectURL(new Blob([src], {type: "text/javascript"})));
+      ticker.onmessage = tickPoll;
+    } catch (e) { ticker = setInterval(tickPoll, POLL_MS); }
+    tickPoll();
+  }
+  function stopTicker() {
+    if (!ticker) return;
+    if (ticker.terminate) ticker.terminate(); else clearInterval(ticker);
+    ticker = null;
+  }
+  function tickPoll() {
+    if (!on) return;
+    if (polling && Date.now() - lastPoll < 15000) return;   // ответ ещё не пришёл (повис — через 15 с пробуем снова)
+    polling = true; lastPoll = Date.now();
+    poll();
+  }
+
   function poll() {
     if (!on) return;
     opt.api("/voice", {action: "poll", speaking: speaking}).then(function (j) {
       if (!on) return;
       if (!j || !j.ok) {
         if (j && j.offline) { lastState = {inGame: false, connected: 0}; var w = $("vc-where"); if (w) w.textContent = "Сервер не отвечает — переподключаюсь…"; }
-        else { opt.toast((j && j.message) || "Голосовой чат недоступен.", true); leave(false); return; }
+        else if (j && (j.status === 401 || /закрыт|выключен/.test(j.message || ""))) { opt.toast(j.message || "Голосовой чат недоступен.", true); leave(false); return; }
+        else { var w3 = $("vc-where"); if (w3) w3.textContent = "Переподключаюсь…"; }   // разовая ошибка сервера — не выкидываем из голоса
       } else {
         var first = !lastState;
         lastState = j; myName = j.me; range = j.range || range;
@@ -184,13 +208,16 @@
         (j.peers || []).forEach(function (pe) {
           var p = peers[pe.name] || (peers[pe.name] = {pending: [], muted: false});
           p.d = pe.d; p.seen = now; p.speaking = pe.speaking;
+          if (pe.sid && p.sid && pe.sid !== p.sid && p.pc) closePc(p);   // собеседник переподключился — старое соединение мёртвое
+          if (pe.sid) p.sid = pe.sid;
+          if (p.pc && p.pc.connectionState !== "connected" && p.made && now - p.made > STUCK_MS) closePc(p);   // «соединяюсь» дольше 20 с — заново
           if (!p.pc && myName < pe.name) call(pe.name);   // звонит тот, чей ник «меньше» — без встречных звонков
           volume(p);
         });
         Object.keys(peers).forEach(function (n) { if (now - (peers[n].seen || 0) > GONE_MS) drop(n); });
         if (first) draw(); else { status(); drawPeers(); }
       }
-      pollT = setTimeout(poll, POLL_MS);
+      polling = false;
     });
   }
 
@@ -201,7 +228,7 @@
     var p = peers[name] || (peers[name] = {pending: [], muted: false});
     if (p.pc) return p;
     var pc = new RTCPeerConnection({iceServers: iceServers});
-    p.pc = pc;
+    p.pc = pc; p.made = Date.now();
     local.getTracks().forEach(function (t) { pc.addTrack(t, local); });
     pc.onicecandidate = function (e) { if (e.candidate) send(name, {t: "ice", c: e.candidate}); };
     pc.ontrack = function (e) {
@@ -261,7 +288,8 @@
   function volume(p) {
     if (p.d == null) return;
     var g = p.d <= NEAR ? 1 : Math.max(0, 1 - (p.d - NEAR) / Math.max(1, range - NEAR));
-    g = p.muted ? 0 : g * g;
+    // 2026-10-18: у самого края (до 100 бл.) — очень тихо, но слышно; дальше — тишина
+    g = p.muted || p.d > range ? 0 : 0.03 + 0.97 * g * g;
     if (p.gain && ctx) p.gain.gain.setTargetAtTime(g, ctx.currentTime, 0.15);
     else if (p.el) p.el.volume = g;
   }
@@ -288,5 +316,5 @@
       });
     })).then(function (l) { var o = {}; l.forEach(function (x) { o[x[0]] = x[1]; }); return {on: on, me: myName, inGame: lastState && lastState.inGame, peers: o}; });
   }
-  window.VPVoice = {mount: mount, active: function () { return on; }, stats: stats};
+  window.VPVoice = {mount: mount, active: function () { return on; }, stats: stats, range: function () { return range; }};
 })();

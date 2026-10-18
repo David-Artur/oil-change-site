@@ -500,8 +500,9 @@
     [0.25, 0.5, 0.75, 1].forEach(function (f) { g.beginPath(); g.arc(cx, cy, range * f * sc, 0, 7); g.stroke(); });
     g.fillStyle = dark ? "rgba(255,255,255,.55)" : "rgba(0,0,0,.4)"; g.font = (10 * u) + "px Rubik, sans-serif"; g.textAlign = "left"; g.textBaseline = "bottom";
     [0.5, 1].forEach(function (f) { g.fillText(Math.round(range * f) + "", cx + 3 * u, cy - range * f * sc - 1); });   // подписи колец, блоки
-    g.strokeStyle = "rgba(63,210,94,.55)"; g.setLineDash([4 * u, 4 * u]);   // граница слышимости голоса (32)
-    g.beginPath(); g.arc(cx, cy, 32 * sc, 0, 7); g.stroke(); g.setLineDash([]);
+    g.strokeStyle = "rgba(63,210,94,.55)"; g.setLineDash([4 * u, 4 * u]);   // граница слышимости голоса (voice.range с сервера)
+    var vr = (window.VPVoice && window.VPVoice.range && window.VPVoice.range()) || 100;
+    g.beginPath(); g.arc(cx, cy, vr * sc, 0, 7); g.stroke(); g.setLineDash([]);
     var note = $("hm-radar-note"), mapEl = $("hm-map");
     if (!live || !live.online || !live.me) {
       g.fillStyle = dark ? "#aaa" : "#777"; g.font = (15 * u) + "px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("не в игре", cx, cy); drawRim(g, cx, cy, R, u, 180);
