@@ -19,7 +19,7 @@
     box.innerHTML =
       '<div id="hm-voice"></div>' +
       '<div class="hm-row">' +
-        '<div class="card cab-card hm-radar" id="hm-rcard"><button class="btn small hm-rclose" type="button" id="hm-rclose">✕ Закрыть</button><div class="hm-rwrap"><canvas id="hm-mapc" width="320" height="320" aria-hidden="true"></canvas>' +
+        '<div class="card cab-card hm-radar" id="hm-rcard"><button class="btn small hm-rclose" type="button" id="hm-rclose" title="Закрыть" aria-label="Закрыть">✕</button><div class="hm-rwrap"><canvas id="hm-mapc" width="320" height="320" aria-hidden="true"></canvas>' +
           '<canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas></div>' +
           '<div class="hm-rbtns"><button class="btn small" type="button" id="hm-zout" title="Дальше">−</button><span class="hm-zl" id="hm-zoom"></span><button class="btn small" type="button" id="hm-zin" title="Ближе">+</button>' +
           '<button class="btn small" type="button" id="hm-north">🧭</button><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button><button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
@@ -28,6 +28,7 @@
           '<div class="hm-line" id="hm-line"></div><div id="hm-map"></div></div></div>' +
         '<div class="card cab-card hm-vitals" id="hm-vitals"></div>' +
       '</div>' +
+      '<div class="card cab-card hm-tp" id="hm-tp"></div>' +
       '<div class="card cab-card hm-friends" id="hm-friends"></div>' +
       '<div class="card cab-card hm-skills" id="hm-skills"></div>' +
       '<div class="card cab-card hm-quick" id="hm-quick"></div>' +
@@ -51,7 +52,13 @@
     var zstep = function (d) { var i = ZOOMS.indexOf(zoom) + d; if (i < 0 || i >= ZOOMS.length) return; zoom = ZOOMS[i]; pref("zoom", String(zoom)); upd(); };
     $("hm-zin").onclick = function () { zstep(-1); };
     $("hm-zout").onclick = function () { zstep(1); };
-    var full = function (on) { $("hm-rcard").classList.toggle("full", on); document.body.classList.toggle("hm-noscroll", on); sizeCanvases(); drawMap(); drawRadar(); };
+    var full = function (on) {
+      var rc = $("hm-rcard"), vb = $("hm-voice");
+      rc.classList.toggle("full", on); document.body.classList.toggle("hm-noscroll", on);
+      // на весь экран: сверху — голосовой чат, по центру — компас, снизу — управление компасом
+      if (on) rc.insertBefore(vb, rc.querySelector(".hm-rwrap")); else box.insertBefore(vb, box.firstChild);
+      sizeCanvases(); drawMap(); drawRadar();
+    };
     $("hm-full").onclick = function () { full(true); try { history.pushState({vpRadar: 1}, ""); } catch (e) { } };
     $("hm-rclose").onclick = function () { full(false); if (history.state && history.state.vpRadar) history.back(); };
     window.addEventListener("popstate", function () { if ($("hm-rcard").classList.contains("full")) full(false); });   // жест «назад» — закрыть радар
@@ -79,7 +86,7 @@
   // вкладку показали / скрыли (cabinet.js)
   function show(on) {
     shown = on;
-    if (on) { drawStatic(); tick(); loadFriends(true); } else { clearTimeout(timer); timer = null; }
+    if (on) { drawStatic(); tick(); loadFriends(true); loadTp(true); } else { clearTimeout(timer); timer = null; }
   }
 
   function tick() {
@@ -91,10 +98,12 @@
       busy = false;
       if (j && j.ok) {
         live = j;
+        if (j.tp) { o.toast(j.tp.message, !j.tp.ok); tpRun = null; drawTp(); loadTp(true); }   // итог телепорта с сайта
         if (j.chat && j.chat.length) { chat = chat.concat(j.chat).slice(-150); chatId = j.chat[j.chat.length - 1].id; drawChat(); }
         else if (j.chatId != null && j.chatId < chatId) chatId = j.chatId;   // сервер перезапускался — счётчик начался заново
         drawLive();
         loadFriends(false);
+        loadTp(false);
       } else if (j && j.offline) {
         var n = $("hm-radar-note"); if (n) n.textContent = "Сервер не отвечает — переподключаюсь…";
       }
@@ -161,6 +170,55 @@
     g.fillStyle = "rgba(0,0,0,.18)"; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill();   // чуть темнее — точки и подписи читаются
   }
 
+  // ---------------------------------------------------------------- телепорты (/api/home tpopts|tp): цена сразу, подтверждение, отсчёт в игре, итог — уведомлением
+  var tpo = null, tpAt = 0, tpBusy = false, tpWorld = null, tpRun = null;
+  function loadTp(force) {
+    var w = live && live.me ? live.me.worldId : null;
+    if (tpBusy || !(live && live.online)) { if (!(live && live.online)) { tpo = null; drawTp(); } return; }
+    if (!force && w === tpWorld && Date.now() - tpAt < 15000) return;
+    tpBusy = true;
+    o.api("/home", {action: "tpopts"}).then(function (j) {
+      tpBusy = false; tpAt = Date.now(); tpWorld = w;
+      var el = $("hm-tp"); if (el) el.hidden = !!(j && j.status === 404) || (j && !j.ok && !j.options);
+      tpo = j && j.options ? j.options : null; drawTp();
+    });
+  }
+  function priceTxt(t) { return t.price < 0 ? "нельзя" : (t.price > 0 ? "$" + Number(t.price).toLocaleString("ru-RU") : "бесплатно") + " · " + t.delay + " с"; }
+  function drawTp() {
+    var el = $("hm-tp"); if (!el) return;
+    if (!live || !live.online) { el.innerHTML = '<h3>🧭 Телепорты</h3><p class="cab-meta">Зайди на сервер — отсюда можно будет телепортироваться в лобби, домой и на спавн миров.</p>'; return; }
+    if (!tpo) { el.innerHTML = '<h3>🧭 Телепорты</h3><p class="cab-meta">Загружаю…</p>'; return; }
+    var h = '<h3>🧭 Телепорты</h3>';
+    if (tpRun) {
+      var left = Math.max(0, Math.ceil((tpRun.until - Date.now()) / 1000));
+      h += '<div class="tp-run">⏳ <b>' + esc(tpRun.label) + "</b> — отсчёт в игре" + (left ? ": " + left + " с" : "…") + ' <span class="cab-meta">не двигайся и не получай урон</span></div>';
+    }
+    h += '<div class="tp-grid">' + tpo.map(function (t, i) {
+      var off = t.price < 0 || !!t.why || !!tpRun;
+      return '<button class="tp-btn' + (t.price < 0 ? " no" : "") + '" type="button" data-i="' + i + '"' + (off ? " disabled" : "") + (t.why ? ' title="' + esc(t.why) + '"' : "") + '>' +
+        "<b>" + esc(t.label) + '</b><span>' + (t.why && t.price < 0 ? esc(t.why) : priceTxt(t)) + "</span></button>";
+    }).join("") + "</div>";
+    el.innerHTML = h;
+    Array.prototype.forEach.call(el.querySelectorAll(".tp-btn"), function (b) { b.onclick = function () { askTp(tpo[+b.getAttribute("data-i")]); }; });
+  }
+  function askTp(t) {
+    var m = document.createElement("div");
+    m.className = "tp-ask";
+    m.innerHTML = '<div class="card tp-ask-box"><h3>' + esc(t.label) + '</h3><p>Цена: <b>' + (t.price > 0 ? "$" + Number(t.price).toLocaleString("ru-RU") : "бесплатно") + "</b> · отсчёт <b>" + t.delay + " с</b></p>" +
+      '<p class="cab-meta">В игре начнётся отсчёт — не двигайся и не получай урон, иначе телепорт отменится (деньги не спишутся).</p>' +
+      '<div class="cab-row"><button class="btn green" type="button" data-ok>Телепорт</button><button class="btn" type="button" data-no>Отмена</button></div></div>';
+    document.body.appendChild(m);
+    var close = function () { m.remove(); };
+    m.onclick = function (e) { if (e.target === m) close(); };
+    m.querySelector("[data-no]").onclick = close;
+    m.querySelector("[data-ok]").onclick = function () {
+      close();
+      o.api("/home", {action: "tp", key: t.key}).then(function (j) {
+        o.toast(j && j.message || (j && j.ok ? "Телепорт начат." : "Не получилось."), !(j && j.ok));
+        if (j && j.ok) { tpRun = {label: t.label, until: Date.now() + (j.delay || t.delay) * 1000}; drawTp(); var iv = setInterval(function () { if (!tpRun) return clearInterval(iv); drawTp(); }, 1000); }
+      });
+    };
+  }
   // ---------------------------------------------------------------- друзья (/api/friends): кто в игре и где, кто когда был, заявки
   var fr = null, frAt = 0, frBusy = false;
   function loadFriends(force) {
