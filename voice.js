@@ -10,6 +10,10 @@
   var ctx = null, local = null, analyser = null, speaking = false, micOn = true, ptt = false, pttDown = false;
   var peers = {};      // ник → {pc, gain, el, d, seen, speaking, muted, pending: [ICE], made}
   var lastState = null, wakeLock = null;
+  // У240: понятный статус связи и проверка «меня слышно?»
+  var FAIL_MS = 60000, GAP_MS = 8000;
+  var joinedAt = 0, lastOk = 0, rtts = [], badAt = 0, badLen = 0, checking = false, micPeak = -1, reportHtml = "";
+  var HINT = 'Не подключается или долго «соединяюсь»? У некоторых операторов и в некоторых странах такая связь блокируется — <b>попробуй включить VPN</b>.';
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); }
   function $(id) { return document.getElementById(id); }
@@ -30,20 +34,26 @@
           : '<p class="cab-meta">Говори с игроками, которые <b>рядом с тобой в игре</b> и тоже подключились (у них <b>🎤 над головой</b>). ' +
             'Чем дальше — тем тише, дальше ' + range + ' блоков и в другом мире — не слышно. Ничего не записывается.</p>') +
         '<div class="cab-row"><button class="btn green' + (compact ? " vc-big" : "") + '" type="button" id="vc-join">🎤 Подключиться к голосу</button></div>' +
-        '<p class="cab-meta" id="vc-msg">Браузер спросит разрешение на микрофон — нажми «Разрешить». Лучше в наушниках.</p>';
+        '<p class="cab-meta" id="vc-msg">Браузер спросит разрешение на микрофон — нажми «Разрешить». Лучше в наушниках.</p>' +
+        '<p class="vc-hint">' + HINT + '</p>';
     } else {
       // 2026-10-18 (владелец): компактно и без «дрыганья» — подписи не меняются при разговоре, всё фиксированной ширины/высоты
       h += '<div class="vc-bar"><span class="vc-dot"></span><span class="vc-where" id="vc-where"></span></div>' +
+        '<div class="vc-health wait" id="vc-health">⏳ Подключаюсь к серверу…</div>' +
         '<div class="vc-row">' +
         '<button class="vc-ib" type="button" id="vc-mic"></button>' +
         '<div class="vc-meter" id="vc-meter"><i id="vc-level"></i></div>' +
         '<button class="vc-chip" type="button" id="vc-mode"></button>' +
         '<button class="vc-chip" type="button" id="vc-leave" title="Отключиться от голоса">Выйти</button></div>' +
         '<button class="btn gold vc-ptt" type="button" id="vc-ptt"' + (ptt ? "" : " hidden") + '>Держи — и говори</button>' +
-        '<div id="vc-peers" class="vc-peers"></div>';
+        '<div id="vc-peers" class="vc-peers"></div>' +
+        '<div class="vc-tools"><button class="vc-chip vc-check" type="button" id="vc-check" title="Проверить сервер, ретранслятор голоса и микрофон">🔧 Проверить связь</button></div>' +
+        '<div class="vc-report" id="vc-report"' + (reportHtml ? "" : " hidden") + '>' + reportHtml + '</div>' +
+        '<p class="vc-hint">' + HINT + '</p>';
     }
     box.innerHTML = h + "</div>";
     if (!on) { $("vc-join").onclick = join; return; }
+    $("vc-check").onclick = check;
     $("vc-mic").onclick = function () { micOn = !micOn; applyMic(); ctl(); };
     $("vc-mode").onclick = function () { ptt = !ptt; store("ptt", ptt ? "1" : "0"); applyMic(); ctl(); };
     $("vc-leave").onclick = function () { leave(true); };
@@ -52,7 +62,7 @@
     var up = function (e) { e.preventDefault(); pttDown = false; applyMic(); b.classList.remove("on"); };
     b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointerleave", up); b.addEventListener("pointercancel", up);
     peersHtml = null;
-    ctl(); status(); drawPeers();
+    ctl(); status(); drawPeers(); health();
   }
 
   // кнопки — меняем только их вид, без перерисовки панели
@@ -88,7 +98,8 @@
     if (!names.length && !others.length) h = '<p class="cab-meta vc-empty">Рядом в игре никого.</p>';
     else h = names.map(function (n) {
       var p = peers[n], st = p.pc ? p.pc.connectionState : "new";
-      var link = st === "connected" ? "слышит" : st === "failed" ? "нет связи" : "соединяюсь";
+      var wait = p.waitFrom ? Math.floor((Date.now() - p.waitFrom) / 5000) * 5 : 0;   // шагом 5 с — строка не мигает каждую секунду
+      var link = st === "connected" ? "🟢 связь есть" : wait * 1000 >= FAIL_MS ? "❌ нет связи — VPN?" : "⏳ соединяюсь" + (wait >= 5 ? " " + wait + " с" : "");
       return '<div class="vc-peer' + (p.speaking ? " talk" : "") + '"><span class="vc-ico">🎤</span><b>' + esc(n) + '</b>' +
         '<span class="vc-pm">' + Math.round(p.d) + " бл. · " + link + "</span>" +
         '<button class="vc-chip vc-mute" type="button" data-mute="' + esc(n) + '" title="' + (p.muted ? "Не слышишь его — нажми, чтобы слышать" : "Нажми, чтобы не слышать") + '">' + (p.muted ? "🔇" : "🔊") + "</button></div>";
@@ -120,6 +131,7 @@
         ctx.createMediaStreamSource(local).connect(analyser);
       }
       on = true; lastState = null;
+      joinedAt = Date.now(); lastOk = 0; rtts = []; badAt = 0; reportHtml = "";
       applyMic();
       try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () { }); } catch (e) { }
       draw();
@@ -132,7 +144,7 @@
 
   function leave(tell) {
     on = false;
-    stopTicker(); polling = false;
+    stopTicker(); polling = false; checking = false; micPeak = -1;
     Object.keys(peers).forEach(drop);
     if (local) local.getTracks().forEach(function (t) { t.stop(); });
     local = null;
@@ -161,6 +173,7 @@
     }
     var live = micOn && (!ptt || pttDown);
     speaking = live && lvl > 0.035;
+    if (micPeak >= 0 && live) micPeak = Math.max(micPeak, lvl);   // идёт проверка микрофона
     var bar = $("vc-level"), mt = $("vc-meter");
     if (bar) bar.style.transform = "scaleX(" + (live ? Math.min(1, lvl * 4) : 0).toFixed(3) + ")";   // без смены ширины блока — ничего не сдвигается
     if (mt && mt.classList.contains("talk") !== speaking) mt.classList.toggle("talk", speaking);
@@ -186,6 +199,7 @@
   }
   function tickPoll() {
     if (!on) return;
+    health();   // и когда ответ завис — строка статуса покажет, сколько секунд нет связи
     if (polling && Date.now() - lastPoll < 15000) return;   // ответ ещё не пришёл (повис — через 15 с пробуем снова)
     polling = true; lastPoll = Date.now();
     poll();
@@ -193,8 +207,15 @@
 
   function poll() {
     if (!on) return;
+    var t0 = Date.now();
     opt.api("/voice", {action: "poll", speaking: speaking}).then(function (j) {
       if (!on) return;
+      if (j && !j.offline) {   // сервер ответил (даже ошибкой) — связь до него есть
+        var tn = Date.now(), prev = lastOk || joinedAt;
+        if (tn - prev > GAP_MS) { badAt = tn; badLen = tn - prev; }   // был обрыв: запомнить на минуту
+        lastOk = tn;
+        rtts.push(tn - t0); if (rtts.length > 10) rtts.shift();
+      }
       if (!j || !j.ok) {
         if (j && j.offline) { lastState = {inGame: false, connected: 0}; var w = $("vc-where"); if (w) w.textContent = "Сервер не отвечает — переподключаюсь…"; }
         else if (j && (j.status === 401 || /закрыт|выключен/.test(j.message || ""))) { opt.toast(j.message || "Голосовой чат недоступен.", true); leave(false); return; }
@@ -212,12 +233,128 @@
           if (pe.sid) p.sid = pe.sid;
           if (p.pc && p.pc.connectionState !== "connected" && p.made && now - p.made > STUCK_MS) closePc(p);   // «соединяюсь» дольше 90 с — заново
           if (!p.pc && myName < pe.name) call(pe.name);   // звонит тот, чей ник «меньше» — без встречных звонков
+          if (p.pc && p.pc.connectionState === "connected") p.waitFrom = 0; else if (!p.waitFrom) p.waitFrom = now;
           volume(p);
         });
         Object.keys(peers).forEach(function (n) { if (now - (peers[n].seen || 0) > GONE_MS) drop(n); });
         if (first) draw(); else { status(); drawPeers(); }
       }
       polling = false;
+    });
+  }
+
+  // ---------------------------------------------------------------- У240: статус связи одной строкой
+  function health() {
+    var el = $("vc-health");
+    if (!el) return;
+    var now = Date.now(), gap = now - (lastOk || joinedAt), t, cls;
+    var failed = [], linked = 0;
+    Object.keys(peers).forEach(function (n) {
+      var p = peers[n];
+      if (p.pc && p.pc.connectionState === "connected") linked++;
+      else if (p.waitFrom && now - p.waitFrom >= FAIL_MS) failed.push(n);
+    });
+    var avg = rtts.length ? rtts.reduce(function (a, b) { return a + b; }, 0) / rtts.length : 0;
+    if (!lastOk && gap < 10000) { t = "⏳ Подключаюсь к серверу…"; cls = "wait"; }
+    else if (gap > GAP_MS) {
+      t = "⚠ Нет ответа от сервера уже " + Math.round(gap / 1000) + " с — похоже, твой интернет режет связь. Попробуй VPN или другой интернет (Wi-Fi ↔ мобильный).";
+      cls = "bad";
+    } else if (failed.length) {
+      t = "⚠ Не удаётся соединиться: " + failed.join(", ") + ". У кого-то из вас блокируется связь — попробуйте включить VPN.";
+      cls = "bad";
+    } else if (badAt && now - badAt < 60000) {
+      t = "⚠ Связь с сервером рвётся (был обрыв на " + Math.round(badLen / 1000) + " с). Если голос пропадает — попробуй VPN или другой интернет.";
+      cls = "warn";
+    } else if (avg > 2500) {
+      t = "⚠ Связь с сервером медленная (ответ " + (avg / 1000).toFixed(1) + " с) — голос может запаздывать. Если плохо — попробуй VPN.";
+      cls = "warn";
+    } else {
+      t = "✅ Связь с сервером в порядке" + (linked ? " · соединён с " + linked : "");
+      cls = "ok";
+    }
+    if (el.textContent !== t) el.textContent = t;
+    if (el.className !== "vc-health " + cls) el.className = "vc-health " + cls;
+  }
+
+  // ---------------------------------------------------------------- У240: «🔧 Проверить связь»
+  function within(ms, pr) { return Promise.race([pr, new Promise(function (r) { setTimeout(function () { r(null); }, ms); })]); }
+
+  function report(rows, sum) {
+    reportHtml = rows.map(function (r) { return "<div>" + r + "</div>"; }).join("") + (sum ? '<div class="sum">' + sum + "</div>" : "");
+    var el = $("vc-report");
+    if (el) { el.innerHTML = reportHtml; el.hidden = false; }
+  }
+
+  function checkServer() {   // 5 запросов подряд, на каждый — не дольше 8 с
+    var n = 0, ok = 0, worst = 0;
+    function one() {
+      var t0 = Date.now();
+      return within(8000, opt.api("/me")).then(function (j) {
+        var dt = Date.now() - t0;
+        if (j && !j.offline) { ok++; worst = Math.max(worst, dt); }
+        else worst = Math.max(worst, dt);
+        return ++n < 5 ? one() : null;
+      });
+    }
+    return one().then(function () {
+      if (ok === 5 && worst < 3000) return {state: "ok", txt: "✅ Сервер отвечает (до " + (worst / 1000).toFixed(1) + " с)"};
+      if (ok > 0) return {state: "bad", txt: "⚠ Сервер отвечает с перебоями: " + ok + " из 5, до " + Math.round(worst / 1000) + " с"};
+      // сервер молчит — а интернет вообще есть? (сайт daviart.com лежит на другом хостинге)
+      return within(8000, fetch("img/favicon-32.png?ping=" + Date.now(), {cache: "no-store"}).then(function (r) { return r.ok; }, function () { return false; }))
+        .then(function (net) { return {state: net ? "down" : "nonet", txt: net ? "❌ Сервер не отвечает тебе" : "❌ Нет интернета"}; });
+    });
+  }
+
+  function checkRelay() {   // получится ли адрес на ретрансляторе голоса (TURN) — через него голос идёт, если напрямую нельзя
+    var turn = iceServers.filter(function (s) { return /^turns?:/.test([].concat(s.urls)[0] || ""); });
+    if (!turn.length || !window.RTCPeerConnection) return Promise.resolve({state: "skip", txt: "— Ретранслятор голоса: нет данных"});
+    return new Promise(function (res) {
+      var pc, done = false;
+      function fin(ok) {
+        if (done) return; done = true;
+        try { pc.close(); } catch (e) { }
+        res(ok ? {state: "ok", txt: "✅ Ретранслятор голоса доступен"} : {state: "bad", txt: "⚠ Ретранслятор голоса недоступен — твоя сеть его блокирует"});
+      }
+      try {
+        pc = new RTCPeerConnection({iceServers: turn, iceTransportPolicy: "relay"});
+        pc.createDataChannel("check");
+        pc.onicecandidate = function (e) { if (e.candidate && / typ relay /.test(e.candidate.candidate)) fin(true); };
+        pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).catch(function () { fin(false); });
+        setTimeout(function () { fin(false); }, 9000);
+      } catch (e) { fin(false); }
+    });
+  }
+
+  function checkMic() {   // 5 с слушаем свой микрофон: двигалась ли полоска
+    if (!micOn) return Promise.resolve({state: "bad", txt: "⚠ Микрофон выключен — нажми 🎤"});
+    micPeak = 0;
+    return new Promise(function (r) { setTimeout(r, 5000); }).then(function () {
+      var peak = micPeak; micPeak = -1;
+      if (peak > 0.035) return {state: "ok", txt: "✅ Микрофон ловит твой голос"};
+      return {state: "bad", txt: ptt ? "⚠ Голоса не было — в режиме «Рация» держи кнопку и скажи что-нибудь"
+        : "⚠ Микрофон молчит — скажи что-нибудь вслух во время проверки; если полоска не двигается — проверь разрешение микрофона для daviart.com"};
+    });
+  }
+
+  function check() {
+    if (checking || !on) return;
+    checking = true;
+    var b = $("vc-check"); if (b) b.disabled = true;
+    var rows = ["⏳ Сервер…", "⏳ Ретранслятор голоса…", "⏳ Микрофон — <b>скажи что-нибудь вслух</b>…"];
+    report(rows, "");
+    var parts = [checkServer(), checkRelay(), checkMic()];
+    parts.forEach(function (pr, i) { pr.then(function (r) { rows[i] = r.txt; if (checking) report(rows, ""); }); });
+    Promise.all(parts).then(function (r) {
+      var srv = r[0].state, relay = r[1].state, mic = r[2].state, sum;
+      if (srv === "nonet") sum = "Итог: у тебя пропал интернет.";
+      else if (srv === "down") sum = "Итог: сервер тебе не отвечает. Если у друзей кабинет работает — блокирует твоя сеть: включи VPN или смени интернет. Если ни у кого не работает — напиши админу.";
+      else if (srv === "bad") sum = "Итог: связь до сервера у тебя рвётся — скорее всего, мешает провайдер. Включи VPN или смени интернет (Wi-Fi ↔ мобильный).";
+      else if (relay === "bad") sum = "Итог: сервер в порядке, но твоя сеть может не пропускать голос. Если с кем-то долго «соединяюсь» — включи VPN.";
+      else if (mic === "bad") sum = "Итог: связь в порядке — проверь микрофон.";
+      else sum = "Итог: у тебя всё в порядке ✅ Если кого-то не слышно — проблема у него: пусть тоже нажмёт «Проверить связь».";
+      checking = false;
+      report(rows, sum);
+      var bb = $("vc-check"); if (bb) bb.disabled = false;
     });
   }
 
@@ -247,7 +384,8 @@
       volume(p);
     };
     pc.onconnectionstatechange = function () {
-      drawPeers();
+      if (pc.connectionState === "connected") p.waitFrom = 0;
+      drawPeers(); health();
       if (pc.connectionState === "failed") {   // переподключиться через 3 с (звонит снова «меньший» ник)
         setTimeout(function () { if (peers[name] && peers[name].pc === pc) { closePc(peers[name]); if (myName < name) call(name); } }, 3000);
       }

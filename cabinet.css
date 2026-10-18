@@ -389,3 +389,17 @@ body.hm-noscroll { overflow: hidden; }
 .vc-pm { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vc-mute { width: 40px; height: 30px; padding: 0; font-size: .95rem; }
 .vc-empty { margin: 4px 0; font-size: .82rem; }
+
+/* У240: статус связи, «Проверить связь», подсказка про VPN */
+.vc-health { font-size: .8rem; line-height: 1.3; padding: 5px 8px; border-radius: 8px; margin: 4px 0; background: rgba(127,127,127,.14); }
+.vc-health.ok { background: rgba(63,210,94,.15); }
+.vc-health.warn { background: rgba(247,209,84,.2); }
+.vc-health.bad { background: rgba(220,70,50,.2); }
+.vc-tools { display: flex; gap: 6px; margin: 6px 0 2px; }
+.vc-check { height: 32px; padding: 0 10px; }
+.vc-check:disabled { opacity: .6; cursor: default; }
+.vc-report { font-size: .8rem; line-height: 1.35; padding: 6px 8px; border-radius: 8px; background: rgba(127,127,127,.1); margin: 4px 0; }
+.vc-report[hidden] { display: none; }
+.vc-report div { margin: 2px 0; }
+.vc-report .sum { margin-top: 6px; font-weight: 600; }
+.vc-hint { font-size: .76rem; line-height: 1.3; color: var(--muted); margin: 6px 0 0; }
