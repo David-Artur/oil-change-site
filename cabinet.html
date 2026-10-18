@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css?v=16">
-<link rel="stylesheet" href="cabinet.css?v=18">
+<link rel="stylesheet" href="cabinet.css?v=20">
 </head>
 <body>
 <header class="cab-top">
@@ -76,38 +76,16 @@
   <section id="cab-view" hidden>
     <div class="chips cab-tabs" id="tabs" role="tablist" aria-label="Разделы кабинета">
       <button class="chip chip-home" data-tab="home" role="tab">🏠 Главная</button>
-      <button class="chip" data-tab="profile" role="tab">Профиль</button>
-      <button class="chip" data-tab="claims" role="tab">Приваты</button>
-      <button class="chip" data-tab="clan" role="tab">Клан</button>
-      <button class="chip" data-tab="market" role="tab">Рынок <span class="badge" id="tab-badge" hidden></span></button>
-      <button class="chip" data-tab="ach" role="tab">Ачивки</button>
-      <button class="chip" data-tab="account" role="tab">Аккаунт</button>
-      <button class="chip" data-tab="help" role="tab">Справка</button>
-      <button class="chip chip-bonus" data-tab="bonus" role="tab"><span class="gift-glow" aria-hidden="true">🎁</span> Бонусы<span class="bn-ext" id="bonusbar" aria-live="polite"></span></button>
+      <button class="chip" data-tab="land" role="tab">🏡 Земли и клан</button>
+      <button class="chip" data-tab="market" role="tab">🛒 Рынок <span class="badge" id="tab-badge" hidden></span></button>
+      <button class="chip chip-bonus" data-tab="rewards" role="tab"><span class="gift-glow" aria-hidden="true">🎁</span> Награды<span class="bn-ext" id="bonusbar" aria-live="polite"></span></button>
+      <button class="chip" data-tab="acct" role="tab">⚙ Аккаунт</button>
       <button class="chip chip-don" data-tab="donate" role="tab"><span class="don-main">💛 Донат</span></button>
     </div>
-    <div id="tab-home" class="cab-tab"></div>
-    <div id="tab-profile" class="cab-tab" hidden>
-    <div class="card cab-head">
-      <div>
-        <h1 id="me-nick">—</h1>
-        <p class="cab-sub"><span class="dot" id="me-dot"></span><span id="me-online"></span></p>
-        <p class="cab-sync" id="sync" aria-live="polite"></p>
-      </div>
-      <div class="cab-kpis">
-        <div><span class="lbl">Баланс</span><b id="me-bal">—</b></div>
-        <div><span class="lbl">Уровень</span><b id="me-lvl">—</b></div>
-        <div><span class="lbl">Клан</span><b id="me-clan">—</b></div>
-      </div>
-      <button class="btn small" id="logout" type="button">Выйти</button>
-    </div>
-    <div class="card cab-card ref-card" id="ref-card">
-      <h2>🤝 Приведи друга — получи $1000</h2>
-      <p class="cab-meta">Позови друга на сервер. В <b>первый час игры</b> он пишет в чат твой код — ему <b>прокачка ×2 до 10 уровня</b>, а тебе <b>$1000</b>, когда он дойдёт до 10 уровня. Твой код — твой ник.</p>
-      <div class="ref-code"><code id="ref-cmd">/ref Ник</code><button class="btn small gold" type="button" id="ref-copy">Копировать</button></div>
-      <p class="cab-note">Звать можно сколько угодно друзей — $1000 за каждого (не больше 5 наград в сутки; с одного интернета с тобой — не считается). Кого ты пригласил — в игре: <code>/ref friends</code>.</p>
-      <a class="btn blue ref-pro" href="partners.html">⭐ Получить продвинутую рефералку</a>
-    </div>
+    <!-- 2026-10-18 (владелец): меньше вкладок — Главная = живой экран + профиль; Земли = приваты + клан; Награды = бонусы + «Приведи друга» + ачивки; Аккаунт = аккаунт + справка -->
+    <div id="tab-home" class="cab-tab">
+    <div id="home-live"></div>
+    <div id="profile-body"></div>
     <div class="card cab-card skin-card" id="skin-card" hidden>
       <h2>Скин</h2>
       <div class="skin-wrap">
@@ -127,16 +105,41 @@
         </div>
       </div>
     </div>
-    <div id="profile-body"></div>
     </div>
-    <div id="tab-claims" class="cab-tab" hidden></div>
-    <div id="tab-clan" class="cab-tab" hidden></div>
+    <div id="tab-land" class="cab-tab" hidden>
+      <h2 class="cab-sec">🏡 Приваты</h2><div id="tab-claims"></div>
+      <h2 class="cab-sec">⚔ Клан</h2><div id="tab-clan"></div>
+    </div>
     <div id="tab-market" class="cab-tab" hidden></div>
-    <div id="tab-ach" class="cab-tab" hidden></div>
-    <div id="tab-account" class="cab-tab" hidden></div>
-    <div id="tab-help" class="cab-tab" hidden></div>
-    <div id="tab-bonus" class="cab-tab" hidden></div>
-      <div id="tab-donate" class="cab-tab" hidden></div>
+    <div id="tab-rewards" class="cab-tab" hidden>
+    <div id="tab-bonus"></div>
+    <div class="card cab-card ref-card" id="ref-card">
+      <h2>🤝 Приведи друга — получи $1000</h2>
+      <p class="cab-meta">Позови друга на сервер. В <b>первый час игры</b> он пишет в чат твой код — ему <b>прокачка ×2 до 10 уровня</b>, а тебе <b>$1000</b>, когда он дойдёт до 10 уровня. Твой код — твой ник.</p>
+      <div class="ref-code"><code id="ref-cmd">/ref Ник</code><button class="btn small gold" type="button" id="ref-copy">Копировать</button></div>
+      <p class="cab-note">Звать можно сколько угодно друзей — $1000 за каждого (не больше 5 наград в сутки; с одного интернета с тобой — не считается). Кого ты пригласил — в игре: <code>/ref friends</code>.</p>
+      <a class="btn blue ref-pro" href="partners.html">⭐ Получить продвинутую рефералку</a>
+    </div>
+      <h2 class="cab-sec">🏆 Ачивки</h2><div id="tab-ach"></div>
+    </div>
+    <div id="tab-acct" class="cab-tab" hidden>
+    <div class="card cab-head">
+      <div>
+        <h1 id="me-nick">—</h1>
+        <p class="cab-sub"><span class="dot" id="me-dot"></span><span id="me-online"></span></p>
+        <p class="cab-sync" id="sync" aria-live="polite"></p>
+      </div>
+      <div class="cab-kpis">
+        <div><span class="lbl">Баланс</span><b id="me-bal">—</b></div>
+        <div><span class="lbl">Уровень</span><b id="me-lvl">—</b></div>
+        <div><span class="lbl">Клан</span><b id="me-clan">—</b></div>
+      </div>
+      <button class="btn small" id="logout" type="button">Выйти</button>
+    </div>
+    <div id="tab-account"></div>
+    <div id="tab-help"></div>
+    </div>
+    <div id="tab-donate" class="cab-tab" hidden></div>
   </section>
 
   <!-- окно «Продать» -->
@@ -157,8 +160,8 @@
 <script src="mc-icons.js?v=1"></script>
 <script src="shop.js?v=3"></script>
 <script src="voice.js?v=3"></script>
-<script src="home.js?v=3"></script>
-<script src="cabinet.js?v=23"></script>
+<script src="home.js?v=4"></script>
+<script src="cabinet.js?v=25"></script>
 <script src="ui.js?v=1"></script>
 <script src="consent.js?v=1"></script>
 </body>

@@ -19,7 +19,9 @@
     box.innerHTML =
       '<div id="hm-voice"></div>' +
       '<div class="hm-row">' +
-        '<div class="card cab-card hm-radar"><canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas>' +
+        '<div class="card cab-card hm-radar"><div class="hm-rwrap"><canvas id="hm-mapc" width="320" height="320" aria-hidden="true"></canvas>' +
+          '<canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas></div>' +
+          '<div class="hm-rbtns"><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button><button class="btn small" type="button" id="hm-zoom"></button></div>' +
           '<p class="cab-meta hm-note" id="hm-radar-note"></p>' +
           '<div class="hm-info"><button class="hm-coords" type="button" id="hm-coords" title="Нажми — скопировать координаты">📍 <b id="hm-xyz">—</b> <span class="hm-copy">⧉</span></button>' +
           '<div class="hm-line" id="hm-line"></div><div id="hm-map"></div></div></div>' +
@@ -32,6 +34,16 @@
       '<div class="hm-chat-over" id="hm-chat-over" hidden><div class="hm-chat-over-top"><b>Чат сервера</b><button class="btn small" type="button" id="hm-chat-close">✕ Закрыть</button></div>' +
         '<div class="hm-chat-list" id="hm-chat-big"></div>' + chatForm("big") + '</div>';
     if (window.VPVoice) window.VPVoice.mount($("hm-voice"), {api: o.api, toast: o.toast, compact: true});
+    mapOn = pref("map") === "1"; zoom = Number(pref("zoom")) || 100;
+    var upd = function () {
+      $("hm-mapbtn").classList.toggle("on", mapOn); $("hm-mapbtn").textContent = mapOn ? "🗺 Мир: вкл" : "🗺 Мир";
+      $("hm-zoom").textContent = "🔍 " + zoom + " бл.";
+      if (!mapOn) { var mc = $("hm-mapc"); mc.getContext("2d").clearRect(0, 0, mc.width, mc.height); }
+      drawRadar(); drawMap();
+    };
+    $("hm-mapbtn").onclick = function () { mapOn = !mapOn; pref("map", mapOn ? "1" : "0"); upd(); };
+    $("hm-zoom").onclick = function () { zoom = zoom === 100 ? 50 : 100; pref("zoom", String(zoom)); upd(); };
+    upd();
     $("hm-coords").onclick = function () {
       var m = live && live.me; if (!m) return;
       var t = m.x + " " + m.y + " " + m.z, done = function () { o.toast("Координаты скопированы: " + t); };
@@ -85,6 +97,44 @@
     if (!live) drawLive();
   }
 
+  function pref(k, v) { try { if (v === undefined) return localStorage.getItem("daviart.home." + k); localStorage.setItem("daviart.home." + k, v); } catch (e) { return null; } }
+
+  // ---------------------------------------------------------------- карта мира под радаром (BlueMap: lowres-тайлы 500×500 блоков, 1 пиксель = 1 блок;
+  // картинка — верхняя половина PNG 501×1002). Обновляется, когда BlueMap перерисует участок (обычно через несколько минут).
+  var MAP_ROOT = "https://mc.daviart.com/map/maps/", TILE = 500, tiles = {}, mapOn = false, zoom = 100;
+  function numPath(n) { var s = String(Math.abs(n)).split("").join("/"); return (n < 0 ? "-" : "") + s; }
+  function tileImg(world, tx, tz) {
+    var k = world + ":" + tx + ":" + tz, t = tiles[k];
+    if (t) return t.ok ? t.img : null;
+    t = tiles[k] = {img: new Image(), ok: false};
+    t.img.onload = function () { t.ok = true; };
+    t.img.onerror = function () { t.bad = true; };
+    t.img.src = MAP_ROOT + encodeURIComponent(world) + "/tiles/1/x" + numPath(tx) + "/z" + numPath(tz) + ".png";
+    return null;
+  }
+  function drawMap() {
+    var c = $("hm-mapc"); if (!c) return;
+    var g = c.getContext("2d"), W = c.width, R = W / 2 - 14, cx = W / 2, cy = W / 2;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W);
+    var me = o.me() || {}, world = (live && live.me && live.me.worldId) || (me.where && me.where.worldId);
+    if (!mapOn || !live || !live.online || !live.me || sm.x == null || !world) return;
+    var sc = R / zoom, psi = sm.yaw * Math.PI / 180, cs = Math.cos(psi), sn = Math.sin(psi);
+    g.save();
+    g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip();
+    g.fillStyle = "#1b1b1b"; g.fillRect(0, 0, W, W);
+    // мир → экран: вверх — куда смотришь (та же формула, что для точек игроков)
+    g.setTransform(-cs * sc, sn * sc, -sn * sc, -cs * sc, cx, cy);
+    g.imageSmoothingEnabled = false;
+    var span = zoom * 1.5, x0 = Math.floor((sm.x - span) / TILE), x1 = Math.floor((sm.x + span) / TILE), z0 = Math.floor((sm.z - span) / TILE), z1 = Math.floor((sm.z + span) / TILE);
+    for (var tx = x0; tx <= x1; tx++) for (var tz = z0; tz <= z1; tz++) {
+      var img = tileImg(world, tx, tz);
+      if (img) g.drawImage(img, 0, 0, TILE, TILE, tx * TILE - sm.x, tz * TILE - sm.z, TILE, TILE);
+    }
+    g.restore();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = "rgba(0,0,0,.18)"; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill();   // чуть темнее — точки и подписи читаются
+  }
+
   function fallbackCopy(t) {
     var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
     document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch (e) { } document.body.removeChild(ta);
@@ -107,10 +157,11 @@
   }
 
   // плавный радар: данные приходят раз в ~0.7 с, а стрелка и точки каждый кадр «доезжают» до новых значений
-  var sm = {yaw: null, pts: {}}, rafOn = false, lastFrame = 0;
+  var sm = {yaw: null, pts: {}, x: null, z: null}, rafOn = false, lastFrame = 0;
   function radarTarget() {
-    if (!live || !live.online || !live.me) { sm.yaw = null; sm.pts = {}; return; }
+    if (!live || !live.online || !live.me) { sm.yaw = null; sm.pts = {}; sm.x = null; return; }
     if (sm.yaw == null) sm.yaw = live.me.yaw;
+    if (sm.x == null || Math.abs(sm.x - live.me.x) + Math.abs(sm.z - live.me.z) > 60) { sm.x = live.me.x + 0.5; sm.z = live.me.z + 0.5; }   // телепорт — сразу
     var seen = {};
     (live.radar || []).forEach(function (p) {
       seen[p.name] = 1;
@@ -128,6 +179,8 @@
     var d = ((live.me.yaw - sm.yaw + 540) % 360) - 180;   // поворот по кратчайшему пути
     sm.yaw += d * k;
     Object.keys(sm.pts).forEach(function (n) { var p = sm.pts[n]; p.dx += (p.tdx - p.dx) * k; p.dz += (p.tdz - p.dz) * k; });
+    sm.x += (live.me.x + 0.5 - sm.x) * k; sm.z += (live.me.z + 0.5 - sm.z) * k;
+    drawMap();
     drawRadar();
     requestAnimationFrame(frame);
   }
@@ -211,11 +264,11 @@
     var g = c.getContext("2d"), W = c.width, R = W / 2 - 14, cx = W / 2, cy = W / 2;
     var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     g.clearRect(0, 0, W, W);
-    g.fillStyle = dark ? "rgba(255,255,255,.04)" : "rgba(0,0,0,.04)";
-    g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill();
-    var range = (live && live.radarRange) || 48, sc = R / range;
+    if (!mapOn) { g.fillStyle = dark ? "rgba(255,255,255,.04)" : "rgba(0,0,0,.04)"; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill(); }
+    var range = zoom, sc = R / range;
+    if (mapOn) dark = true;   // на карте — светлые подписи
     g.strokeStyle = dark ? "rgba(255,255,255,.18)" : "rgba(0,0,0,.15)"; g.lineWidth = 1;
-    [16, 32, 48].forEach(function (r) { if (r <= range) { g.beginPath(); g.arc(cx, cy, r * sc, 0, 7); g.stroke(); } });
+    (range > 60 ? [25, 50, 75, 100] : [16, 32, 48]).forEach(function (r) { if (r <= range) { g.beginPath(); g.arc(cx, cy, r * sc, 0, 7); g.stroke(); } });
     g.strokeStyle = "rgba(63,210,94,.5)"; g.setLineDash([4, 4]);   // граница слышимости голоса (32)
     g.beginPath(); g.arc(cx, cy, 32 * sc, 0, 7); g.stroke(); g.setLineDash([]);
     var note = $("hm-radar-note"), mapEl = $("hm-map");

@@ -21,7 +21,8 @@
   var RANK = {3: "лидер", 2: "заместитель", 1: "участник"};
   var RANKS = {level: "Уровень", money: "Деньги", pvp: "PvP", mobs: "Мобы", time: "Время в игре", market: "Оборот Рынка", ach: "Ачивки"};
   var CATS = [["all", "Все"], ["res", "Ресурсы"], ["blocks", "Блоки"], ["tools", "Снаряжение"], ["magic", "Магия"], ["food", "Еда"], ["other", "Другое"]];
-  var TABS = ["home", "profile", "claims", "clan", "market", "ach", "account", "help", "bonus", "donate"];
+  var TABS = ["home", "land", "market", "rewards", "acct", "donate"];   // 2026-10-18: вкладки объединены (старые адреса — OLD_TABS)
+  var OLD_TABS = {profile: "home", voice: "home", claims: "land", clan: "land", ach: "rewards", bonus: "rewards", account: "acct", help: "acct"};
   var homeMounted = false;   // У237: «Главная» — второй экран (home.js; голос — voice.js внутри неё)
   var donTiers = null, donLoading = false;
 
@@ -183,20 +184,23 @@
   });
 
   function setTab(t) {
+    t = OLD_TABS[t] || t;
     tab = t;
     Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip"), function (b) { b.setAttribute("aria-selected", b.getAttribute("data-tab") === t); });
     TABS.forEach(function (x) { $("tab-" + x).hidden = x !== t; });
     $("cab-view").classList.toggle("on-donate", t === "donate");   // на «Донате» полоса бонуса не дублирует карточку
     try { history.replaceState(null, "", "#" + t); } catch (e) { }
+    var ch = document.querySelector('#tabs .chip[data-tab="' + t + '"]');   // выбранная вкладка — в видимую часть полосы (телефон)
+    if (ch && ch.scrollIntoView) try { ch.scrollIntoView({block: "nearest", inline: "nearest"}); } catch (e) { }
     if (t === "market" && !market) loadMarket();
-    if (t === "clan" && !clansAll) loadClans();
+    if (t === "land" && !clansAll) loadClans();
     if (t === "donate" && me) renderDonate();
-    if (t === "bonus" && me) loadBonus();
+    if (t === "rewards" && me) loadBonus();
     if (t === "home" && !homeMounted && me) {
       homeMounted = true;
-      if (window.VPHome) window.VPHome.mount($("tab-home"), {api: api, toast: toast, me: function () { return me; }, money: money, mapLink: mapLink, skills: SKILLS,
+      if (window.VPHome) window.VPHome.mount($("home-live"), {api: api, toast: toast, me: function () { return me; }, money: money, mapLink: mapLink, skills: SKILLS,
         setTab: function (x) { setTab(x); var v = $("cab-view"); if (v) window.scrollTo(0, v.getBoundingClientRect().top + window.scrollY); }});
-      else $("tab-home").innerHTML = '<div class="card cab-card"><p class="cab-meta">Не загрузилась «Главная» — обнови страницу.</p></div>';
+      else $("home-live").innerHTML = '<div class="card cab-card"><p class="cab-meta">Не загрузилась «Главная» — обнови страницу.</p></div>';
     }
     if (window.VPHome && homeMounted) window.VPHome.show(t === "home");
   }
@@ -272,44 +276,37 @@
   function bar(v, cls) { return '<div class="bar ' + (cls || "") + '"><i style="width:' + Math.max(0, Math.min(100, v)) + '%"></i></div>'; }
   function stat(l, v) { return '<div class="cab-stat"><span class="lbl">' + l + "</span><b>" + (v == null ? "—" : v) + "</b></div>"; }
 
-  function renderProfile() {
-    var s = me.stats || {}, h = "";
-    if (me.where) {
-      var w = me.where;
-      h += '<div class="card cab-card"><h2>Сейчас в игре</h2><div class="cab-stats">' + stat("Мир", esc(w.world)) + stat("Координаты", w.x + " " + w.y + " " + w.z) +
-        stat("Здоровье", Math.round(w.health) + " / " + w.maxHealth) + stat("Сытость", w.food + " / 20") + stat("Уровень опыта", w.xpLevel) + "</div>" +
-        '<div class="cab-row">' + (w.world !== "Лобби" ? mapLink(w.worldId, w.x, w.y, w.z, "🗺 Где я на карте") : "") + "</div></div>";
-    }
-    h += '<div class="card cab-card"><h2>Статистика</h2><div class="cab-stats">' +
-      stat("В игре", s.playMinutes != null ? (Math.floor(s.playMinutes / 60) + " ч " + (s.playMinutes % 60) + " мин") : "—") +
-      stat("Смертей", s.deaths) + stat("Убито мобов", s.mobKills) + stat("Убито игроков", s.playerKills) +
-      stat("Пройдено", s.walkCm != null ? (s.walkCm / 100000).toFixed(1) + " км" : "—") + stat("Прыжков", s.jumps) +
-      stat("На сервере с", me.firstPlayed ? new Date(me.firstPlayed).toLocaleDateString("ru-RU") : "—") + "</div></div>";
-    var rk = me.ranks || {}, rkeys = Object.keys(RANKS).filter(function (k) { return rk[k]; });
-    if (rkeys.length) {
-      h += '<div class="card cab-card"><h2>Места в рейтингах</h2><div class="cab-stats">' + rkeys.map(function (k) {
-        var r = rk[k];
-        return stat(RANKS[k], r.rank ? "#" + r.rank + ' <span class="cab-meta">из ' + r.of + (r.value ? " · " + esc(r.value) : "") + "</span>" : '<span class="cab-meta">нет в таблице</span>');
-      }).join("") + '</div><p class="cab-note">Таблица обновляется раз в минуту по игрокам онлайн. В игре — <code>/top</code>.</p></div>';
-    }
-    var homes = me.homes || [];
-    h += '<div class="card cab-card"><h2>Дома</h2>' + (homes.length ? homes.map(function (x) {
-      return '<div class="mem"><span class="nm">' + esc(x.world) + '</span><span class="cab-meta">' + x.x + " " + x.y + " " + x.z + "</span>" + mapLink(x.worldId, x.x, x.y, x.z) + "</div>";
-    }).join("") : '<p class="cab-meta">Домов нет. В каждом мире (1–3) — свой: встань на место и напиши <code>/sethome</code>.</p>') + "</div>";
-    var b = me.body || {};
-    if (Object.keys(b).length) {
-      h += '<div class="card cab-card"><h2>Тело</h2><p class="cab-meta">Части тела лечатся сами (кровать — ×5, в Святых землях — ×10), бинтами и у лекаря. Сломанные ноги — медленно ходишь.</p><div class="body-fig">' +
-        BODY.map(function (p) { var v = Math.round((b[p[0]] == null ? 1 : b[p[0]]) * 100); return "<div>" + p[1] + " · <b>" + v + "%</b>" + bar(v, v < 25 ? "bad" : v < 60 ? "warn" : "") + "</div>"; }).join("") + "</div></div>";
-    }
+  function renderProfile() {   // 2026-10-18: «Профиль» — нижняя часть «Главной»; живое (где ты, тело) — выше, в home.js
+    var s = me.stats || {}, h = "", box = $("profile-body");
+    var open = {};
+    Array.prototype.forEach.call(box.querySelectorAll("details[data-k]"), function (d) { open[d.getAttribute("data-k")] = d.open; });
+    var sec = function (k, title, body, def) {
+      var isOpen = open[k] == null ? def : open[k];
+      return '<details class="card cab-card cab-fold" data-k="' + k + '"' + (isOpen ? " open" : "") + "><summary><h2>" + title + "</h2></summary>" + body + "</details>";
+    };
+    h += sec("inv", "🎒 Инвентарь", me.inventory ? '<p class="cab-meta">Наведи (или нажми) на предмет — название и прочность. Продать — во вкладке «Рынок», когда ты в лобби.</p>' + mcInventory(me.inventory, false)
+      : '<p class="cab-meta">Видно, когда ты в игре.</p>', true);
     var sk = me.skills || {}, keys = Object.keys(sk);
     if (keys.length) {
       keys.sort(function (a, c) { return (sk[c] - sk[a]) || ((SKILLS[a] || a).localeCompare(SKILLS[c] || c)); });
-      h += '<div class="card cab-card"><h2>Навыки <span class="cab-meta">(1–100, качаются действием)</span></h2><div class="cab-cards" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0 22px">' +
-        keys.map(function (k) { return '<div class="skill"><span>' + esc(SKILLS[k] || k) + "</span><b>" + sk[k] + "</b>" + bar(sk[k]) + "</div>"; }).join("") + "</div></div>";
+      h += sec("skills", "📈 Все навыки <span class=\"cab-meta\">(1–100)</span>", '<div class="cab-cards" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 18px">' +
+        keys.map(function (k) { return '<div class="skill"><span>' + esc(SKILLS[k] || k) + "</span><b>" + sk[k] + "</b>" + bar(sk[k]) + "</div>"; }).join("") + "</div>", false);
     }
-    if (me.inventory) {
-      h += '<div class="card cab-card"><h2>Инвентарь</h2><p class="cab-meta">Как в игре: наведи (или нажми) на предмет — название и прочность. Продать — во вкладке «Рынок», когда ты в лобби.</p>' + mcInventory(me.inventory, false) + "</div>";
-    } else h += '<div class="card cab-card"><h2>Снаряжение и инвентарь</h2><p class="cab-meta">Видно, когда ты в игре.</p></div>';
+    var st = '<div class="cab-stats">' +
+      stat("В игре", s.playMinutes != null ? (Math.floor(s.playMinutes / 60) + " ч " + (s.playMinutes % 60) + " мин") : "—") +
+      stat("Смертей", s.deaths) + stat("Убито мобов", s.mobKills) + stat("Убито игроков", s.playerKills) +
+      stat("Пройдено", s.walkCm != null ? (s.walkCm / 100000).toFixed(1) + " км" : "—") + stat("Прыжков", s.jumps) +
+      stat("На сервере с", me.firstPlayed ? new Date(me.firstPlayed).toLocaleDateString("ru-RU") : "—") + "</div>";
+    var rk = me.ranks || {}, rkeys = Object.keys(RANKS).filter(function (k) { return rk[k]; });
+    if (rkeys.length) st += '<h3 class="don-sub">Места в рейтингах</h3><div class="cab-stats">' + rkeys.map(function (k) {
+      var r = rk[k];
+      return stat(RANKS[k], r.rank ? "#" + r.rank + ' <span class="cab-meta">из ' + r.of + (r.value ? " · " + esc(r.value) : "") + "</span>" : '<span class="cab-meta">нет в таблице</span>');
+    }).join("") + '</div><p class="cab-note">В игре — <code>/top</code>.</p>';
+    h += sec("stats", "📊 Статистика и рейтинги", st, false);
+    var homes = me.homes || [];
+    h += sec("homes", "🏠 Дома", homes.length ? homes.map(function (x) {
+      return '<div class="mem"><span class="nm">' + esc(x.world) + '</span><span class="cab-meta">' + x.x + " " + x.y + " " + x.z + "</span>" + mapLink(x.worldId, x.x, x.y, x.z) + "</div>";
+    }).join("") : '<p class="cab-meta">Домов нет. В каждом мире (1–3) — свой: встань на место и напиши <code>/sethome</code>.</p>', false);
     $("profile-body").innerHTML = h;
   }
 
@@ -634,7 +631,7 @@
     if (window.DShop) DShop.votes($("cab-votes"), me.nick);
     else $("cab-votes").innerHTML = '<p class="cab-meta">Не загрузился модуль голосования — обнови страницу.</p>';
     if (!giftVoteTimer && window.DShop) giftVoteTimer = setInterval(function () {
-      if (!document.hidden && tab === "bonus" && $("cab-votes")) DShop.votes($("cab-votes"), me.nick);
+      if (!document.hidden && tab === "rewards" && $("cab-votes")) DShop.votes($("cab-votes"), me.nick);
     }, 60000);
   }
 
@@ -901,7 +898,7 @@
 
   // ---------------------------------------------------------------- старт
   var h0 = (location.hash || "").replace("#", "");
-  if (h0 === "voice") h0 = "home";   // У236 → У237: голос теперь на «Главной»
+  h0 = OLD_TABS[h0] || h0;   // старые адреса (#profile, #clan, #bonus, #voice …) → объединённые вкладки
   if (TABS.indexOf(h0) >= 0) tab = h0;
   if (tok()) { show("load"); load(true); } else show("login");
 })();

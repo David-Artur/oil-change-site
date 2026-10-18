@@ -326,3 +326,23 @@ body.hm-noscroll { overflow: hidden; }
 .hm .vc-compact > p.cab-meta { font-size: .8rem; margin: 2px 0 6px; }
 .hm .vc-compact #vc-msg { font-size: .74rem; margin-top: 4px; }
 .hm .btn.vc-big { padding: 12px; }
+
+/* 2026-10-18 (владелец): вкладки на телефоне — одна строка с прокруткой вбок, компактно и у самого верха */
+@media (max-width: 720px) {
+  .cab-tabs { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 6px; padding: 6px 0; margin: 0 0 8px; }
+  .cab-tabs::-webkit-scrollbar { display: none; }
+  .cab-tabs .chip { flex: none; padding: 5px 11px; font-size: .86rem; min-height: 34px; white-space: nowrap; }
+  .cab-tabs .chip.chip-don .don-main { padding: 5px 11px; }
+  .cab-tabs .chip-bonus .bn-ext { display: none; }
+}
+.hm-rwrap { position: relative; width: 100%; max-width: 210px; margin: 0 auto; aspect-ratio: 1; } .hm-rwrap canvas { position: absolute; inset: 0; width: 100% !important; max-width: none !important; height: 100%; } .hm-rbtns { display: flex; justify-content: center; gap: 6px; margin-top: 6px; } .hm-rbtns .btn { padding: 4px 10px; font-size: .8rem; } .hm-rbtns .btn.on { box-shadow: 0 0 0 2px #3fd25e inset; }
+
+/* 2026-10-18: объединённые вкладки — раскрывающиеся блоки и подзаголовки разделов */
+.cab-fold > summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cab-fold > summary::-webkit-details-marker { display: none; }
+.cab-fold > summary h2 { margin: 0; font-size: 1rem; }
+.cab-fold > summary::after { content: "▾"; opacity: .6; transition: transform .15s; }
+.cab-fold[open] > summary::after { transform: rotate(180deg); }
+.cab-fold[open] > summary { margin-bottom: 8px; }
+.cab-sec { font-size: 1.05rem; margin: 14px 2px 8px; }
+.cab-sec:first-child { margin-top: 4px; }
