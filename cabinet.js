@@ -901,7 +901,28 @@
   // (в режиме «приложения» на телефоне ссылка на карту открывалась на весь экран без возможности вернуться)
   (function () {
     var rb = document.getElementById("reload-btn");
-    if (rb) rb.onclick = function () { rb.disabled = true; location.reload(); };
+    // 2026-10-18: GitHub Pages отдаёт страницу из кэша до 10 мин — обычный reload мог оставить старый voice.js; грузим заново с меткой
+    var fresh = function () {
+      try { var u = new URL(location.href); u.searchParams.set("r", Date.now().toString(36)); location.replace(u.toString()); }
+      catch (e) { location.reload(); }
+    };
+    if (rb) rb.onclick = function () { rb.disabled = true; fresh(); };
+    // раз в 5 мин: вышла новая версия кабинета (другие ?v= у скриптов) — подсветить 🔄 и предложить обновить
+    var mine = function (doc) {
+      return Array.prototype.map.call(doc.querySelectorAll("script[src*='?v='], link[href*='?v=']"), function (e) { return e.getAttribute("src") || e.getAttribute("href"); }).sort().join(" ");
+    };
+    var loaded = mine(document), told = false;
+    setInterval(function () {
+      if (told || document.hidden) return;
+      fetch(location.pathname + "?check=" + Date.now(), {cache: "no-store"}).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
+        if (!t || told) return;
+        var now = mine(new DOMParser().parseFromString(t, "text/html"));
+        if (!now || now === loaded) return;
+        told = true;
+        if (rb) { rb.classList.add("gold"); rb.title = "Вышло обновление кабинета — нажми, чтобы загрузить"; }
+        if (typeof toast === "function") toast("Вышло обновление кабинета — нажми 🔄 вверху справа.");
+      }).catch(function () { });
+    }, 300000);
     // iOS Safari не слушает user-scalable=no — гасим щипок и двойной тап вручную
     ["gesturestart", "gesturechange"].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, {passive: false}); });
     document.addEventListener("touchmove", function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, {passive: false});
