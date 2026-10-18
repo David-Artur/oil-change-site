@@ -64,14 +64,18 @@
     var el = $("vc-peers");
     if (!el) return;
     var names = Object.keys(peers).filter(function (n) { return peers[n].d != null; }).sort(function (a, b) { return peers[a].d - peers[b].d; });
-    if (!names.length) { el.innerHTML = '<p class="cab-meta">Пока никого рядом. Позови друзей: пусть откроют кабинет → «Голос» и подойдут к тебе в игре.</p>'; return; }
+    var others = (lastState && lastState.others) || [];   // рядом в игре, но голос не подключили
+    if (!names.length && !others.length) { el.innerHTML = '<p class="cab-meta">Рядом в игре никого. Подойди к игрокам — они появятся здесь.</p>'; return; }
     el.innerHTML = names.map(function (n) {
       var p = peers[n], st = p.pc ? p.pc.connectionState : "new";
-      var link = st === "connected" ? "" : st === "failed" ? " · не соединилось" : " · соединяюсь…";
+      var link = st === "connected" ? " · слышит тебя" : st === "failed" ? " · не соединилось" : " · соединяюсь…";
       return '<div class="vc-peer' + (p.speaking ? " talk" : "") + '"><span class="vc-ico">' + (p.speaking ? "🗣" : "🎤") + '</span><b>' + esc(n) + '</b>' +
         '<span class="cab-meta">' + Math.round(p.d) + ' бл.' + link + '</span>' +
         '<button class="btn small" type="button" data-mute="' + esc(n) + '">' + (p.muted ? "🔇 Не слышу" : "🔊 Слышу") + "</button></div>";
-    }).join("");
+    }).join("") + others.slice().sort(function (a, b) { return a.d - b.d; }).map(function (o) {
+      return '<div class="vc-peer off"><span class="vc-ico">🔇</span><b>' + esc(o.name) + '</b><span class="cab-meta">' + Math.round(o.d) +
+        ' бл. · не подключён к голосу — не слышит тебя</span></div>';
+    }).join("") + (others.length && !names.length ? '<p class="cab-meta">Позови их: пусть откроют кабинет → «🎤 Голос» → «Подключиться».</p>' : "");
     Array.prototype.forEach.call(el.querySelectorAll("[data-mute]"), function (b) {
       b.onclick = function () { var p = peers[b.getAttribute("data-mute")]; if (p) { p.muted = !p.muted; volume(p); drawPeers(); } };
     });

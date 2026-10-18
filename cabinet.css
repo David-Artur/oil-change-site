@@ -253,3 +253,4 @@
 .vc-peer.talk { box-shadow: 0 0 0 2px #3fd25e inset; }
 .vc-peer b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .vc-ico { font-size: 1.2rem; }
+.vc-peer.off { opacity: .6; }
