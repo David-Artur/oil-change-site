@@ -233,6 +233,16 @@ code.cmdcopy:hover, code.cmdcopy:focus-visible { background: var(--grass-bg, rgb
 .soon .tag { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 4px; background: var(--warn-bg); color: var(--warn); white-space: nowrap; }
 .soon p { margin: 6px 0 0; color: var(--muted); font-size: .94rem; }
 
+/* что нового (data.js NEWS) — лента карточек: дата слева, текст справа; первая — свежая (зелёная полоска) */
+.news { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.news-item { padding: 14px; display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+.news-item time { flex: none; width: 64px; text-align: center; font: 700 .78rem/1.25 var(--font); color: var(--grass); background: var(--grass-bg); border: 1px solid var(--line2); border-radius: 6px; padding: 6px 4px; }
+.news-item > div { min-width: 0; }
+.news-item h3 { font-size: 1.03rem; margin-bottom: 4px; }
+.news-item p { margin: 0; color: var(--muted); font-size: .94rem; }
+.news-item .news-more { display: inline-block; margin-top: 6px; font-size: .9rem; font-weight: 600; }
+.news-item.fresh { border-left: 4px solid var(--grass); }
+
 /* FAQ */
 .faq { display: grid; gap: 8px; }
 .faq details { padding: 0; }
@@ -324,7 +334,9 @@ form.recover { display: grid; gap: 14px; }
   .brand img { width: 56px; height: 56px; }
   .actions .btn { flex: 1 1 100%; }
   .ip-box { padding-left: 12px; }
-  .cmds, .worlds, .features, .rules, .soon, .gblocks, .vizgrid, .howto { grid-template-columns: 1fr; }
+  .cmds, .worlds, .features, .rules, .soon, .gblocks, .vizgrid, .howto, .news { grid-template-columns: 1fr; }
+  .news-item { padding: 12px; gap: 10px; }
+  .news-item time { width: 56px; }
   .mc-ico { width: 56px; height: 56px; }
   .gtable { font-size: .86rem; }
   .gtable th, .gtable td { padding: 8px 8px; }

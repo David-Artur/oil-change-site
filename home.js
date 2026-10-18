@@ -25,6 +25,7 @@
           '<button class="btn small" type="button" id="hm-north">🧭</button><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button><button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
           '<p class="cab-meta hm-note" id="hm-radar-note"></p>' +
           '<div class="hm-info"><button class="hm-coords" type="button" id="hm-coords" title="Нажми — скопировать координаты">📍 <b id="hm-xyz">—</b> <span class="hm-copy">⧉</span></button>' +
+          '<div class="hm-pois" id="hm-pois"></div>' +
           '<div class="hm-line" id="hm-line"></div><div id="hm-map"></div></div></div>' +
         '<div class="card cab-card hm-vitals" id="hm-vitals"></div>' +
       '</div>' +
@@ -67,6 +68,12 @@
     $("hm-coords").onclick = function () {
       var m = live && live.me; if (!m) return;
       var t = m.x + " " + m.y + " " + m.z, done = function () { o.toast("Координаты скопированы: " + t); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); });
+      else { fallbackCopy(t); done(); }
+    };
+    $("hm-pois").onclick = function (e) {   // У248: тап по спавну/порталу — его координаты в буфер
+      var b = e.target.closest("[data-xz]"); if (!b) return;
+      var t = b.getAttribute("data-xz"), done = function () { o.toast(b.getAttribute("data-name") + ": координаты скопированы — " + t); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); });
       else { fallbackCopy(t); done(); }
     };
@@ -446,6 +453,48 @@
     });
   }
 
+  // У248 (владелец 2026-10-18): спавн мира и порталы — на радаре; дальше края — на ободе со стрелкой и расстоянием; список под радаром
+  var DIRS = ["↑ С", "↗ СВ", "→ В", "↘ ЮВ", "↓ Ю", "↙ ЮЗ", "← З", "↖ СЗ"];
+  var poisHtml = null;
+  function drawPois(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark) {
+    var ps = live && live.pois || [];
+    var list = [];
+    if (sm.x == null) ps = [];
+    ps.forEach(function (p) {
+      var ax = live.me.x + 0.5 + p.dx, az = live.me.z + 0.5 + p.dz, dx = ax - sm.x, dz = az - sm.z;
+      var sx = dx * rx + dz * rz, sy = -(dx * fx + dz * fz), d = Math.sqrt(sx * sx + sy * sy), out = d * sc > R - 10 * u;
+      var k = out ? (R - 10 * u) / (d * sc) : 1, x = cx + sx * sc * k, y = cy + sy * sc * k;
+      g.save();
+      if (p.kind === "spawn") {   // золотая звезда
+        g.fillStyle = "#f6c945"; g.strokeStyle = "#5a3b12"; g.lineWidth = 1.2 * u; g.beginPath();
+        for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, r = (i % 2 ? 3.2 : 8) * u; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+        g.closePath(); g.fill(); g.stroke();
+      } else {   // портал: фиолетовая рамка
+        g.fillStyle = "#8b3dff"; g.strokeStyle = "#1a0b33"; g.lineWidth = 2 * u;
+        g.beginPath(); g.rect(x - 5 * u, y - 7 * u, 10 * u, 14 * u); g.fill(); g.stroke();
+        g.fillStyle = "rgba(220,180,255,.8)"; g.fillRect(x - 2.5 * u, y - 4.5 * u, 5 * u, 9 * u);
+      }
+      var txt = p.label + (out ? " · " + Math.round(d) + " бл." : "");
+      g.font = "bold " + (11 * u) + "px Rubik, sans-serif"; g.textBaseline = "top";
+      // у края круга подпись — внутрь, чтобы не обрезалась ободом
+      g.textAlign = x > cx + R * 0.45 ? "right" : x < cx - R * 0.45 ? "left" : "center";
+      if (g.textAlign !== "center") x += (g.textAlign === "right" ? 6 : -6) * u;
+      g.lineWidth = 3 * u; g.strokeStyle = dark ? "rgba(0,0,0,.75)" : "rgba(255,255,255,.85)"; g.strokeText(txt, x, y + 9 * u);
+      g.fillStyle = dark ? "#fff" : "#222"; g.fillText(txt, x, y + 9 * u);
+      g.restore();
+      var az8 = Math.round(((Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360) / 45) % 8;   // направление по сторонам света
+      list.push({p: p, d: Math.round(Math.sqrt(dx * dx + dz * dz)), dir: DIRS[az8]});
+    });
+    var el = $("hm-pois");
+    if (!el) return;
+    list.sort(function (a, b) { return a.d - b.d; });
+    var h = list.map(function (q) {
+      return '<button class="hm-poi" type="button" data-xz="' + q.p.x + ' ' + q.p.z + '" data-name="' + esc(q.p.label) + '" title="Нажми — скопировать координаты">' +
+        (q.p.kind === "spawn" ? "★ " : "▣ ") + esc(q.p.label) + " · <b>" + q.d + " бл.</b> " + q.dir + "</button>";
+    }).join("");
+    if (h !== poisHtml) { poisHtml = h; el.innerHTML = h; }
+  }
+
   // рамка компаса «по-майнкрафтовски»: деревянный обод из «пикселей»-досок, тёмные края, деления через 15°, буквы С/В/Ю/З с пиксельной тенью
   // (север — красный), золотые ромбы между сторонами. Стороны света ставятся по текущему повороту радара (vy).
   var PLANK = ["#7a5533", "#8a6239", "#6e4c2c", "#946b40", "#80593a", "#9b7146"];
@@ -524,6 +573,7 @@
       g.fillStyle = dark ? "#eee" : "#222"; g.font = (12 * u) + "px Rubik, sans-serif"; g.textBaseline = "top";
       g.fillText(p.name + (Math.abs(p.dy) >= 4 ? (p.dy > 0 ? " ▲" : " ▼") : ""), x, y + 9 * u); g.textBaseline = "middle";
     });
+    drawPois(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
     drawMarks(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
     g.save(); g.translate(cx, cy); g.rotate((sm.yaw - vy) * Math.PI / 180);   // ты — стрелка туда, куда смотришь
     g.fillStyle = "#3a9bff"; g.strokeStyle = "#fff"; g.lineWidth = 1.5 * u;

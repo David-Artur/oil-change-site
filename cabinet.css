@@ -390,6 +390,12 @@ body.hm-noscroll { overflow: hidden; }
 .vc-mute { width: 40px; height: 30px; padding: 0; font-size: .95rem; }
 .vc-empty { margin: 4px 0; font-size: .82rem; }
 
+/* У248: спавн и порталы под радаром — тап копирует координаты */
+.hm-pois { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+.hm-pois:empty { display: none; }
+.hm-poi { border: 1px solid var(--line); background: var(--card2); color: var(--text); border-radius: 999px; padding: 6px 10px; font: 600 .8rem var(--font); cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.hm-poi b { font-weight: 800; }
+
 /* У240: статус связи, «Проверить связь», подсказка про VPN */
 .vc-health { font-size: .8rem; line-height: 1.3; padding: 5px 8px; border-radius: 8px; margin: 4px 0; background: rgba(127,127,127,.14); }
 .vc-health.ok { background: rgba(63,210,94,.15); }

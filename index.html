@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 
@@ -63,15 +63,19 @@
 <nav class="nav" id="nav" aria-label="Разделы">
   <div class="wrap">
     <a href="#join">Как играть</a>
+    <a href="#news">Что нового</a>
     <a href="https://mc.daviart.com/map/" class="nav-map" target="_blank" rel="noopener">🗺 Карта онлайн</a>
     <a href="#claims">Приваты</a>
     <a href="#worlds">Миры</a>
+    <a href="#npc">Жители</a>
     <a href="#teleport">Телепорт</a>
     <a href="#economy">Экономика</a>
     <a href="#market">Рынок</a>
+    <a href="#potions">Зелья</a>
     <a href="#clans">Кланы</a>
     <a href="#leaders">Лидеры</a>
     <a href="#cabinet" data-cab>Кабинет</a>
+    <a href="#voice" data-cab>Голос</a>
     <a href="#ach">Ачивки</a>
     <a href="#bloodmoon">Кровавая луна</a>
     <a href="#elytra">Элитры</a>
@@ -97,6 +101,12 @@
     <ol class="steps join5" id="join-steps"></ol>
   </section>
 
+  <section id="news">
+    <h2>Что нового</h2>
+    <p class="lead">Последние обновления сервера — свежие сверху. Все новости и обсуждение — в <a href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>.</p>
+    <ol class="news" id="news-list"></ol>
+  </section>
+
   <section id="claims" class="guide" data-guide="claims"></section>
 
   <section id="worlds">
@@ -111,9 +121,12 @@
     </div>
   </section>
 
+  <section id="npc" class="guide" data-guide="npc"></section>
+
   <section id="teleport" class="guide" data-guide="teleport"></section>
   <section id="economy" class="guide" data-guide="economy"></section>
   <section id="market" class="guide" data-guide="market"></section>
+  <section id="potions" class="guide" data-guide="potions"></section>
   <section id="clans" class="guide" data-guide="clans"></section>
   <section id="leaders">
     <h2>Лидеры</h2>
@@ -131,9 +144,12 @@
       <div class="card gblock"><h3>⚑ Клан</h3><p>Создать клан, пригласить игрока (даже не в сети), клан-чат с сайта, назначить заместителя, исключить, передать лидерство, банк и налог.</p></div>
       <div class="card gblock"><h3>⚖ Рынок</h3><p>Витрина с поиском, покупка прямо с сайта (предмет — на Склад), продажа из инвентаря, когда ты в лобби, снять свой лот. В игре — <code>/market</code> из любого мира.</p></div>
       <div class="card gblock"><h3>🔒 Безопасно</h3><p>Пароль проверяет сервер, сайт его не хранит; 5 ошибок — вход для ника закрыт на 15 мин. Забыл пароль — код на привязанную почту.</p></div>
+      <div class="card gblock"><h3>🎤 Голос рядом</h3><p>Голосовой чат с игроками до 100 блоков в том же мире: чем дальше — тем тише. Подробно — раздел <a href="#voice">«Голос»</a>.</p></div>
+      <div class="card gblock"><h3>🧭 Телепорты и друзья</h3><p>Телепорт в лобби, домой или на спавн мира прямо с сайта — с той же ценой и отсчётом, что в игре. Друзья: кто в игре и в каком мире.</p></div>
     </div>
     <p style="margin-top:14px"><a class="btn gold" href="cabinet.html">Открыть личный кабинет</a></p>
   </section>
+  <section id="voice" class="guide" data-guide="voice" data-cab></section>
   <section id="ach" class="guide" data-guide="ach"></section>
   <section id="bloodmoon" class="guide" data-guide="bloodmoon"></section>
   <section id="elytra" class="guide" data-guide="elytra"></section>
@@ -196,7 +212,7 @@
 
 <footer>
   <div class="wrap">
-    <div><img src="img/favicon-32.png" alt="">© DaviArt Craft · сайт обновлён <span id="updated">2026-10-13</span></div>
+    <div><img src="img/favicon-32.png" alt="">© DaviArt Craft · сайт обновлён <span id="updated">18.10.2026</span></div>
     <nav aria-label="Ссылки">
       <a href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>
       <a href="https://mc.daviart.com/map/" target="_blank" rel="noopener">Карта мира</a>
@@ -215,9 +231,9 @@
 
 <a class="dot-admin" href="admin.html" aria-label="Служебная страница" title=""></a>
 
-<script src="data.js?v=14"></script>
+<script src="data.js?v=15"></script>
 <script src="viz.js?v=8"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 <script src="shop.js?v=3"></script>
 <script src="pages.js?v=7"></script>
 <script src="ui.js?v=1"></script>

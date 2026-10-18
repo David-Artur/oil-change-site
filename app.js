@@ -20,13 +20,22 @@
     launcher: '<div class="jv jv-launch"><div class="jv-logo">MINECRAFT</div><span class="jv-ver">Java 1.21.10</span><span class="jv-btn green">Играть</span></div>',
     server: '<div class="jv jv-dirt"><div class="jv-title">Добавить сервер</div><label>Адрес сервера</label>' +
       '<button type="button" class="jv-field" data-copy="' + esc(S.address || "daviart.com") + '" data-msg="Адрес скопирован — вставь его в Minecraft">' + esc(S.address || "daviart.com") + '<i class="copy-ico"></i></button><span class="jv-btn">Готово</span></div>',
-    chat: '<div class="jv jv-chat"><p class="y">Зарегистрируйся: /register пароль</p><p class="in">/register <span class="ph">пароль</span><b class="caret">_</b></p></div>',
+    chat: '<div class="jv jv-chat"><p class="y">Зарегистрируйся: /reg пароль</p><p class="in">/reg <span class="ph">пароль</span><b class="caret">_</b></p></div>',
     portal: '<div class="jv jv-portal"><div class="frame"><i ' + mcImg("block__nether_portal") + '></i></div><span class="jv-sign">Святые земли</span></div>',
     start: '<div class="jv jv-start"><span class="slot"><i ' + mcImg("item__raw_copper") + '></i><b>64</b></span><span class="arr">→</span><span class="slot"><i ' + mcImg("item__emerald") + '></i></span><span class="arr">→</span><span class="slot"><i ' + mcImg("item__compass_16") + '></i></span></div>'
   };
   var js = $("join-steps");
   if (js && window.JOIN) js.innerHTML = JOIN.map(function (s, i) {
     return '<li class="card jstep"><span class="jn">' + (i + 1) + "</span>" + (JOIN_V[s.v] || "") + "<h3>" + rich(s.t) + "</h3><p>" + rich(s.d) + "</p>" + (s.more ? '<p class="jmore">' + rich(s.more) + "</p>" : "") + "</li>";
+  }).join("");
+
+  /* ---------- что нового (data.js NEWS, новые сверху) ---------- */
+  var nl = $("news-list");
+  var MON = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+  var dayMon = function (d) { var p = String(d).split("-"); return +p[2] + " " + (MON[+p[1] - 1] || ""); };
+  if (nl && window.NEWS) nl.innerHTML = NEWS.map(function (n, i) {
+    return '<li class="card news-item' + (i === 0 ? " fresh" : "") + '"><time datetime="' + esc(n.d) + '">' + esc(dayMon(n.d)) + "</time><div><h3>" + rich(n.t) + "</h3><p>" + rich(n.p) + "</p>" +
+      (n.a ? '<a class="news-more" href="' + esc(n.a) + '">Подробнее →</a>' : "") + "</div></li>";
   }).join("");
 
   /* ---------- миры ---------- */
