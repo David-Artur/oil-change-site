@@ -402,6 +402,18 @@ body.hm-noscroll { overflow: hidden; }
 #hm-map { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .hm-discord { --b: #5865f2; --bh: #8891f7; --bl: #3a43b8; color: #fff; }
 
+/* У256: фильтры компаса — «⚙» в левом верхнем углу карточки радара, панель с галочками поверх */
+.hm-radar { position: relative; }
+.hm-fbtn { position: absolute; top: 8px; left: 8px; z-index: 3; min-width: 40px; min-height: 36px; padding: 2px 8px; font-size: 1.05rem; }
+.hm-fbtn.on { box-shadow: 0 0 0 2px #f6c945 inset; }
+.hm-radar.full .hm-fbtn { top: calc(8px + env(safe-area-inset-top)); left: 10px; }
+.hm-flt { position: absolute; top: 50px; left: 8px; right: 8px; z-index: 4; max-width: 340px; padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.hm-flt[hidden] { display: none; }
+.hm-flt-top { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.hm-flt-top b { flex: 1; }
+.hm-flt-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: .92rem; cursor: pointer; }
+.hm-flt-row input { width: 20px; height: 20px; accent-color: #3fd25e; }
+
 /* У254: шумодав */
 .vc-nr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 6px; }
 .vc-nr .vc-chip { height: 32px; padding: 0 10px; }

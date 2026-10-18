@@ -19,7 +19,9 @@
     box.innerHTML =
       '<div id="hm-voice"></div>' +
       '<div class="hm-row">' +
-        '<div class="card cab-card hm-radar" id="hm-rcard"><button class="btn small hm-rclose" type="button" id="hm-rclose" title="Закрыть" aria-label="Закрыть">✕</button><div class="hm-rwrap"><canvas id="hm-mapc" width="320" height="320" aria-hidden="true"></canvas>' +
+        '<div class="card cab-card hm-radar" id="hm-rcard"><button class="btn small hm-rclose" type="button" id="hm-rclose" title="Закрыть" aria-label="Закрыть">✕</button>' +
+          '<button class="btn small hm-fbtn" type="button" id="hm-fbtn" title="Фильтры: что показывать на компасе" aria-label="Фильтры">⚙</button><div class="hm-flt card" id="hm-flt" hidden></div>' +
+          '<div class="hm-rwrap"><canvas id="hm-mapc" width="320" height="320" aria-hidden="true"></canvas>' +
           '<canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas></div>' +
           '<div class="hm-rbtns"><button class="btn small" type="button" id="hm-zout" title="Дальше">−</button><span class="hm-zl" id="hm-zoom"></span><button class="btn small" type="button" id="hm-zin" title="Ближе">+</button>' +
           '<button class="btn small" type="button" id="hm-north">🧭</button><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button><button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
@@ -71,6 +73,8 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); });
       else { fallbackCopy(t); done(); }
     };
+    $("hm-fbtn").onclick = function () { var b = $("hm-flt"); if (b.hidden) filtersUi(); b.hidden = !b.hidden; };   // У256
+    $("hm-fbtn").classList.toggle("on", FLT.some(function (x) { return !flt[x[0]]; }));
     $("hm-pois").onclick = function (e) {   // У248: тап по спавну/порталу — его координаты в буфер
       var ad = e.target.closest("[data-add]"), dl = e.target.closest("[data-del]");
       if (ad) {   // У255: личная метка там, где стоишь
@@ -464,11 +468,38 @@
     });
   }
 
+  // У256 (владелец 2026-10-18): фильтры радара — «⚙» в углу, галочки, что показывать; запоминается в браузере
+  var FLT = [["pvoice", "Игроки с голосом"], ["pother", "Игроки без голоса"], ["friends", "Друзья и клан"], ["spawn", "Спавн"],
+    ["portal", "Порталы"], ["home", "Мой дом"], ["claim", "Мои приваты"], ["member", "Приваты, где я участник"], ["mark", "Мои метки"],
+    ["mapmarks", "Метки карты в руке (крестики, флаги)"], ["ring", "Круг слышимости голоса"]];
+  var POI_FLT = {spawn: "spawn", portal: "portal", home: "home", claim: "claim", "claim-member": "member", mark: "mark"};
+  var flt = (function () {
+    var f = {}; FLT.forEach(function (x) { f[x[0]] = true; });
+    try { var s = JSON.parse(pref("filters") || "{}"); Object.keys(s).forEach(function (k) { if (k in f) f[k] = !!s[k]; }); } catch (e) { }
+    return f;
+  })();
+  function filtersUi() {
+    var box = $("hm-flt"); if (!box) return;
+    box.innerHTML = '<div class="hm-flt-top"><b>Что показывать</b><button class="btn small" type="button" data-fa="all">Всё</button><button class="btn small" type="button" data-fa="close">Готово</button></div>' +
+      FLT.map(function (x) { return '<label class="hm-flt-row"><input type="checkbox" data-f="' + x[0] + '"' + (flt[x[0]] ? " checked" : "") + "> " + esc(x[1]) + "</label>"; }).join("");
+    box.onchange = function (e) { var k = e.target.getAttribute("data-f"); if (!k) return; flt[k] = e.target.checked; saveFlt(); };
+    box.onclick = function (e) {
+      var a = e.target.getAttribute && e.target.getAttribute("data-fa");
+      if (a === "all") { FLT.forEach(function (x) { flt[x[0]] = true; }); saveFlt(); filtersUi(); }
+      if (a === "close") box.hidden = true;
+    };
+  }
+  function saveFlt() {
+    pref("filters", JSON.stringify(flt)); poisHtml = null;
+    var b = $("hm-fbtn"); if (b) b.classList.toggle("on", FLT.some(function (x) { return !flt[x[0]]; }));
+    drawRadar();
+  }
+
   // У248 (владелец 2026-10-18): спавн мира и порталы — на радаре; дальше края — на ободе со стрелкой и расстоянием; список под радаром
   var DIRS = ["↑ С", "↗ СВ", "→ В", "↘ ЮВ", "↓ Ю", "↙ ЮЗ", "← З", "↖ СЗ"];
   var poisHtml = null;
   function drawPois(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark) {
-    var ps = live && live.pois || [];
+    var ps = (live && live.pois || []).filter(function (p) { var k = POI_FLT[p.kind]; return !k || flt[k]; });   // У256: фильтр точек
     var list = [], boxes = [];   // занятые подписями места: налезает — подпись не рисуем (название есть в кнопках под радаром)
     if (sm.x == null) ps = [];
     ps.forEach(function (p) {
@@ -581,7 +612,8 @@
     [0.5, 1].forEach(function (f) { g.fillText(Math.round(range * f) + "", cx + 3 * u, cy - range * f * sc - 1); });   // подписи колец, блоки
     g.strokeStyle = "rgba(63,210,94,.55)"; g.setLineDash([4 * u, 4 * u]);   // граница слышимости голоса (voice.range с сервера)
     var vr = (window.VPVoice && window.VPVoice.range && window.VPVoice.range()) || 100;
-    g.beginPath(); g.arc(cx, cy, vr * sc, 0, 7); g.stroke(); g.setLineDash([]);
+    if (flt.ring) { g.beginPath(); g.arc(cx, cy, vr * sc, 0, 7); g.stroke(); }
+    g.setLineDash([]);
     var note = $("hm-radar-note"), mapEl = $("hm-map");
     if (!live || !live.online || !live.me) {
       g.fillStyle = dark ? "#aaa" : "#777"; g.font = (15 * u) + "px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("не в игре", cx, cy); drawRim(g, cx, cy, R, u, 180);
@@ -592,7 +624,10 @@
     var vy = viewYaw(), yaw = vy * Math.PI / 180, fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = -Math.sin(yaw);
     // север на ободе
     drawRim(g, cx, cy, R, u, vy);
-    var list = Object.keys(sm.pts).map(function (n) { return sm.pts[n]; });
+    var list = Object.keys(sm.pts).map(function (n) { return sm.pts[n]; }).filter(function (p) {   // У256: фильтр игроков
+      if (p.clan || p.friend) return flt.friends;
+      return p.voice ? flt.pvoice : flt.pother;
+    });
     list.forEach(function (p) {
       var sx = p.dx * rx + p.dz * rz, sy = -(p.dx * fx + p.dz * fz);
       var d = Math.sqrt(sx * sx + sy * sy), k = d * sc > R ? R / (d * sc) : 1;
@@ -604,7 +639,7 @@
       g.fillText(p.name + (Math.abs(p.dy) >= 4 ? (p.dy > 0 ? " ▲" : " ▼") : ""), x, y + 9 * u); g.textBaseline = "middle";
     });
     drawPois(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
-    drawMarks(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
+    if (flt.mapmarks) drawMarks(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
     g.save(); g.translate(cx, cy); g.rotate((sm.yaw - vy) * Math.PI / 180);   // ты — стрелка туда, куда смотришь
     g.fillStyle = "#3a9bff"; g.strokeStyle = "#fff"; g.lineWidth = 1.5 * u;
     g.beginPath(); g.moveTo(0, -12 * u); g.lineTo(8 * u, 8 * u); g.lineTo(0, 4 * u); g.lineTo(-8 * u, 8 * u); g.closePath(); g.fill(); g.stroke(); g.restore();
