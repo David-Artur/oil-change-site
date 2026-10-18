@@ -236,7 +236,15 @@
           if (p.pc && p.pc.connectionState === "connected") p.waitFrom = 0; else if (!p.waitFrom) p.waitFrom = now;
           volume(p);
         });
-        Object.keys(peers).forEach(function (n) { if (now - (peers[n].seen || 0) > GONE_MS) drop(n); });
+        // 2026-10-18 (владелец): сервер его не прислал (другой мир, умер → лобби, ушёл далеко) — сразу не слышно и не в списке;
+        // само соединение держим GONE_MS, чтобы вернулся без нового «соединяюсь»
+        var here = {};
+        (j.peers || []).forEach(function (pe) { here[pe.name] = true; });
+        Object.keys(peers).forEach(function (n) {
+          var p = peers[n];
+          if (now - (p.seen || 0) > GONE_MS) { drop(n); return; }
+          if (!here[n] && p.d != null) { p.d = null; p.speaking = false; p.waitFrom = 0; silence(p); }
+        });
         if (first) draw(); else { status(); drawPeers(); }
       }
       polling = false;
@@ -251,6 +259,7 @@
     var failed = [], linked = 0;
     Object.keys(peers).forEach(function (n) {
       var p = peers[n];
+      if (p.d == null) return;   // сейчас не рядом
       if (p.pc && p.pc.connectionState === "connected") linked++;
       else if (p.waitFrom && now - p.waitFrom >= FAIL_MS) failed.push(n);
     });
@@ -424,12 +433,17 @@
 
   // громкость по расстоянию: до 4 блоков — полная, к краю слышимости — тише, дальше — тишина
   function volume(p) {
-    if (p.d == null) return;
+    if (p.d == null) { silence(p); return; }   // сервер не говорит, где он, — не слышно
     var g = p.d <= NEAR ? 1 : Math.max(0, 1 - (p.d - NEAR) / Math.max(1, range - NEAR));
     // 2026-10-18: у самого края (до 100 бл.) — очень тихо, но слышно; дальше — тишина
     g = p.muted || p.d > range ? 0 : 0.03 + 0.97 * g * g;
     if (p.gain && ctx) p.gain.gain.setTargetAtTime(g, ctx.currentTime, 0.15);
     else if (p.el) p.el.volume = g;
+  }
+
+  function silence(p) {
+    if (p.gain && ctx) p.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+    else if (p.el) p.el.volume = 0;
   }
 
   function closePc(p) {
