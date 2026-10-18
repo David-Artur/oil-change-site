@@ -193,7 +193,7 @@
   }
 
   // ---------------------------------------------------------------- телепорты (/api/home tpopts|tp): цена сразу, подтверждение, отсчёт в игре, итог — уведомлением
-  var tpo = null, tpAt = 0, tpBusy = false, tpWorld = null, tpRun = null;
+  var tpo = null, tpNone = null, tpAt = 0, tpBusy = false, tpWorld = null, tpRun = null;
   function loadTp(force) {
     var w = live && live.me ? live.me.worldId : null;
     if (tpBusy || !(live && live.online)) { if (!(live && live.online)) { tpo = null; drawTp(); } return; }
@@ -202,7 +202,7 @@
     o.api("/home", {action: "tpopts"}).then(function (j) {
       tpBusy = false; tpAt = Date.now(); tpWorld = w;
       var el = $("hm-tp"); if (el) el.hidden = !!(j && j.status === 404) || (j && !j.ok && !j.options);
-      tpo = j && j.options ? j.options : null; drawTp();
+      tpo = j && j.options ? j.options : null; tpNone = j && j.none || null; drawTp();
     });
   }
   function priceTxt(t) { return t.price < 0 ? "нельзя" : (t.price > 0 ? "$" + Number(t.price).toLocaleString("ru-RU") : "бесплатно") + " · " + t.delay + " с"; }
@@ -215,6 +215,7 @@
       var left = Math.max(0, Math.ceil((tpRun.until - Date.now()) / 1000));
       h += '<div class="tp-run">⏳ <b>' + esc(tpRun.label) + "</b> — отсчёт в игре" + (left ? ": " + left + " с" : "…") + ' <span class="cab-meta">не двигайся и не получай урон</span></div>';
     }
+    if (tpNone && !tpo.length) { el.innerHTML = h + '<p class="cab-meta">🚫 ' + esc(tpNone) + "</p>"; return; }   // Б24: Пустоши/Ад/Энд — без кнопок
     h += '<div class="tp-grid">' + tpo.map(function (t, i) {
       var off = t.price < 0 || !!t.why || !!tpRun;
       return '<button class="tp-btn' + (t.price < 0 ? " no" : "") + '" type="button" data-i="' + i + '"' + (off ? " disabled" : "") + (t.why ? ' title="' + esc(t.why) + '"' : "") + '>' +
