@@ -4,7 +4,7 @@
  * Подключение: window.VPHome.mount(элемент, {api, toast, me: fn() → данные /me, money, mapLink, skills: {id: название}, setTab}). */
 (function () {
   "use strict";
-  var POLL_MS = 600;
+  var POLL_MS = 300;   // 3 раза в секунду + плавность — почти мгновенно (≈5 КБ/с, только пока «Главная» открыта)
   var box = null, o = null, timer = null, live = null, chatId = 0, chat = [], shown = false, busy = false, chatOpen = false;
   var BODY = [["head", "Голова"], ["torso", "Туловище"], ["left_arm", "Л. рука"], ["right_arm", "П. рука"], ["left_leg", "Л. нога"], ["right_leg", "П. нога"]];
 
@@ -15,12 +15,14 @@
 
   function mount(el, opt) {
     box = el; o = opt;
+    box.classList.add("hm");
     box.innerHTML =
-      '<div class="card cab-card hm-head" id="hm-head"></div>' +
       '<div id="hm-voice"></div>' +
       '<div class="hm-row">' +
-        '<div class="card cab-card hm-radar"><h3>Рядом</h3><canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas>' +
-          '<p class="cab-meta" id="hm-radar-note"></p><div class="cab-row" id="hm-map"></div></div>' +
+        '<div class="card cab-card hm-radar"><canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas>' +
+          '<p class="cab-meta hm-note" id="hm-radar-note"></p>' +
+          '<div class="hm-info"><button class="hm-coords" type="button" id="hm-coords" title="Нажми — скопировать координаты">📍 <b id="hm-xyz">—</b> <span class="hm-copy">⧉</span></button>' +
+          '<div class="hm-line" id="hm-line"></div><div id="hm-map"></div></div></div>' +
         '<div class="card cab-card hm-vitals" id="hm-vitals"></div>' +
       '</div>' +
       '<div class="card cab-card hm-skills" id="hm-skills"></div>' +
@@ -30,6 +32,12 @@
       '<div class="hm-chat-over" id="hm-chat-over" hidden><div class="hm-chat-over-top"><b>Чат сервера</b><button class="btn small" type="button" id="hm-chat-close">✕ Закрыть</button></div>' +
         '<div class="hm-chat-list" id="hm-chat-big"></div>' + chatForm("big") + '</div>';
     if (window.VPVoice) window.VPVoice.mount($("hm-voice"), {api: o.api, toast: o.toast, compact: true});
+    $("hm-coords").onclick = function () {
+      var m = live && live.me; if (!m) return;
+      var t = m.x + " " + m.y + " " + m.z, done = function () { o.toast("Координаты скопированы: " + t); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); });
+      else { fallbackCopy(t); done(); }
+    };
     $("hm-chat-full").onclick = function () { chatOpen = true; $("hm-chat-over").hidden = false; document.body.classList.add("hm-noscroll"); drawChat(); };
     $("hm-chat-close").onclick = function () { chatOpen = false; $("hm-chat-over").hidden = true; document.body.classList.remove("hm-noscroll"); };
     ["mini", "big"].forEach(function (k) {
@@ -77,17 +85,25 @@
     if (!live) drawLive();
   }
 
+  function fallbackCopy(t) {
+    var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch (e) { } document.body.removeChild(ta);
+  }
+
+  // под радаром: координаты (нажать — скопировать) и строка «Ник ● · мир · погода/время · $ · ур.»
   function drawHead() {
     var me = o.me() || {}, m = live && live.me, env = live && live.env;
-    var place = m ? esc(m.world) + ' <span class="cab-meta">' + m.x + " " + m.y + " " + m.z + "</span>" : (me.online ? "в игре" : "не в игре");
-    var sky = "";
-    if (env) {
-      sky = env.dim === "nether" ? "🔥 Ад" : env.dim === "the_end" ? "🌌 Энд" : (env.thunder ? "⛈ гроза" : env.storm ? "🌧 дождь" : env.day ? "☀ день" : "🌙 ночь") + " · " + env.clock;
-    }
-    $("hm-head").innerHTML = '<div class="hm-head-l"><b class="hm-nick">' + esc(me.nick || "") + '</b><span class="dot' + (live && live.online ? " on" : "") + '"></span>' +
-      '<span>' + place + "</span></div>" +
-      '<div class="hm-head-r">' + (sky ? '<span>' + sky + "</span>" : "") + '<span class="hm-bal">' + o.money(me.balance) + "</span>" +
-      '<span class="cab-meta">ур. ' + (me.level || "—") + "</span></div>";
+    var xyz = $("hm-xyz"), line = $("hm-line"), btn = $("hm-coords");
+    if (!xyz) return;
+    var t = m ? m.x + " " + m.y + " " + m.z : "—";
+    if (xyz.textContent !== t) xyz.textContent = t;
+    btn.disabled = !m;
+    var sky = !env ? "" : env.dim === "nether" ? "🔥 Ад" : env.dim === "the_end" ? "🌌 Энд" :
+      (env.thunder ? "⛈" : env.storm ? "🌧" : env.day ? "☀" : "🌙") + " " + env.clock;
+    var h = '<b>' + esc(me.nick || "") + '</b> <span class="dot' + (live && live.online ? " on" : "") + '"></span>' +
+      " · " + (m ? esc(m.world) : (me.online ? "в игре" : "не в игре")) + (sky ? " · " + sky : "") +
+      ' · <span class="hm-bal">' + o.money(me.balance) + "</span> · ур. " + (me.level || "—");
+    if (line.getAttribute("data-v") !== h) { line.innerHTML = h; line.setAttribute("data-v", h); }
   }
 
   // плавный радар: данные приходят раз в ~0.7 с, а стрелка и точки каждый кадр «доезжают» до новых значений
@@ -108,7 +124,7 @@
   function frame(t) {
     if (!shown || !live || !live.online || !live.me) { rafOn = false; drawRadar(); return; }
     var dt = lastFrame ? Math.min(0.1, (t - lastFrame) / 1000) : 0.016; lastFrame = t;
-    var k = 1 - Math.exp(-dt / 0.28);   // ~0.6 с до нового положения
+    var k = 1 - Math.exp(-dt / 0.18);   // ~0.4 с до нового положения (данные — 3 раза в секунду)
     var d = ((live.me.yaw - sm.yaw + 540) % 360) - 180;   // поворот по кратчайшему пути
     sm.yaw += d * k;
     Object.keys(sm.pts).forEach(function (n) { var p = sm.pts[n]; p.dx += (p.tdx - p.dx) * k; p.dz += (p.tdz - p.dz) * k; });
@@ -232,7 +248,7 @@
     if (note && note.getAttribute("data-v") !== nh) { note.innerHTML = nh; note.setAttribute("data-v", nh); }
     if (mapEl && o.mapLink && live.me.world !== "Лобби" && !mapEl.firstChild) {
       var me = o.me() || {}, w = me.where;
-      if (w) mapEl.innerHTML = o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Большая карта");
+      if (w) mapEl.innerHTML = o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Карта");
     }
   }
 
