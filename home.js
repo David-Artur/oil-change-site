@@ -4,7 +4,7 @@
  * Подключение: window.VPHome.mount(элемент, {api, toast, me: fn() → данные /me, money, mapLink, skills: {id: название}, setTab}). */
 (function () {
   "use strict";
-  var POLL_MS = 700;
+  var POLL_MS = 600;
   var box = null, o = null, timer = null, live = null, chatId = 0, chat = [], shown = false, busy = false, chatOpen = false;
   var BODY = [["head", "Голова"], ["torso", "Туловище"], ["left_arm", "Л. рука"], ["right_arm", "П. рука"], ["left_leg", "Л. нога"], ["right_leg", "П. нога"]];
 
@@ -90,9 +90,36 @@
       '<span class="cab-meta">ур. ' + (me.level || "—") + "</span></div>";
   }
 
+  // плавный радар: данные приходят раз в ~0.7 с, а стрелка и точки каждый кадр «доезжают» до новых значений
+  var sm = {yaw: null, pts: {}}, rafOn = false, lastFrame = 0;
+  function radarTarget() {
+    if (!live || !live.online || !live.me) { sm.yaw = null; sm.pts = {}; return; }
+    if (sm.yaw == null) sm.yaw = live.me.yaw;
+    var seen = {};
+    (live.radar || []).forEach(function (p) {
+      seen[p.name] = 1;
+      var c = sm.pts[p.name];
+      if (!c) sm.pts[p.name] = {name: p.name, dx: p.dx, dz: p.dz, dy: p.dy, voice: p.voice, clan: p.clan, tdx: p.dx, tdz: p.dz};
+      else { c.tdx = p.dx; c.tdz = p.dz; c.dy = p.dy; c.voice = p.voice; c.clan = p.clan; }
+    });
+    Object.keys(sm.pts).forEach(function (n) { if (!seen[n]) delete sm.pts[n]; });
+    if (!rafOn) { rafOn = true; lastFrame = 0; requestAnimationFrame(frame); }
+  }
+  function frame(t) {
+    if (!shown || !live || !live.online || !live.me) { rafOn = false; drawRadar(); return; }
+    var dt = lastFrame ? Math.min(0.1, (t - lastFrame) / 1000) : 0.016; lastFrame = t;
+    var k = 1 - Math.exp(-dt / 0.28);   // ~0.6 с до нового положения
+    var d = ((live.me.yaw - sm.yaw + 540) % 360) - 180;   // поворот по кратчайшему пути
+    sm.yaw += d * k;
+    Object.keys(sm.pts).forEach(function (n) { var p = sm.pts[n]; p.dx += (p.tdx - p.dx) * k; p.dz += (p.tdz - p.dz) * k; });
+    drawRadar();
+    requestAnimationFrame(frame);
+  }
+
   function drawLive() {
     drawHead();
-    drawRadar();
+    radarTarget();
+    if (!rafOn) drawRadar();
     drawVitals();
     drawSkills();
   }
@@ -182,12 +209,12 @@
       if (mapEl) mapEl.innerHTML = "";
       return;
     }
-    var yaw = live.me.yaw * Math.PI / 180, fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = -Math.sin(yaw);
+    var yaw = sm.yaw * Math.PI / 180, fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = -Math.sin(yaw);
     // север на ободе
     var nx = 0 * rx + -1 * rz, ny = -(0 * fx + -1 * fz);
     g.fillStyle = "#e0533d"; g.font = "bold 14px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText("С", cx + nx * (R + 7), cy + ny * (R + 7));
-    var list = live.radar || [];
+    var list = Object.keys(sm.pts).map(function (n) { return sm.pts[n]; });
     list.forEach(function (p) {
       var sx = p.dx * rx + p.dz * rz, sy = -(p.dx * fx + p.dz * fz);
       var d = Math.sqrt(sx * sx + sy * sy), k = d * sc > R ? R / (d * sc) : 1;
@@ -200,8 +227,9 @@
     });
     g.fillStyle = "#3a9bff";   // ты — стрелка вверх
     g.beginPath(); g.moveTo(cx, cy - 11); g.lineTo(cx + 8, cy + 8); g.lineTo(cx, cy + 4); g.lineTo(cx - 8, cy + 8); g.closePath(); g.fill();
-    if (note) note.innerHTML = list.length ? '<span class="hm-dot g"></span>с голосом <span class="hm-dot s"></span>без голоса <span class="hm-dot y"></span>твой клан · пунктир — слышно голос'
+    var nh = list.length ? '<span class="hm-dot g"></span>с голосом <span class="hm-dot s"></span>без голоса <span class="hm-dot y"></span>твой клан · пунктир — слышно голос'
       : "Рядом (48 бл.) никого.";
+    if (note && note.getAttribute("data-v") !== nh) { note.innerHTML = nh; note.setAttribute("data-v", nh); }
     if (mapEl && o.mapLink && live.me.world !== "Лобби" && !mapEl.firstChild) {
       var me = o.me() || {}, w = me.where;
       if (w) mapEl.innerHTML = o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Большая карта");
