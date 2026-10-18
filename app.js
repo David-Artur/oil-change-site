@@ -212,7 +212,8 @@
 
   /* ---------- высота меню (для липкого поиска команд) и подсветка раздела ---------- */
   var nav = $("nav");
-  function setNavH() { if (nav) document.documentElement.style.setProperty("--navh", nav.offsetHeight + "px"); }
+  // 2026-10-18 (владелец): на телефоне меню не прилипает (в нём 6–7 рядов) — поиск команд прилипает к самому верху экрана
+  function setNavH() { if (nav) document.documentElement.style.setProperty("--navh", (getComputedStyle(nav).position === "sticky" ? nav.offsetHeight : 0) + "px"); }
   setNavH(); window.addEventListener("resize", setNavH);
   if (nav && "IntersectionObserver" in window) {
     var links = {}; Array.prototype.forEach.call(nav.querySelectorAll("a"), function (l) { links[l.getAttribute("href").slice(1)] = l; });

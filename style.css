@@ -329,6 +329,9 @@ form.recover { display: grid; gap: 14px; }
 .formmsg[hidden] { display: none; }
 
 @media (max-width: 560px) {
+  /* 2026-10-18 (владелец): меню в 6–7 рядов не держим на экране — иначе поиск команд «висел» посреди экрана; поиск — у самого верха */
+  .nav { position: static; }
+  html { scroll-padding-top: 8px; }
   section { padding-top: 32px; }
   h2 { font-size: 1.4rem; }
   .brand img { width: 56px; height: 56px; }
