@@ -4,7 +4,7 @@
  * Подключение: window.VPVoice.mount(элемент, {api: fn(path, body) → Promise<json>, toast: fn(msg, bad)}). */
 (function () {
   "use strict";
-  var POLL_MS = 400, GONE_MS = 15000, NEAR = 4, STUCK_MS = 20000;   // 2026-10-18: телефон/VPN — терпеливее
+  var POLL_MS = 400, GONE_MS = 60000, NEAR = 4, STUCK_MS = 90000;   // 2026-10-18: телефон/VPN шлёт опросы пачками раз в 25–30 с — терпеливее
   var box = null, opt = null;
   var on = false, pollT = null, myName = "", range = 100, iceServers = [{urls: "stun:stun.l.google.com:19302"}];
   var ctx = null, local = null, analyser = null, speaking = false, micOn = true, ptt = false, pttDown = false;
@@ -210,7 +210,7 @@
           p.d = pe.d; p.seen = now; p.speaking = pe.speaking;
           if (pe.sid && p.sid && pe.sid !== p.sid && p.pc) closePc(p);   // собеседник переподключился — старое соединение мёртвое
           if (pe.sid) p.sid = pe.sid;
-          if (p.pc && p.pc.connectionState !== "connected" && p.made && now - p.made > STUCK_MS) closePc(p);   // «соединяюсь» дольше 20 с — заново
+          if (p.pc && p.pc.connectionState !== "connected" && p.made && now - p.made > STUCK_MS) closePc(p);   // «соединяюсь» дольше 90 с — заново
           if (!p.pc && myName < pe.name) call(pe.name);   // звонит тот, чей ник «меньше» — без встречных звонков
           volume(p);
         });
