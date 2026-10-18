@@ -395,6 +395,12 @@ body.hm-noscroll { overflow: hidden; }
 .hm-pois:empty { display: none; }
 .hm-poi { border: 1px solid var(--line); background: var(--card2); color: var(--text); border-radius: 999px; padding: 6px 10px; font: 600 .8rem var(--font); cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .hm-poi b { font-weight: 800; }
+/* У255: личные метки — ✕ рядом с меткой, «📍 Метка здесь» */
+.hm-poiw { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; }
+.hm-poi-del { border: 1px solid var(--line); background: var(--card2); color: #c0392b; border-radius: 999px; width: 30px; height: 30px; font-weight: 800; cursor: pointer; flex: none; }
+.hm-poi-add { border-style: dashed; color: var(--muted); }
+#hm-map { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.hm-discord { --b: #5865f2; --bh: #8891f7; --bl: #3a43b8; color: #fff; }
 
 /* У240: статус связи, «Проверить связь», подсказка про VPN */
 .vc-health { font-size: .8rem; line-height: 1.3; padding: 5px 8px; border-radius: 8px; margin: 4px 0; background: rgba(127,127,127,.14); }

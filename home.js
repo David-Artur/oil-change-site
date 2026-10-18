@@ -72,6 +72,17 @@
       else { fallbackCopy(t); done(); }
     };
     $("hm-pois").onclick = function (e) {   // У248: тап по спавну/порталу — его координаты в буфер
+      var ad = e.target.closest("[data-add]"), dl = e.target.closest("[data-del]");
+      if (ad) {   // У255: личная метка там, где стоишь
+        var nm = window.prompt("Название метки (видна только тебе):", "");
+        if (nm && nm.trim()) o.api("/marks", {action: "add", name: nm.trim()}).then(function (j) { o.toast((j && j.message) || "Не получилось.", !(j && j.ok)); poisHtml = null; });
+        return;
+      }
+      if (dl) {
+        var dn = dl.getAttribute("data-del");
+        if (window.confirm("Удалить метку «" + dn + "»?")) o.api("/marks", {action: "del", name: dn}).then(function (j) { o.toast((j && j.message) || "Не получилось.", !(j && j.ok)); poisHtml = null; });
+        return;
+      }
       var b = e.target.closest("[data-xz]"); if (!b) return;
       var t = b.getAttribute("data-xz"), done = function () { o.toast(b.getAttribute("data-name") + ": координаты скопированы — " + t); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); });
@@ -458,14 +469,26 @@
   var poisHtml = null;
   function drawPois(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark) {
     var ps = live && live.pois || [];
-    var list = [];
+    var list = [], boxes = [];   // занятые подписями места: налезает — подпись не рисуем (название есть в кнопках под радаром)
     if (sm.x == null) ps = [];
     ps.forEach(function (p) {
       var ax = live.me.x + 0.5 + p.dx, az = live.me.z + 0.5 + p.dz, dx = ax - sm.x, dz = az - sm.z;
       var sx = dx * rx + dz * rz, sy = -(dx * fx + dz * fz), d = Math.sqrt(sx * sx + sy * sy), out = d * sc > R - 10 * u;
       var k = out ? (R - 10 * u) / (d * sc) : 1, x = cx + sx * sc * k, y = cy + sy * sc * k;
       g.save();
-      if (p.kind === "spawn") {   // золотая звезда
+      if (p.kind === "home") {   // У255: домик
+        g.fillStyle = "#e8743b"; g.strokeStyle = "#3a1a08"; g.lineWidth = 1.5 * u;
+        g.beginPath(); g.moveTo(x, y - 8 * u); g.lineTo(x + 7 * u, y - 2 * u); g.lineTo(x + 5 * u, y - 2 * u); g.lineTo(x + 5 * u, y + 6 * u);
+        g.lineTo(x - 5 * u, y + 6 * u); g.lineTo(x - 5 * u, y - 2 * u); g.lineTo(x - 7 * u, y - 2 * u); g.closePath(); g.fill(); g.stroke();
+        g.fillStyle = "#5a2a10"; g.fillRect(x - 1.5 * u, y + 1 * u, 3 * u, 5 * u);
+      } else if (p.kind === "claim" || p.kind === "claim-member") {   // У255: свой приват — зелёный квадрат, где участник — жёлтый
+        g.fillStyle = p.kind === "claim" ? "rgba(63,210,94,.85)" : "rgba(247,209,84,.9)"; g.strokeStyle = "#16300c"; g.lineWidth = 1.5 * u;
+        g.beginPath(); g.rect(x - 6 * u, y - 6 * u, 12 * u, 12 * u); g.fill(); g.stroke();
+      } else if (p.kind === "mark") {   // У255: личная метка — красная булавка
+        g.fillStyle = "#e0262b"; g.strokeStyle = "#fff"; g.lineWidth = 1.5 * u;
+        g.beginPath(); g.arc(x, y - 6 * u, 5 * u, 0, 7); g.fill(); g.stroke();
+        g.beginPath(); g.moveTo(x - 3 * u, y - 3 * u); g.lineTo(x, y + 6 * u); g.lineTo(x + 3 * u, y - 3 * u); g.closePath(); g.fill();
+      } else if (p.kind === "spawn") {   // золотая звезда
         g.fillStyle = "#f6c945"; g.strokeStyle = "#5a3b12"; g.lineWidth = 1.2 * u; g.beginPath();
         for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, r = (i % 2 ? 3.2 : 8) * u; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
         g.closePath(); g.fill(); g.stroke();
@@ -479,8 +502,13 @@
       // у края круга подпись — внутрь, чтобы не обрезалась ободом
       g.textAlign = x > cx + R * 0.45 ? "right" : x < cx - R * 0.45 ? "left" : "center";
       if (g.textAlign !== "center") x += (g.textAlign === "right" ? 6 : -6) * u;
-      g.lineWidth = 3 * u; g.strokeStyle = dark ? "rgba(0,0,0,.75)" : "rgba(255,255,255,.85)"; g.strokeText(txt, x, y + 9 * u);
-      g.fillStyle = dark ? "#fff" : "#222"; g.fillText(txt, x, y + 9 * u);
+      var tw = g.measureText(txt).width, bx = g.textAlign === "right" ? x - tw : g.textAlign === "left" ? x : x - tw / 2, by = y + 9 * u, bh = 13 * u;
+      var hit = boxes.some(function (b) { return bx < b[0] + b[2] && bx + tw > b[0] && by < b[1] + b[3] && by + bh > b[1]; });
+      if (!hit) {
+        boxes.push([bx, by, tw, bh]);
+        g.lineWidth = 3 * u; g.strokeStyle = dark ? "rgba(0,0,0,.75)" : "rgba(255,255,255,.85)"; g.strokeText(txt, x, by);
+        g.fillStyle = dark ? "#fff" : "#222"; g.fillText(txt, x, by);
+      }
       g.restore();
       var az8 = Math.round(((Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360) / 45) % 8;   // направление по сторонам света
       list.push({p: p, d: Math.round(Math.sqrt(dx * dx + dz * dz)), dir: DIRS[az8]});
@@ -488,10 +516,12 @@
     var el = $("hm-pois");
     if (!el) return;
     list.sort(function (a, b) { return a.d - b.d; });
+    var ICON = {spawn: "★ ", portal: "▣ ", home: "🏠 ", claim: "🟩 ", "claim-member": "🟨 ", mark: "📍 "};
     var h = list.map(function (q) {
-      return '<button class="hm-poi" type="button" data-xz="' + q.p.x + ' ' + q.p.z + '" data-name="' + esc(q.p.label) + '" title="Нажми — скопировать координаты">' +
-        (q.p.kind === "spawn" ? "★ " : "▣ ") + esc(q.p.label) + " · <b>" + q.d + " бл.</b> " + q.dir + "</button>";
-    }).join("");
+      return '<span class="hm-poiw"><button class="hm-poi" type="button" data-xz="' + q.p.x + ' ' + q.p.z + '" data-name="' + esc(q.p.label) + '" title="Нажми — скопировать координаты">' +
+        (ICON[q.p.kind] || "• ") + esc(q.p.label) + " · <b>" + q.d + " бл.</b> " + q.dir + "</button>" +
+        (q.p.kind === "mark" ? '<button class="hm-poi-del" type="button" data-del="' + esc(q.p.label) + '" title="Удалить метку" aria-label="Удалить метку">✕</button>' : "") + "</span>";
+    }).join("") + (live && live.marksApi ? '<button class="hm-poi hm-poi-add" type="button" data-add="1" title="Поставить личную метку там, где ты стоишь (видна только тебе)">📍 Метка здесь</button>' : "");
     if (h !== poisHtml) { poisHtml = h; el.innerHTML = h; }
   }
 
@@ -590,8 +620,10 @@
     var kind = w ? "pos" : "all";
     if (el.getAttribute("data-kind") === kind && el.firstChild) return;
     el.setAttribute("data-kind", kind);
-    el.innerHTML = w ? o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Открыть карту — где я")
-      : '<a class="btn small" target="_blank" rel="noopener" href="https://mc.daviart.com/map/">🗺 Открыть карту мира</a>';
+    el.innerHTML = (w ? o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Открыть карту — где я")
+      : '<a class="btn small" target="_blank" rel="noopener" href="https://mc.daviart.com/map/">🗺 Открыть карту мира</a>') +
+      // 2026-10-18 (владелец): рядом с картой — сразу Discord
+      ' <a class="btn small hm-discord" target="_blank" rel="noopener" href="https://discord.gg/sTgZM8Kh">💬 Discord</a>';
   }
 
   // ---------------------------------------------------------------- чат
