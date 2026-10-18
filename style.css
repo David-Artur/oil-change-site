@@ -417,6 +417,23 @@ main > section.pg-on { animation: pgIn .25s ease; }
 @keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(125, 255, 106, .7); } 70% { box-shadow: 0 0 0 7px rgba(125, 255, 106, 0); } 100% { box-shadow: 0 0 0 0 rgba(125, 255, 106, 0); } }
 .nav a.nav-map { color: #1f8fb3; font-weight: 700; border-color: #1f8fb3; }
 
+/* У249 (2026-10-18): большая заметная кнопка «Личный кабинет» в шапке + выделенный пункт меню */
+.btn.cab-big { --b: #3fae1c; --bh: #8ff060; --bl: #22680c; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; margin-top: 16px;
+  min-height: 72px; padding: 12px 18px; border-width: 3px; white-space: normal; text-align: center;
+  box-shadow: inset 3px 3px 0 var(--bh), inset -3px -4px 0 var(--bl), 0 0 0 3px rgba(143, 240, 96, .35), 0 8px 22px -6px rgba(63, 174, 28, .75);
+  animation: cabGlow 2.4s ease-in-out infinite; }
+.btn.cab-big:active { box-shadow: inset -3px -3px 0 var(--bh), inset 3px 4px 0 var(--bl); }
+.cab-big .cb-t { font-size: clamp(1.35rem, 6.2vw, 1.7rem); font-weight: 800; line-height: 1.15; letter-spacing: .2px; }
+.cab-big .cb-s { font-size: .86rem; font-weight: 500; line-height: 1.25; color: #f1ffe6; opacity: .95; }
+@keyframes cabGlow { 50% { box-shadow: inset 3px 3px 0 var(--bh), inset -3px -4px 0 var(--bl), 0 0 0 5px rgba(143, 240, 96, .55), 0 8px 26px -4px rgba(63, 174, 28, .9); } }
+@media (prefers-reduced-motion: reduce) { .btn.cab-big { animation: none; } }
+@media (min-width: 960px) {
+  .hero .cab-big { grid-column: 1; grid-row: 3; margin-top: 18px; }
+  .hero .facts { grid-row: 4; }
+}
+.nav a.nav-cab { background: #3fae1c; border-color: #22680c; color: #fff; font-weight: 700; text-shadow: 1px 1px 0 rgba(0, 0, 0, .45); }
+.nav a.nav-cab:hover { background: #4cc226; color: #fff; }
+
 /* бонус дня рядом с донатом */
 .btn.bonus { --b: #3d8a1e; --bh: #7fcf55; --bl: #23540f; color: #fff; }
 .btn.don { --b: #c43a6a; --bh: #f07aa3; --bl: #7a1f3f; color: #fff; }
