@@ -9,7 +9,7 @@
   var API = (local && qs.get("api")) || "https://mc.daviart.com/api";
   var KEY = "daviart.cabinet.token";
   var REFRESH = 20000;
-  var me = null, market = null, clansAll = null, tab = "profile", lastSync = 0, mkFilter = {q: "", cat: "all", sort: "new"};
+  var me = null, market = null, clansAll = null, tab = "home", lastSync = 0, mkFilter = {q: "", cat: "all", sort: "new"};
 
   var SKILLS = {"walk":"Ходьба","sprint":"Бег","sneak":"Ходьба вприсядку","jump":"Прыжок в высоту","fall":"Падение","swim":"Плавание","swim_fast":"Быстрое плавание",
     "wade":"Ходьба в воде","breath":"Дыхание","riding":"Верховая езда","minecart":"Вагонетка","strength":"Сила удара","crit":"Критический удар","reach":"Дальность удара",
@@ -21,8 +21,8 @@
   var RANK = {3: "лидер", 2: "заместитель", 1: "участник"};
   var RANKS = {level: "Уровень", money: "Деньги", pvp: "PvP", mobs: "Мобы", time: "Время в игре", market: "Оборот Рынка", ach: "Ачивки"};
   var CATS = [["all", "Все"], ["res", "Ресурсы"], ["blocks", "Блоки"], ["tools", "Снаряжение"], ["magic", "Магия"], ["food", "Еда"], ["other", "Другое"]];
-  var TABS = ["profile", "claims", "clan", "market", "voice", "ach", "account", "help", "bonus", "donate"];
-  var voiceMounted = false;   // У236: голосовой чат (voice.js)
+  var TABS = ["home", "profile", "claims", "clan", "market", "ach", "account", "help", "bonus", "donate"];
+  var homeMounted = false;   // У237: «Главная» — второй экран (home.js; голос — voice.js внутри неё)
   var donTiers = null, donLoading = false;
 
   function $(id) { return document.getElementById(id); }
@@ -192,11 +192,13 @@
     if (t === "clan" && !clansAll) loadClans();
     if (t === "donate" && me) renderDonate();
     if (t === "bonus" && me) loadBonus();
-    if (t === "voice" && !voiceMounted) {
-      voiceMounted = true;
-      if (window.VPVoice) window.VPVoice.mount($("tab-voice"), {api: api, toast: toast});
-      else $("tab-voice").innerHTML = '<div class="card cab-card"><p class="cab-meta">Не загрузился модуль голосового чата — обнови страницу.</p></div>';
+    if (t === "home" && !homeMounted && me) {
+      homeMounted = true;
+      if (window.VPHome) window.VPHome.mount($("tab-home"), {api: api, toast: toast, me: function () { return me; }, money: money, mapLink: mapLink, skills: SKILLS,
+        setTab: function (x) { setTab(x); var v = $("cab-view"); if (v) window.scrollTo(0, v.getBoundingClientRect().top + window.scrollY); }});
+      else $("tab-home").innerHTML = '<div class="card cab-card"><p class="cab-meta">Не загрузилась «Главная» — обнови страницу.</p></div>';
     }
+    if (window.VPHome && homeMounted) window.VPHome.show(t === "home");
   }
 
   // ---------------------------------------------------------------- синхронизация
@@ -254,6 +256,7 @@
     var n = (me.market && me.market.notices || []).length + (me.invite ? 1 : 0);
     var badge = $("tab-badge"); if (badge) { badge.textContent = n ? String(n) : ""; badge.hidden = !n; }
     renderBonusBar();
+    if (window.VPHome && homeMounted) window.VPHome.refresh();
     renderProfile();
     renderClaims();
     renderClan();
@@ -898,6 +901,7 @@
 
   // ---------------------------------------------------------------- старт
   var h0 = (location.hash || "").replace("#", "");
+  if (h0 === "voice") h0 = "home";   // У236 → У237: голос теперь на «Главной»
   if (TABS.indexOf(h0) >= 0) tab = h0;
   if (tok()) { show("load"); load(true); } else show("login");
 })();

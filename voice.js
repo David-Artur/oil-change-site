@@ -23,11 +23,13 @@
 
   function draw() {
     if (!box) return;
-    var h = '<div class="card cab-card vc-card"><h2>🎤 Голосовой чат</h2>' +
-      '<p class="cab-meta">Говори с игроками, которые <b>рядом с тобой в игре</b> и тоже подключились (у них <b>🎤 над головой</b>). ' +
-      'Чем дальше — тем тише, дальше ' + range + ' блоков и в другом мире — не слышно. Играй на компьютере, а голос — с телефона или в этом же браузере. Ничего не записывается.</p>';
+    var compact = opt && opt.compact;   // «Главная» (home.js): коротко
+    var h = '<div class="card cab-card vc-card' + (compact ? " vc-compact" : "") + '"><h2>🎤 Голосовой чат</h2>' + (compact
+      ? (on ? "" : '<p class="cab-meta">Говори с теми, кто рядом в игре (до ' + range + ' бл.). У подключённых — 🎤 над головой.</p>')
+      : '<p class="cab-meta">Говори с игроками, которые <b>рядом с тобой в игре</b> и тоже подключились (у них <b>🎤 над головой</b>). ' +
+        'Чем дальше — тем тише, дальше ' + range + ' блоков и в другом мире — не слышно. Играй на компьютере, а голос — с телефона или в этом же браузере. Ничего не записывается.</p>');
     if (!on) {
-      h += '<div class="cab-row"><button class="btn green" type="button" id="vc-join">🎤 Подключиться</button></div>' +
+      h += '<div class="cab-row"><button class="btn green' + (compact ? " vc-big" : "") + '" type="button" id="vc-join">🎤 Подключиться к голосу</button></div>' +
         '<p class="cab-meta" id="vc-msg">Браузер спросит разрешение на микрофон — нажми «Разрешить». Лучше в наушниках.</p>';
     } else {
       h += '<div class="vc-status"><span class="vc-dot ' + (lastState && lastState.inGame ? "on" : "") + '"></span><span id="vc-where">' + esc(where()) + '</span></div>' +
@@ -37,7 +39,7 @@
         '<button class="btn" type="button" id="vc-mode">' + (ptt ? "Режим: нажми и говори" : "Режим: говорю всегда") + '</button>' +
         '<button class="btn" type="button" id="vc-leave">Отключиться</button></div>' +
         (ptt ? '<button class="btn gold vc-ptt" type="button" id="vc-ptt">Держи — и говори</button>' : "") +
-        '<h3 class="don-sub">Рядом с тобой</h3><div id="vc-peers"></div>' +
+        (compact ? "" : '<h3 class="don-sub">Рядом с тобой</h3>') + '<div id="vc-peers"></div>' +
         '<p class="cab-meta">Не сворачивай браузер и не блокируй экран — иначе телефон может выключить микрофон.</p>';
     }
     box.innerHTML = h + "</div>";
