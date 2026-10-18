@@ -378,7 +378,10 @@
     var el = $("hm-skills"); if (!el) return;
     var me = o.me() || {}, lv = live && live.leveling;
     var h = '<h3>Прокачка · уровень персонажа <b>' + (me.level || "—") + "</b></h3>";
-    var near = lv && lv.near || [];
+    var near = (lv && lv.near || []).slice();
+    var ar = live && live.archery || {};   // Leveling 0.4.25: стрельба из лука/арбалета — тоже кандидаты в «ближайшие к уровню»
+    Object.keys(ar).forEach(function (k) { var a = ar[k]; if (a && a.level < 100 && a.pct > 0) near.push({id: k, level: a.level, pct: a.pct}); });
+    near.sort(function (a, b) { return b.pct - a.pct; }); near = near.slice(0, 3);
     if (near.length) h += near.map(function (s) {
       var p = Math.round(s.pct * 100);
       return '<div class="hm-stat"><span class="hm-sn">' + esc(o.skills[s.id] || s.id) + " · " + s.level + " → " + (s.level + 1) + "</span><b>" + p + "%</b>" + bar(p) + "</div>";
