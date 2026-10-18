@@ -22,6 +22,7 @@
   function mount(el, o) {
     box = el; opt = o;
     ptt = store("ptt") === "1";
+    var nm = Number(store("nr")); nrMode = nm >= 0 && nm <= 3 && store("nr") !== null ? nm : 2;   // У254: по умолчанию «обычно»
     draw();
   }
 
@@ -46,6 +47,7 @@
         '<button class="vc-chip" type="button" id="vc-mode"></button>' +
         '<button class="vc-chip" type="button" id="vc-leave" title="Отключиться от голоса">Выйти</button></div>' +
         '<button class="btn gold vc-ptt" type="button" id="vc-ptt"' + (ptt ? "" : " hidden") + '>Держи — и говори</button>' +
+        '<div class="vc-nr"><button class="vc-chip" type="button" id="vc-nr"></button><span class="vc-nr-hint">🎧 лучше в наушниках — не будет эха</span></div>' +
         '<div id="vc-peers" class="vc-peers"></div>' +
         '<div class="vc-tools"><button class="vc-chip vc-check" type="button" id="vc-check" title="Проверить сервер, ретранслятор голоса и микрофон">🔧 Проверить связь</button></div>' +
         '<div class="vc-report" id="vc-report"' + (reportHtml ? "" : " hidden") + '>' + reportHtml + '</div>' +
@@ -57,6 +59,11 @@
     $("vc-mic").onclick = function () { micOn = !micOn; applyMic(); ctl(); };
     $("vc-mode").onclick = function () { ptt = !ptt; store("ptt", ptt ? "1" : "0"); applyMic(); ctl(); };
     $("vc-leave").onclick = function () { leave(true); };
+    $("vc-nr").onclick = function () {   // У254: выкл → тихо → обычно → шумно; новый режим — заново послушать тишину 2 с
+      nrMode = (nrMode + 1) % 4; store("nr", String(nrMode));
+      if (gate) gate.port.postMessage({mode: nrMode, recal: true});
+      ctl();
+    };
     var b = $("vc-ptt");
     var down = function (e) { e.preventDefault(); pttDown = true; applyMic(); b.classList.add("on"); };
     var up = function (e) { e.preventDefault(); pttDown = false; applyMic(); b.classList.remove("on"); };
@@ -72,6 +79,14 @@
     m.textContent = micOn ? "🎤" : "🔇"; m.classList.toggle("off", !micOn); m.title = micOn ? "Микрофон включён — нажми, чтобы выключить" : "Микрофон выключен — нажми, чтобы включить";
     md.textContent = ptt ? "Рация" : "Всегда"; md.title = ptt ? "Говоришь, пока держишь кнопку (нажми — говорить всегда)" : "Микрофон слушает всегда (нажми — режим рации)";
     pb.hidden = !ptt;
+    var nr = $("vc-nr");
+    if (nr) {
+      nr.textContent = gate ? "🔇 Шумодав: " + NR_NAMES[nrMode] : "Шумодав недоступен";
+      nr.disabled = !gate;
+      nr.classList.toggle("off", !gate || nrMode === 0);
+      nr.title = gate ? "Срезает гул и шум между фразами; эхо — тише, пока говорит собеседник. Нажми: выкл → тихо → обычно → шумно (в шумной комнате — «шумно»)"
+        : "Этот браузер не умеет шумодав — работает обычное шумоподавление браузера";
+    }
   }
 
   function status() {
@@ -125,11 +140,15 @@
     ctx = AC ? new AC() : null;   // создаём по нажатию — иначе телефон не даст играть звук
     navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
       local = s;
+      sendStream = local;
       if (ctx) {
         try { ctx.resume(); } catch (e) { }
         analyser = ctx.createAnalyser(); analyser.fftSize = 512;
         ctx.createMediaStreamSource(local).connect(analyser);
       }
+      return buildGate().catch(function () { sendStream = local; gate = null; });   // не вышло — голос как раньше, без шумодава
+    }).then(function () {
+      if (!local) return;
       on = true; lastState = null;
       joinedAt = Date.now(); lastOk = 0; rtts = []; badAt = 0; reportHtml = "";
       applyMic();
@@ -142,8 +161,43 @@
     });
   }
 
+  // ---------------------------------------------------------------- У254: шумодав
+  // Цепочка: микрофон → срез гула ниже 120 Гц (вентилятор, стол) → шумовой порог (AudioWorklet, работает и в свёрнутой вкладке) → собеседникам.
+  // Первые 2 с порог слушает тишину и запоминает уровень шума, дальше медленно подстраивается; пропускает звук, только когда ты говоришь
+  // громче шума (открытие ~5 мс, закрытие через 0,4 с — слова не обрезаются). Пока собеседник говорит — твой микрофон тише (×0,35), чтобы его
+  // голос из твоих динамиков не возвращался ему эхом. Режимы: выкл / тихо / обычно / шумно (во сколько раз громче шума надо говорить).
+  var NR_NAMES = ["выкл", "тихо", "обычно", "шумно"];
+  var nrMode = 2, gate = null, gateOpen = false, sendStream = null, ducked = false;
+  var GATE_SRC = "class G extends AudioWorkletProcessor{constructor(){super();this.mode=2;this.duck=false;this.t0=currentTime;this.cal=[];this.floor=0.003;this.g=0;this.open=-9;this.last=0;" +
+    "this.port.onmessage=e=>{const d=e.data;if('mode' in d)this.mode=d.mode;if('duck' in d)this.duck=d.duck;if(d.recal){this.t0=currentTime;this.cal=[];}}}" +
+    "process(i,o){const a=i[0]&&i[0][0],out=o[0];if(!a||!out||!out[0])return true;let s=0;for(let k=0;k<a.length;k++)s+=a[k]*a[k];const r=Math.sqrt(s/a.length);" +
+    "if(currentTime-this.t0<2){this.cal.push(r);if(this.cal.length%16==0){const c=this.cal.slice().sort((x,y)=>x-y);this.floor=Math.max(0.0005,c[Math.floor(c.length*0.6)])}}" +
+    "const K=[0,2,3,4.5][this.mode],MIN=[0,0.006,0.01,0.018][this.mode],th=Math.max(this.floor*K,MIN);" +
+    "if(this.mode===0||r>th)this.open=currentTime;else if(currentTime-this.t0>=2)this.floor=this.floor*0.9995+r*0.0005;" +
+    "const want=(this.mode===0||currentTime-this.open<0.4)?(this.duck?0.35:1):0;this.g+=(want-this.g)*(want>this.g?0.5:0.03);" +
+    "for(let c=0;c<out.length;c++){const b=out[c];for(let k=0;k<b.length;k++)b[k]=a[k]*this.g}" +
+    "if(currentTime-this.last>0.08){this.last=currentTime;this.port.postMessage({open:want>0.5,lvl:r,th:th})}return true}}registerProcessor('vp-gate',G)";
+
+  function buildGate() {
+    if (!ctx || !ctx.audioWorklet || !window.AudioWorkletNode) return Promise.reject(new Error("no worklet"));
+    var url = URL.createObjectURL(new Blob([GATE_SRC], {type: "text/javascript"}));
+    return ctx.audioWorklet.addModule(url).then(function () {
+      var src = ctx.createMediaStreamSource(local);
+      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 120; hp.Q.value = 0.7;
+      gate = new AudioWorkletNode(ctx, "vp-gate", {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1]});
+      var dest = ctx.createMediaStreamDestination();
+      src.connect(hp); hp.connect(gate); gate.connect(dest);
+      gate.port.onmessage = function (e) { gateOpen = !!e.data.open; };
+      gate.port.postMessage({mode: nrMode});
+      sendStream = dest.stream;
+    });
+  }
+
+  function setDuck(v) { if (gate && v !== ducked) { ducked = v; gate.port.postMessage({duck: v}); } }
+
   function leave(tell) {
     on = false;
+    gate = null; gateOpen = false; sendStream = null; ducked = false;
     stopTicker(); polling = false; checking = false; micPeak = -1;
     Object.keys(peers).forEach(drop);
     if (local) local.getTracks().forEach(function (t) { t.stop(); });
@@ -172,7 +226,7 @@
       lvl = Math.sqrt(sum / a.length);
     }
     var live = micOn && (!ptt || pttDown);
-    speaking = live && lvl > 0.035;
+    speaking = live && (gate && nrMode > 0 ? gateOpen : lvl > 0.035);   // с шумодавом «говорю» = звук реально уходит
     if (micPeak >= 0 && live) micPeak = Math.max(micPeak, lvl);   // идёт проверка микрофона
     var bar = $("vc-level"), mt = $("vc-meter");
     if (bar) bar.style.transform = "scaleX(" + (live ? Math.min(1, lvl * 4) : 0).toFixed(3) + ")";   // без смены ширины блока — ничего не сдвигается
@@ -247,6 +301,8 @@
           if (now - (p.seen || 0) > GONE_MS) { drop(n); return; }
           if (!here[n] && p.d != null) { p.d = null; p.speaking = false; p.waitFrom = 0; silence(p); }
         });
+        // У254: собеседник рядом говорит и слышен — свой микрофон приглушаем (без наушников его голос не вернётся ему эхом)
+        setDuck(nrMode > 0 && Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; }));
         if (first) draw(); else { status(); drawPeers(); }
       }
       polling = false;
@@ -377,7 +433,8 @@
     if (p.pc) return p;
     var pc = new RTCPeerConnection({iceServers: iceServers});
     p.pc = pc; p.made = Date.now();
-    local.getTracks().forEach(function (t) { pc.addTrack(t, local); });
+    var out = sendStream || local;   // У254: собеседникам — звук после шумодава
+    out.getAudioTracks().forEach(function (t) { pc.addTrack(t, out); });
     pc.onicecandidate = function (e) { if (e.candidate) send(name, {t: "ice", c: e.candidate}); };
     pc.ontrack = function (e) {
       var s = e.streams[0];
@@ -468,7 +525,7 @@
         r.forEach(function (s) { if (s.type === "inbound-rtp" && (s.kind === "audio" || s.mediaType === "audio")) bytes += s.bytesReceived || 0; });
         return [n, {state: p.pc.connectionState, d: p.d, bytes: bytes, gain: p.gain ? p.gain.gain.value : (p.el ? p.el.volume : null)}];
       });
-    })).then(function (l) { var o = {}; l.forEach(function (x) { o[x[0]] = x[1]; }); return {on: on, me: myName, inGame: lastState && lastState.inGame, peers: o}; });
+    })).then(function (l) { var o = {}; l.forEach(function (x) { o[x[0]] = x[1]; }); return {on: on, me: myName, inGame: lastState && lastState.inGame, peers: o, nr: NR_NAMES[nrMode], gate: !!gate, open: gateOpen, duck: ducked}; });
   }
   window.VPVoice = {mount: mount, active: function () { return on; }, stats: stats, range: function () { return range; }};
 })();

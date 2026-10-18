@@ -402,6 +402,12 @@ body.hm-noscroll { overflow: hidden; }
 #hm-map { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .hm-discord { --b: #5865f2; --bh: #8891f7; --bl: #3a43b8; color: #fff; }
 
+/* У254: шумодав */
+.vc-nr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 6px; }
+.vc-nr .vc-chip { height: 32px; padding: 0 10px; }
+.vc-nr .vc-chip.off { opacity: .7; }
+.vc-nr-hint { font-size: .76rem; color: var(--muted); }
+
 /* У240: статус связи, «Проверить связь», подсказка про VPN */
 .vc-health { font-size: .8rem; line-height: 1.3; padding: 5px 8px; border-radius: 8px; margin: 4px 0; background: rgba(127,127,127,.14); }
 .vc-health.ok { background: rgba(63,210,94,.15); }
