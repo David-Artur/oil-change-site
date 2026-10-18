@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Личный кабинет · DaviArt Craft</title>
 <meta name="description" content="Личный кабинет игрока DaviArt Craft: профиль и навыки, приваты, клан, ачивки — прямо с сайта. Вход кодом из игры.">
 <meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
@@ -11,14 +11,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=16">
-<link rel="stylesheet" href="cabinet.css?v=24">
+<script>/* тема до отрисовки — без вспышки белого */ try { var th = localStorage.getItem("daviart.theme"); if (th === "light" || th === "dark") document.documentElement.setAttribute("data-theme", th); } catch (e) { }</script>
+<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="cabinet.css?v=27">
 </head>
 <body>
 <header class="cab-top">
   <div class="wrap">
     <a class="cab-brand" href="index.html"><img src="img/favicon-32.png" alt="" width="28" height="28">DaviArt Craft</a>
     <span class="cab-title">Личный кабинет</span>
+    <span class="cab-tools"><button class="btn small" type="button" id="theme-btn" title="Тема: светлая / тёмная / как в системе">🌗</button><button class="btn small" type="button" id="reload-btn" title="Обновить страницу" aria-label="Обновить страницу">🔄</button></span>
     <a class="btn small" href="index.html">← На сайт</a>
   </div>
 </header>
@@ -81,7 +83,6 @@
       <button class="chip chip-bonus" data-tab="rewards" role="tab"><span class="gift-glow" aria-hidden="true">🎁</span> Награды<span class="bn-ext" id="bonusbar" aria-live="polite"></span></button>
       <button class="chip" data-tab="acct" role="tab">⚙ Аккаунт</button>
       <button class="chip chip-don" data-tab="donate" role="tab"><span class="don-main">💛 Донат</span></button>
-      <button class="chip chip-reload" type="button" id="reload-btn" title="Обновить страницу" aria-label="Обновить страницу">🔄</button>
     </div>
     <!-- 2026-10-18 (владелец): меньше вкладок — Главная = живой экран + профиль; Земли = приваты + клан; Награды = бонусы + «Приведи друга» + ачивки; Аккаунт = аккаунт + справка -->
     <div id="tab-home" class="cab-tab">
@@ -161,8 +162,8 @@
 <script src="mc-icons.js?v=1"></script>
 <script src="shop.js?v=3"></script>
 <script src="voice.js?v=3"></script>
-<script src="home.js?v=8"></script>
-<script src="cabinet.js?v=26"></script>
+<script src="home.js?v=11"></script>
+<script src="cabinet.js?v=28"></script>
 <script src="ui.js?v=1"></script>
 <script src="consent.js?v=1"></script>
 </body>

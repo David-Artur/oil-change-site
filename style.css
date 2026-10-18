@@ -12,8 +12,9 @@
   --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   color-scheme: light;
 }
+/* 2026-10-18: тема — по системе, либо выбранная вручную в кабинете (html[data-theme="light|dark"]) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #14110e; --bg2: #1a1612; --card: #211c17; --card2: #29231c; --line: #3a3129; --line2: #4a3f34;
     --text: #efe7da; --muted: #b6a891; --soft: #8f826e;
     --grass: #8fd25a; --grass-bg: #20311a; --gold: #f6c945; --gold-bg: #362b12;
@@ -22,6 +23,15 @@
     --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 10px 24px -14px rgba(0, 0, 0, .8);
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+    --bg: #14110e; --bg2: #1a1612; --card: #211c17; --card2: #29231c; --line: #3a3129; --line2: #4a3f34;
+    --text: #efe7da; --muted: #b6a891; --soft: #8f826e;
+    --grass: #8fd25a; --grass-bg: #20311a; --gold: #f6c945; --gold-bg: #362b12;
+    --red: #f07a62; --red-bg: #3a1c17; --warn: #f0b14c; --warn-bg: #352713;
+    --code-bg: #2f2820; --code: #ffd98a; --btn: #3a3129; --btn-hi: #4c4136; --btn-lo: #1d1813;
+    --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 10px 24px -14px rgba(0, 0, 0, .8);
+    color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 64px; }
@@ -193,7 +203,8 @@ code.cmdcopy:hover, code.cmdcopy:focus-visible { background: var(--grass-bg, rgb
 .chips::-webkit-scrollbar { display: none; }
 .chip { flex: none; font: 500 .9rem var(--font); color: var(--text); background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; min-height: 36px; }
 .chip[aria-pressed="true"] { background: var(--grass); border-color: var(--grass); color: #fff; }
-@media (prefers-color-scheme: dark) { .chip[aria-pressed="true"] { color: #10200a; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip[aria-pressed="true"] { color: #10200a; } }
+:root[data-theme="dark"] .chip[aria-pressed="true"] { color: #10200a; }
 .cgroup { margin-top: 18px; }
 .cgroup h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--muted); }
 .cmds { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }

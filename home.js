@@ -22,7 +22,7 @@
         '<div class="card cab-card hm-radar" id="hm-rcard"><button class="btn small hm-rclose" type="button" id="hm-rclose">✕ Закрыть</button><div class="hm-rwrap"><canvas id="hm-mapc" width="320" height="320" aria-hidden="true"></canvas>' +
           '<canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas></div>' +
           '<div class="hm-rbtns"><button class="btn small" type="button" id="hm-zout" title="Дальше">−</button><span class="hm-zl" id="hm-zoom"></span><button class="btn small" type="button" id="hm-zin" title="Ближе">+</button>' +
-          '<button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button><button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
+          '<button class="btn small" type="button" id="hm-north">🧭</button><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button><button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
           '<p class="cab-meta hm-note" id="hm-radar-note"></p>' +
           '<div class="hm-info"><button class="hm-coords" type="button" id="hm-coords" title="Нажми — скопировать координаты">📍 <b id="hm-xyz">—</b> <span class="hm-copy">⧉</span></button>' +
           '<div class="hm-line" id="hm-line"></div><div id="hm-map"></div></div></div>' +
@@ -36,15 +36,18 @@
       '<div class="hm-chat-over" id="hm-chat-over" hidden><div class="hm-chat-over-top"><b>Чат сервера</b><button class="btn small" type="button" id="hm-chat-close">✕ Закрыть</button></div>' +
         '<div class="hm-chat-list" id="hm-chat-big"></div>' + chatForm("big") + '</div>';
     if (window.VPVoice) window.VPVoice.mount($("hm-voice"), {api: o.api, toast: o.toast, compact: true});
-    mapOn = pref("map") === "1"; zoom = Number(pref("zoom")) || 100; if (ZOOMS.indexOf(zoom) < 0) zoom = 100;
+    mapOn = pref("map") === "1"; zoom = Number(pref("zoom")) || 100; if (ZOOMS.indexOf(zoom) < 0) zoom = 100; northUp = pref("north") !== "0";
+    document.addEventListener("vp-theme", function () { drawMap(); drawRadar(); });
     var upd = function () {
       $("hm-mapbtn").classList.toggle("on", mapOn); $("hm-mapbtn").textContent = mapOn ? "🗺 Мир: вкл" : "🗺 Мир";
+      $("hm-north").textContent = northUp ? "🧭 Север ↑" : "🧭 По взгляду"; $("hm-north").title = northUp ? "Север всегда вверху, крутится стрелка (нажми — радар по взгляду)" : "Радар крутится по взгляду (нажми — север вверху)";
       $("hm-zoom").textContent = zoom + " бл.";
       $("hm-zin").disabled = zoom === ZOOMS[0]; $("hm-zout").disabled = zoom === ZOOMS[ZOOMS.length - 1];
       if (!mapOn) { var mc = $("hm-mapc"); mc.getContext("2d").clearRect(0, 0, mc.width, mc.height); }
       drawRadar(); drawMap();
     };
     $("hm-mapbtn").onclick = function () { mapOn = !mapOn; pref("map", mapOn ? "1" : "0"); upd(); };
+    $("hm-north").onclick = function () { northUp = !northUp; pref("north", northUp ? "1" : "0"); upd(); };
     var zstep = function (d) { var i = ZOOMS.indexOf(zoom) + d; if (i < 0 || i >= ZOOMS.length) return; zoom = ZOOMS[i]; pref("zoom", String(zoom)); upd(); };
     $("hm-zin").onclick = function () { zstep(-1); };
     $("hm-zout").onclick = function () { zstep(1); };
@@ -113,6 +116,9 @@
   // ---------------------------------------------------------------- карта мира под радаром (BlueMap: lowres-тайлы 500×500 блоков, 1 пиксель = 1 блок;
   // картинка — верхняя половина PNG 501×1002). Обновляется, когда BlueMap перерисует участок (обычно через несколько минут).
   var MAP_ROOT = "https://mc.daviart.com/map/maps/", TILE = 500, tiles = {}, mapOn = false, zoom = 100, ZOOMS = [25, 50, 100, 200, 300];
+  var RIM = 26, northUp = true;   // ширина рамки компаса (CSS px); север вверху (по умолчанию) или «по взгляду»
+  function viewYaw() { return northUp || sm.yaw == null ? 180 : sm.yaw; }   // 180 = смотришь на север → север вверху
+  function isDark() { var t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
   // холсты — в размер на экране × плотность пикселей (во всю ширину телефона и на весь экран — чётко)
   var U = 1;
   function sizeCanvases() {
@@ -134,11 +140,11 @@
   function drawMap() {
     var c = $("hm-mapc"); if (!c) return;
     sizeCanvases();
-    var g = c.getContext("2d"), W = c.width, R = W / 2 - 14 * U, cx = W / 2, cy = W / 2;
+    var g = c.getContext("2d"), W = c.width, R = W / 2 - RIM * U, cx = W / 2, cy = W / 2;
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W);
     var me = o.me() || {}, world = (live && live.me && live.me.worldId) || (me.where && me.where.worldId);
     if (!mapOn || !live || !live.online || !live.me || sm.x == null || !world) return;
-    var sc = R / zoom, psi = sm.yaw * Math.PI / 180, cs = Math.cos(psi), sn = Math.sin(psi);
+    var sc = R / zoom, psi = viewYaw() * Math.PI / 180, cs = Math.cos(psi), sn = Math.sin(psi);
     g.save();
     g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip();
     g.fillStyle = "#1b1b1b"; g.fillRect(0, 0, W, W);
@@ -267,27 +273,43 @@
     var m = live && live.me;
     if (!live || !live.online || !m) { el.innerHTML = '<h3>Тело и силы</h3><p class="cab-meta">Зайди на сервер — здесь будут здоровье, еда, стамина, раны и температура в реальном времени.</p>'; return; }
     var lv = live.leveling || {}, hp = Math.round(100 * m.health / Math.max(1, m.maxHealth)), food = Math.round(100 * m.food / 20);
-    var h = "<h3>Тело и силы</h3>" +
-      row("❤", "Здоровье", Math.ceil(m.health) + " / " + m.maxHealth, hp, sev(hp)) +
+    var rows = row("❤", "Здоровье", Math.ceil(m.health) + " / " + m.maxHealth, hp, sev(hp)) +
       row("🍗", "Еда", m.food + " / 20", food, sev(food)) +
       (lv.stamina != null ? row("⚡", "Стамина", lv.exhausted ? "без сил" : Math.round(lv.stamina) + "%", lv.stamina, lv.exhausted ? "bad" : sev(lv.stamina)) : "") +
       (m.air >= 0 ? row("🫧", "Воздух", m.air + "%", m.air, sev(m.air)) : "") +
-      '<div class="hm-mini">🛡 Броня <b>' + m.armor + "</b>" + (live.enemies ? ' · <span class="hm-warn">👹 врагов рядом: ' + live.enemies + "</span>" : "") + "</div>";
+      '<div class="hm-mini">🛡 Броня <b>' + m.armor + "</b>" + (live.enemies ? ' · <span class="hm-warn">👹 врагов: ' + live.enemies + "</span>" : "") + "</div>";
     if (lv.heat != null) {
       var hot = lv.heat >= 0.03, cold = lv.cold >= 0.03, tr = lv.trend > 0 ? " ↑" : lv.trend < 0 ? " ↓" : "";
-      h += '<div class="hm-mini">' + (hot ? "☀" : cold ? "❄" : "✔") + " " + lv.outside + "° · " +
+      rows += '<div class="hm-mini">' + (hot ? "☀" : cold ? "❄" : "✔") + " " + lv.outside + "° · " +
         (hot ? '<span class="' + (lv.heat >= 0.3 ? "hm-warn" : "") + '">Жарко ' + Math.round(lv.heat * 100) + "%</span>" :
           cold ? '<span class="' + (lv.cold >= 0.3 ? "hm-cold" : "") + '">Холодно ' + Math.round(lv.cold * 100) + "%</span>" : "Норма") + tr +
-        (lv.wet >= 0.1 ? " · 💧 мокрый " + Math.round(lv.wet * 100) + "%" : "") + "</div>";
+        (lv.wet >= 0.1 ? " · 💧 " + Math.round(lv.wet * 100) + "%" : "") + "</div>";
     }
-    var b = live.body || {};
-    if (Object.keys(b).length) {
-      h += '<div class="hm-body">' + BODY.map(function (p) {
-        var v = Math.round((b[p[0]] == null ? 1 : b[p[0]]) * 100);
-        return '<div class="hm-part ' + (v >= 95 ? "ok" : v >= 60 ? "warn" : "bad") + '" title="' + p[1] + " " + v + '%"><span>' + p[1] + "</span><b>" + v + "%</b></div>";
-      }).join("") + "</div>";
-    }
-    el.innerHTML = h;
+    el.innerHTML = '<h3>Тело и силы</h3><div class="hm-vgrid">' + figure(live.body || {}) + '<div class="hm-vcol">' + rows + "</div></div>";
+  }
+
+  // человечек в стиле Minecraft (пропорции скина 16×32): каждая часть — цветом по здоровью, процент прямо на ней
+  function partColor(v) { return v >= 95 ? "#4caf50" : v >= 60 ? "#e8c21a" : v >= 30 ? "#f0892a" : "#e0412b"; }
+  function figure(b) {
+    var pc = function (k) { return Math.round((b[k] == null ? 1 : b[k]) * 100); };
+    var parts = [   // id, x, y, w, h (в пикселях скина), подпись
+      ["head", 4, 0, 8, 8, "Голова"], ["torso", 4, 8, 8, 12, "Туловище"], ["right_arm", 0, 8, 4, 12, "П. рука"],
+      ["left_arm", 12, 8, 4, 12, "Л. рука"], ["right_leg", 4, 20, 4, 12, "П. нога"], ["left_leg", 8, 20, 4, 12, "Л. нога"]];
+    var s = '<svg class="hm-fig" viewBox="-0.6 -0.6 17.2 33.2" role="img" aria-label="Части тела">';
+    parts.forEach(function (p) {
+      var v = pc(p[0]), c = partColor(v);
+      s += '<g><title>' + p[5] + " " + v + "%</title>" +
+        '<rect x="' + p[1] + '" y="' + p[2] + '" width="' + p[3] + '" height="' + p[4] + '" fill="' + c + '" stroke="#1d1d1d" stroke-width=".35"/>' +
+        '<rect x="' + (p[1] + .45) + '" y="' + (p[2] + .45) + '" width="' + (p[3] - .9) + '" height="' + (p[4] * .28) + '" fill="#fff" opacity=".18"/>';   // блик
+      var tx = p[1] + p[3] / 2, ty = p[2] + (p[0] === "head" ? 6.6 : p[4] / 2 + 1);
+      if (p[0] !== "head") s += '<text x="' + tx + '" y="' + ty + '" text-anchor="middle" font-size="' + (p[3] > 4 ? 3 : 2.25) + '" font-weight="800" fill="#fff" stroke="#1d1d1d" stroke-width=".35" paint-order="stroke">' + v + "</text>";
+      s += "</g>";
+    });
+    var hv = pc("head");   // лицо: глаза и рот; процент головы — под глазами
+    s += '<rect x="5.5" y="3" width="1.6" height="1.6" fill="#fff"/><rect x="6.2" y="3.4" width=".9" height="1.2" fill="#2a2a2a"/>' +
+      '<rect x="8.9" y="3" width="1.6" height="1.6" fill="#fff"/><rect x="9.6" y="3.4" width=".9" height="1.2" fill="#2a2a2a"/>' +
+      '<text x="8" y="7.3" text-anchor="middle" font-size="2.4" font-weight="800" fill="#fff" stroke="#1d1d1d" stroke-width=".3" paint-order="stroke">' + hv + "</text>";
+    return s + "</svg>";
   }
 
   function row(ico, name, val, pct, cls) {
@@ -363,12 +385,52 @@
     });
   }
 
+  // рамка компаса «по-майнкрафтовски»: деревянный обод из «пикселей»-досок, тёмные края, деления через 15°, буквы С/В/Ю/З с пиксельной тенью
+  // (север — красный), золотые ромбы между сторонами. Стороны света ставятся по текущему повороту радара (vy).
+  var PLANK = ["#7a5533", "#8a6239", "#6e4c2c", "#946b40", "#80593a", "#9b7146"];
+  function drawRim(g, cx, cy, R, u, vy) {
+    var w = (RIM - 4) * u, mid = R + w / 2, yaw = vy * Math.PI / 180;
+    var fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = -Math.sin(yaw);
+    var scr = function (dx, dz) { return Math.atan2(-(dx * fx + dz * fz), dx * rx + dz * rz); };   // угол на экране для направления в мире
+    g.save();
+    var n = Math.max(48, Math.round(2 * Math.PI * mid / (7 * u)));
+    for (var i = 0; i < n; i++) {   // доски: каждая «пиксельная» плашка своего оттенка
+      g.strokeStyle = PLANK[(i * 7 + (i >> 2) * 3) % PLANK.length];
+      g.lineWidth = w; g.beginPath(); g.arc(cx, cy, mid, i / n * 2 * Math.PI, (i + 1) / n * 2 * Math.PI + 0.004); g.stroke();
+    }
+    g.lineWidth = w * 0.18; g.strokeStyle = "rgba(255,230,180,.18)"; g.beginPath(); g.arc(cx, cy, R + w * 0.2, 0, 7); g.stroke();   // светлая грань
+    g.lineWidth = 2.2 * u; g.strokeStyle = "#2e1d0e";
+    g.beginPath(); g.arc(cx, cy, R + u, 0, 7); g.stroke();
+    g.beginPath(); g.arc(cx, cy, R + w, 0, 7); g.stroke();
+    for (var d = 0; d < 360; d += 15) {   // деления
+      var a = scr(Math.sin(d * Math.PI / 180), -Math.cos(d * Math.PI / 180));   // d — азимут от севера по часовой
+      var len = d % 90 === 0 ? 0 : d % 45 === 0 ? w * 0.5 : w * 0.28;
+      if (!len) continue;
+      g.strokeStyle = d % 45 === 0 ? "#f6d77a" : "rgba(255,240,210,.7)"; g.lineWidth = (d % 45 === 0 ? 2.2 : 1.4) * u;
+      g.beginPath(); g.moveTo(cx + Math.cos(a) * (R + w - 2 * u), cy + Math.sin(a) * (R + w - 2 * u)); g.lineTo(cx + Math.cos(a) * (R + w - 2 * u - len), cy + Math.sin(a) * (R + w - 2 * u - len)); g.stroke();
+      if (d % 90 === 45) {   // золотой ромб
+        var mx = cx + Math.cos(a) * (mid - w * 0.05), my = cy + Math.sin(a) * (mid - w * 0.05), s = 3 * u;
+        g.fillStyle = "#f6c945"; g.strokeStyle = "#5a3b12"; g.lineWidth = u;
+        g.beginPath(); g.moveTo(mx, my - s); g.lineTo(mx + s, my); g.lineTo(mx, my + s); g.lineTo(mx - s, my); g.closePath(); g.fill(); g.stroke();
+      }
+    }
+    var sides = [["С", 0, -1, "#ff4a3d"], ["В", 1, 0, "#ffffff"], ["Ю", 0, 1, "#ffffff"], ["З", -1, 0, "#ffffff"]];
+    g.font = "900 " + Math.round(w * 0.78) + "px 'Courier New', ui-monospace, monospace"; g.textAlign = "center"; g.textBaseline = "middle";
+    sides.forEach(function (sd) {
+      var a = scr(sd[1], sd[2]), x = cx + Math.cos(a) * mid, y = cy + Math.sin(a) * mid;
+      g.fillStyle = "#2e1d0e"; g.beginPath(); g.arc(x, y, w * 0.52, 0, 7); g.fill();   // «плашка» под буквой
+      g.fillStyle = "#3a2a1a"; g.fillText(sd[0], x + 1.4 * u, y + 1.6 * u);              // пиксельная тень, как в Minecraft
+      g.fillStyle = sd[3]; g.fillText(sd[0], x, y + 0.2 * u);
+    });
+    g.restore();
+  }
+
   // радар: ты в центре, вверх — куда смотришь; зелёные — с голосом, серые — без, жёлтые — твой клан
   function drawRadar() {
     var c = $("hm-radar"); if (!c) return;
     sizeCanvases();
-    var g = c.getContext("2d"), W = c.width, R = W / 2 - 14 * U, cx = W / 2, cy = W / 2, u = U;
-    var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var g = c.getContext("2d"), W = c.width, R = W / 2 - RIM * U, cx = W / 2, cy = W / 2, u = U;
+    var dark = isDark();
     g.clearRect(0, 0, W, W);
     if (!mapOn) { g.fillStyle = dark ? "rgba(255,255,255,.04)" : "rgba(0,0,0,.04)"; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill(); }
     var range = zoom, sc = R / range;
@@ -381,16 +443,14 @@
     g.beginPath(); g.arc(cx, cy, 32 * sc, 0, 7); g.stroke(); g.setLineDash([]);
     var note = $("hm-radar-note"), mapEl = $("hm-map");
     if (!live || !live.online || !live.me) {
-      g.fillStyle = dark ? "#aaa" : "#777"; g.font = (15 * u) + "px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("не в игре", cx, cy);
+      g.fillStyle = dark ? "#aaa" : "#777"; g.font = (15 * u) + "px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("не в игре", cx, cy); drawRim(g, cx, cy, R, u, 180);
       if (note) note.textContent = "Радар заработает, когда ты зайдёшь на сервер.";
       if (mapEl) mapEl.innerHTML = "";
       return;
     }
-    var yaw = sm.yaw * Math.PI / 180, fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = -Math.sin(yaw);
+    var vy = viewYaw(), yaw = vy * Math.PI / 180, fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = -Math.sin(yaw);
     // север на ободе
-    var nx = 0 * rx + -1 * rz, ny = -(0 * fx + -1 * fz);
-    g.fillStyle = "#e0533d"; g.font = "bold " + (14 * u) + "px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-    g.fillText("С", cx + nx * (R + 7 * u), cy + ny * (R + 7 * u));
+    drawRim(g, cx, cy, R, u, vy);
     var list = Object.keys(sm.pts).map(function (n) { return sm.pts[n]; });
     list.forEach(function (p) {
       var sx = p.dx * rx + p.dz * rz, sy = -(p.dx * fx + p.dz * fz);
@@ -403,8 +463,9 @@
       g.fillText(p.name + (Math.abs(p.dy) >= 4 ? (p.dy > 0 ? " ▲" : " ▼") : ""), x, y + 9 * u); g.textBaseline = "middle";
     });
     drawMarks(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
-    g.fillStyle = "#3a9bff";   // ты — стрелка вверх
-    g.beginPath(); g.moveTo(cx, cy - 11 * u); g.lineTo(cx + 8 * u, cy + 8 * u); g.lineTo(cx, cy + 4 * u); g.lineTo(cx - 8 * u, cy + 8 * u); g.closePath(); g.fill();
+    g.save(); g.translate(cx, cy); g.rotate((sm.yaw - vy) * Math.PI / 180);   // ты — стрелка туда, куда смотришь
+    g.fillStyle = "#3a9bff"; g.strokeStyle = "#fff"; g.lineWidth = 1.5 * u;
+    g.beginPath(); g.moveTo(0, -12 * u); g.lineTo(8 * u, 8 * u); g.lineTo(0, 4 * u); g.lineTo(-8 * u, 8 * u); g.closePath(); g.fill(); g.stroke(); g.restore();
     var nh = list.length ? '<span class="hm-dot g"></span>с голосом <span class="hm-dot s"></span>без голоса <span class="hm-dot y"></span>клан <span class="hm-dot b"></span>друзья · пунктир — слышно голос'
       : "В радиусе " + zoom + " бл. никого.";
     if (note && note.getAttribute("data-v") !== nh) { note.innerHTML = nh; note.setAttribute("data-v", nh); }

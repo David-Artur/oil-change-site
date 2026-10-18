@@ -902,6 +902,20 @@
   (function () {
     var rb = document.getElementById("reload-btn");
     if (rb) rb.onclick = function () { rb.disabled = true; location.reload(); };
+    // iOS Safari не слушает user-scalable=no — гасим щипок и двойной тап вручную
+    ["gesturestart", "gesturechange"].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, {passive: false}); });
+    document.addEventListener("touchmove", function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, {passive: false});
+    // тема: авто (как в системе) → светлая → тёмная; хранится на устройстве
+    var tb = document.getElementById("theme-btn"), THEMES = ["auto", "light", "dark"], ICON = {auto: "🌗", light: "☀", dark: "🌙"}, NAME = {auto: "как в системе", light: "светлая", dark: "тёмная"};
+    var cur = function () { try { return localStorage.getItem("daviart.theme") || "auto"; } catch (e) { return "auto"; } };
+    var applyTheme = function (th) {
+      if (th === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", th);
+      if (tb) { tb.textContent = ICON[th]; tb.title = "Тема: " + NAME[th] + " (нажми — сменить)"; }
+      try { if (th === "auto") localStorage.removeItem("daviart.theme"); else localStorage.setItem("daviart.theme", th); } catch (e) { }
+      document.dispatchEvent(new Event("vp-theme"));
+    };
+    applyTheme(cur());
+    if (tb) tb.onclick = function () { var th = THEMES[(THEMES.indexOf(cur()) + 1) % 3]; applyTheme(th); toast("Тема: " + NAME[th]); };
     var over = null;
     function closeMap(fromBack) {
       if (!over || over.hidden) return;
