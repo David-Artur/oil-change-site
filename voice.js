@@ -24,60 +24,80 @@
   function draw() {
     if (!box) return;
     var compact = opt && opt.compact;   // «Главная» (home.js): коротко
-    var h = '<div class="card cab-card vc-card' + (compact ? " vc-compact" : "") + '"><h2>🎤 Голосовой чат</h2>' + (compact
-      ? (on ? "" : '<p class="cab-meta">Говори с теми, кто рядом в игре (до ' + range + ' бл.). У подключённых — 🎤 над головой.</p>')
-      : '<p class="cab-meta">Говори с игроками, которые <b>рядом с тобой в игре</b> и тоже подключились (у них <b>🎤 над головой</b>). ' +
-        'Чем дальше — тем тише, дальше ' + range + ' блоков и в другом мире — не слышно. Играй на компьютере, а голос — с телефона или в этом же браузере. Ничего не записывается.</p>');
+    var h = '<div class="card cab-card vc-card' + (compact ? " vc-compact" : "") + (on ? " vc-on" : "") + '"><h2>🎤 Голосовой чат</h2>';
     if (!on) {
-      h += '<div class="cab-row"><button class="btn green' + (compact ? " vc-big" : "") + '" type="button" id="vc-join">🎤 Подключиться к голосу</button></div>' +
+      h += (compact ? '<p class="cab-meta">Говори с теми, кто рядом в игре (до ' + range + ' бл.). У подключённых — 🎤 над головой.</p>'
+          : '<p class="cab-meta">Говори с игроками, которые <b>рядом с тобой в игре</b> и тоже подключились (у них <b>🎤 над головой</b>). ' +
+            'Чем дальше — тем тише, дальше ' + range + ' блоков и в другом мире — не слышно. Ничего не записывается.</p>') +
+        '<div class="cab-row"><button class="btn green' + (compact ? " vc-big" : "") + '" type="button" id="vc-join">🎤 Подключиться к голосу</button></div>' +
         '<p class="cab-meta" id="vc-msg">Браузер спросит разрешение на микрофон — нажми «Разрешить». Лучше в наушниках.</p>';
     } else {
-      h += '<div class="vc-status"><span class="vc-dot ' + (lastState && lastState.inGame ? "on" : "") + '"></span><span id="vc-where">' + esc(where()) + '</span></div>' +
-        '<div class="vc-me"><div class="vc-meter"><i id="vc-level"></i></div><span id="vc-me-state"></span></div>' +
-        '<div class="cab-row vc-ctl">' +
-        '<button class="btn ' + (micOn ? "" : "red") + '" type="button" id="vc-mic">' + (micOn ? "🎤 Микрофон включён" : "🔇 Микрофон выключен") + '</button>' +
-        '<button class="btn" type="button" id="vc-mode">' + (ptt ? "Режим: нажми и говори" : "Режим: говорю всегда") + '</button>' +
-        '<button class="btn" type="button" id="vc-leave">Отключиться</button></div>' +
-        (ptt ? '<button class="btn gold vc-ptt" type="button" id="vc-ptt">Держи — и говори</button>' : "") +
-        (compact ? "" : '<h3 class="don-sub">Рядом с тобой</h3>') + '<div id="vc-peers"></div>' +
-        '<p class="cab-meta">Не сворачивай браузер и не блокируй экран — иначе телефон может выключить микрофон.</p>';
+      // 2026-10-18 (владелец): компактно и без «дрыганья» — подписи не меняются при разговоре, всё фиксированной ширины/высоты
+      h += '<div class="vc-bar"><span class="vc-dot"></span><span class="vc-where" id="vc-where"></span></div>' +
+        '<div class="vc-row">' +
+        '<button class="vc-ib" type="button" id="vc-mic"></button>' +
+        '<div class="vc-meter" id="vc-meter"><i id="vc-level"></i></div>' +
+        '<button class="vc-chip" type="button" id="vc-mode"></button>' +
+        '<button class="vc-chip" type="button" id="vc-leave" title="Отключиться от голоса">Выйти</button></div>' +
+        '<button class="btn gold vc-ptt" type="button" id="vc-ptt"' + (ptt ? "" : " hidden") + '>Держи — и говори</button>' +
+        '<div id="vc-peers" class="vc-peers"></div>';
     }
     box.innerHTML = h + "</div>";
     if (!on) { $("vc-join").onclick = join; return; }
-    $("vc-mic").onclick = function () { micOn = !micOn; applyMic(); draw(); };
-    $("vc-mode").onclick = function () { ptt = !ptt; store("ptt", ptt ? "1" : "0"); applyMic(); draw(); };
+    $("vc-mic").onclick = function () { micOn = !micOn; applyMic(); ctl(); };
+    $("vc-mode").onclick = function () { ptt = !ptt; store("ptt", ptt ? "1" : "0"); applyMic(); ctl(); };
     $("vc-leave").onclick = function () { leave(true); };
     var b = $("vc-ptt");
-    if (b) {
-      var down = function (e) { e.preventDefault(); pttDown = true; applyMic(); b.classList.add("on"); };
-      var up = function (e) { e.preventDefault(); pttDown = false; applyMic(); b.classList.remove("on"); };
-      b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointerleave", up); b.addEventListener("pointercancel", up);
-    }
-    drawPeers();
+    var down = function (e) { e.preventDefault(); pttDown = true; applyMic(); b.classList.add("on"); };
+    var up = function (e) { e.preventDefault(); pttDown = false; applyMic(); b.classList.remove("on"); };
+    b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointerleave", up); b.addEventListener("pointercancel", up);
+    peersHtml = null;
+    ctl(); status(); drawPeers();
+  }
+
+  // кнопки — меняем только их вид, без перерисовки панели
+  function ctl() {
+    var m = $("vc-mic"), md = $("vc-mode"), pb = $("vc-ptt");
+    if (!m) return;
+    m.textContent = micOn ? "🎤" : "🔇"; m.classList.toggle("off", !micOn); m.title = micOn ? "Микрофон включён — нажми, чтобы выключить" : "Микрофон выключен — нажми, чтобы включить";
+    md.textContent = ptt ? "Рация" : "Всегда"; md.title = ptt ? "Говоришь, пока держишь кнопку (нажми — говорить всегда)" : "Микрофон слушает всегда (нажми — режим рации)";
+    pb.hidden = !ptt;
+  }
+
+  function status() {
+    var w = $("vc-where"), d = box && box.querySelector(".vc-dot");
+    if (!w) return;
+    var t = where();
+    if (w.textContent !== t) w.textContent = t;
+    if (d) d.className = "vc-dot" + (lastState && lastState.inGame ? " on" : "");
   }
 
   function where() {
     if (!lastState) return "Подключаюсь…";
-    if (!lastState.inGame) return "Ты сейчас не в игре — зайди на сервер daviart.com, и голос заработает (" + (lastState.connected || 0) + " подключено)";
-    return "В игре: " + (lastState.world || "") + " · подключено к голосу: " + (lastState.connected || 0);
+    if (!lastState.inGame) return "Не в игре — зайди на daviart.com";
+    return (lastState.world || "В игре") + " · в голосе: " + (lastState.connected || 0);
   }
 
+  var peersHtml = null;
   function drawPeers() {
     var el = $("vc-peers");
     if (!el) return;
     var names = Object.keys(peers).filter(function (n) { return peers[n].d != null; }).sort(function (a, b) { return peers[a].d - peers[b].d; });
     var others = (lastState && lastState.others) || [];   // рядом в игре, но голос не подключили
-    if (!names.length && !others.length) { el.innerHTML = '<p class="cab-meta">Рядом в игре никого. Подойди к игрокам — они появятся здесь.</p>'; return; }
-    el.innerHTML = names.map(function (n) {
+    var h;
+    if (!names.length && !others.length) h = '<p class="cab-meta vc-empty">Рядом в игре никого.</p>';
+    else h = names.map(function (n) {
       var p = peers[n], st = p.pc ? p.pc.connectionState : "new";
-      var link = st === "connected" ? " · слышит тебя" : st === "failed" ? " · не соединилось" : " · соединяюсь…";
-      return '<div class="vc-peer' + (p.speaking ? " talk" : "") + '"><span class="vc-ico">' + (p.speaking ? "🗣" : "🎤") + '</span><b>' + esc(n) + '</b>' +
-        '<span class="cab-meta">' + Math.round(p.d) + ' бл.' + link + '</span>' +
-        '<button class="btn small" type="button" data-mute="' + esc(n) + '">' + (p.muted ? "🔇 Не слышу" : "🔊 Слышу") + "</button></div>";
+      var link = st === "connected" ? "слышит" : st === "failed" ? "нет связи" : "соединяюсь";
+      return '<div class="vc-peer' + (p.speaking ? " talk" : "") + '"><span class="vc-ico">🎤</span><b>' + esc(n) + '</b>' +
+        '<span class="vc-pm">' + Math.round(p.d) + " бл. · " + link + "</span>" +
+        '<button class="vc-chip vc-mute" type="button" data-mute="' + esc(n) + '" title="' + (p.muted ? "Не слышишь его — нажми, чтобы слышать" : "Нажми, чтобы не слышать") + '">' + (p.muted ? "🔇" : "🔊") + "</button></div>";
     }).join("") + others.slice().sort(function (a, b) { return a.d - b.d; }).map(function (o) {
-      return '<div class="vc-peer off"><span class="vc-ico">🔇</span><b>' + esc(o.name) + '</b><span class="cab-meta">' + Math.round(o.d) +
-        ' бл. · не подключён к голосу — не слышит тебя</span></div>';
-    }).join("") + (others.length && !names.length ? '<p class="cab-meta">Позови их: пусть откроют кабинет → «🎤 Голос» → «Подключиться».</p>' : "");
+      return '<div class="vc-peer off"><span class="vc-ico">🔇</span><b>' + esc(o.name) + '</b><span class="vc-pm">' + Math.round(o.d) + " бл. · без голоса</span></div>";
+    }).join("");
+    if (h === peersHtml) return;   // ничего не изменилось — не трогаем (не «дрыгается»)
+    peersHtml = h;
+    el.innerHTML = h;
     Array.prototype.forEach.call(el.querySelectorAll("[data-mute]"), function (b) {
       b.onclick = function () { var p = peers[b.getAttribute("data-mute")]; if (p) { p.muted = !p.muted; volume(p); drawPeers(); } };
     });
@@ -141,9 +161,9 @@
     }
     var live = micOn && (!ptt || pttDown);
     speaking = live && lvl > 0.035;
-    var bar = $("vc-level"), st = $("vc-me-state");
-    if (bar) bar.style.width = Math.min(100, Math.round(lvl * 400)) + "%";
-    if (st) st.textContent = !micOn ? "микрофон выключен" : ptt && !pttDown ? "держи кнопку, чтобы говорить" : speaking ? "тебя слышно" : "говори — тебя услышат рядом";
+    var bar = $("vc-level"), mt = $("vc-meter");
+    if (bar) bar.style.transform = "scaleX(" + (live ? Math.min(1, lvl * 4) : 0).toFixed(3) + ")";   // без смены ширины блока — ничего не сдвигается
+    if (mt && mt.classList.contains("talk") !== speaking) mt.classList.toggle("talk", speaking);
     requestAnimationFrame(meter);
   }
 
@@ -168,7 +188,7 @@
           volume(p);
         });
         Object.keys(peers).forEach(function (n) { if (now - (peers[n].seen || 0) > GONE_MS) drop(n); });
-        if (first) draw(); else { var w2 = $("vc-where"); if (w2) w2.textContent = where(); var dot = box.querySelector(".vc-dot"); if (dot) dot.className = "vc-dot" + (j.inGame ? " on" : ""); drawPeers(); }
+        if (first) draw(); else { status(); drawPeers(); }
       }
       pollT = setTimeout(poll, POLL_MS);
     });
