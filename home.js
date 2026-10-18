@@ -556,7 +556,7 @@
     if (!live || !live.online || !live.me) {
       g.fillStyle = dark ? "#aaa" : "#777"; g.font = (15 * u) + "px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("не в игре", cx, cy); drawRim(g, cx, cy, R, u, 180);
       if (note) note.textContent = "Радар заработает, когда ты зайдёшь на сервер.";
-      if (mapEl) mapEl.innerHTML = "";
+      mapButton(mapEl, null);
       return;
     }
     var vy = viewYaw(), yaw = vy * Math.PI / 180, fx = -Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = -Math.sin(yaw);
@@ -581,10 +581,17 @@
     var nh = list.length ? '<span class="hm-dot g"></span>с голосом <span class="hm-dot s"></span>без голоса <span class="hm-dot y"></span>клан <span class="hm-dot b"></span>друзья · пунктир — слышно голос'
       : "В радиусе " + zoom + " бл. никого.";
     if (note && note.getAttribute("data-v") !== nh) { note.innerHTML = nh; note.setAttribute("data-v", nh); }
-    if (mapEl && o.mapLink && live.me.world !== "Лобби" && !mapEl.firstChild) {
-      var me = o.me() || {}, w = me.where;
-      if (w) mapEl.innerHTML = o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Карта");
-    }
+    mapButton(mapEl, live.me.world !== "Лобби" && live.me.worldId ? {worldId: live.me.worldId} : null);   // мир — из живых данных
+  }
+
+  // 2026-10-18 (владелец): «Открыть карту» под компасом — всегда: в игре — на том месте, где стоишь (раз за показ), иначе — карта мира
+  function mapButton(el, w) {
+    if (!el || !o.mapLink) return;
+    var kind = w ? "pos" : "all";
+    if (el.getAttribute("data-kind") === kind && el.firstChild) return;
+    el.setAttribute("data-kind", kind);
+    el.innerHTML = w ? o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Открыть карту — где я")
+      : '<a class="btn small" target="_blank" rel="noopener" href="https://mc.daviart.com/map/">🗺 Открыть карту мира</a>';
   }
 
   // ---------------------------------------------------------------- чат
