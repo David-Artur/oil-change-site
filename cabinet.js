@@ -193,6 +193,7 @@
     var ch = document.querySelector('#tabs .chip[data-tab="' + t + '"]');   // выбранная вкладка — в видимую часть полосы (телефон)
     if (ch && ch.scrollIntoView) try { ch.scrollIntoView({block: "nearest", inline: "nearest"}); } catch (e) { }
     if (t === "market" && !market) loadMarket();
+    if (t === "market") markNoticesSeen();
     if (t === "land" && !clansAll) loadClans();
     if (t === "donate" && me) renderDonate();
     if (t === "rewards" && me) { loadBonus(); loadRefFriends(); }
@@ -300,6 +301,26 @@
     if (pc) pc.onclick = function () { try { navigator.clipboard.writeText($("ref-pcmd").textContent); toast("Скопировано: " + $("ref-pcmd").textContent); } catch (e) { } };
   }
 
+  // 2026-10-19 (владелец: «на „Рынке“ горит 1, нажимаешь — ничего, не пропадает»): раньше на «Рынке» считалось и приглашение в клан,
+  // которое видно только на «Земли и клан» (а если уже в клане — нигде). Теперь: «Рынок» — только непрочитанные сообщения рынка
+  // (открыл вкладку — прочитано, запоминается в браузере), «Земли и клан» — приглашение в клан, только если ты не в клане.
+  function noticesKey() { return ((me && me.market && me.market.notices) || []).join("\n"); }
+  function seenNotices() { try { return localStorage.getItem("cab-mk-seen:" + me.nick) || ""; } catch (e) { return ""; } }
+  function renderBadges() {
+    if (!me) return;
+    var nt = (me.market && me.market.notices) || [];
+    var n = nt.length && noticesKey() !== seenNotices() ? nt.length : 0;
+    var badge = $("tab-badge"); if (badge) { badge.textContent = n ? String(n) : ""; badge.hidden = !n; }
+    var land = document.querySelector('#tabs .chip[data-tab="land"]');
+    if (land) {
+      var lb = land.querySelector(".badge");
+      if (!lb) { lb = document.createElement("span"); lb.className = "badge"; land.appendChild(document.createTextNode(" ")); land.appendChild(lb); }
+      var inv = me.invite && !me.clan ? 1 : 0;
+      lb.textContent = inv ? "1" : ""; lb.hidden = !inv; lb.title = inv ? "Тебя зовут в клан" : "";
+    }
+  }
+  function markNoticesSeen() { if (!me) return; try { localStorage.setItem("cab-mk-seen:" + me.nick, noticesKey()); } catch (e) { } renderBadges(); }
+
   // ---------------------------------------------------------------- отрисовка
   function render() {
     $("me-nick").textContent = me.nick;
@@ -310,8 +331,7 @@
     $("me-bal").textContent = money(me.balance);
     $("me-lvl").textContent = me.level || "—";
     $("me-clan").textContent = me.clan ? "[" + me.clan.tag + "]" : "нет";
-    var n = (me.market && me.market.notices || []).length + (me.invite ? 1 : 0);
-    var badge = $("tab-badge"); if (badge) { badge.textContent = n ? String(n) : ""; badge.hidden = !n; }
+    renderBadges();
     renderBonusBar();
     if (window.VPHome && homeMounted) window.VPHome.refresh();
     renderProfile();
