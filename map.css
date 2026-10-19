@@ -1,0 +1,50 @@
+/* Своя карта мира (У280): плитки с GitHub Pages (daviart-map), Leaflet. Тема — по системе. */
+:root {
+  --bg: #f4f1ea; --card: rgba(255, 255, 255, .92); --ink: #1d1a16; --soft: #6b645a; --line: rgba(0, 0, 0, .12);
+  --green: #3d8a1e; --chip: rgba(0, 0, 0, .06); --void: #d9d4ca;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14110e; --card: rgba(30, 26, 22, .92); --ink: #f1ece4; --soft: #a59d90; --line: rgba(255, 255, 255, .14);
+    --green: #6cc644; --chip: rgba(255, 255, 255, .08); --void: #0b0908;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14110e; --card: rgba(30, 26, 22, .92); --ink: #f1ece4; --soft: #a59d90; --line: rgba(255, 255, 255, .14);
+  --green: #6cc644; --chip: rgba(255, 255, 255, .08); --void: #0b0908;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: Rubik, system-ui, sans-serif; overflow: hidden; }
+.mh { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; gap: 8px;
+  padding: max(8px, env(safe-area-inset-top)) 12px 8px; background: var(--card); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); }
+.mh-home { display: flex; align-items: center; gap: 6px; color: var(--ink); text-decoration: none; font-weight: 700; flex: none; }
+.mh-home img { border-radius: 8px; }
+@media (max-width: 520px) { .mh-home span { display: none; } }
+.mh-worlds { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+.mh-worlds::-webkit-scrollbar { display: none; }
+.mh-worlds button { flex: none; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font: inherit; font-size: .9rem;
+  padding: 7px 12px; border-radius: 999px; cursor: pointer; min-height: 36px; }
+.mh-worlds button.on { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; }
+.mh-3d { flex: none; color: var(--soft); text-decoration: none; font-size: .85rem; border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; }
+#map { position: fixed; inset: 0; top: 0; background: var(--void); }
+.leaflet-container { background: var(--void); font-family: inherit; }
+.leaflet-tile { image-rendering: pixelated; image-rendering: crisp-edges; }
+.leaflet-top { top: 60px; }
+.mpanel { position: fixed; z-index: 1000; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap;
+  gap: 8px; align-items: center; pointer-events: none; }
+.mpanel > * { pointer-events: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+.mcoord { padding: 8px 12px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.mgo { display: flex; gap: 4px; padding: 4px; }
+.mgo input { width: 72px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; background: transparent; color: var(--ink); }
+.mgo button { border: 0; border-radius: 8px; background: var(--green); color: #fff; font: inherit; font-weight: 700; padding: 6px 12px; cursor: pointer; }
+.mtog { padding: 8px 12px; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.mnote { position: fixed; z-index: 999; top: 62px; right: 12px; max-width: 260px; font-size: .8rem; color: var(--soft); background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+@media (max-width: 520px) {
+  .mnote { display: none; }
+  .mgo { order: 3; flex: 1 1 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .mgo input { width: 100%; min-width: 0; }
+}
+.claim-tip { font-family: Rubik, system-ui, sans-serif; }
+.claim-tip b { display: block; }
