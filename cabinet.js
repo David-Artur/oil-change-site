@@ -763,6 +763,10 @@
     var tabBox = $("tab-bonus");
     if (!$("bn-rest")) {
       tabBox.innerHTML = '<div id="bn-gift" class="bn-gift">' + giftHtml() + '</div><div id="bn-rest"><div class="card cab-card"><p class="cab-meta">Загружаю бонусы…</p></div></div>';
+      // владелец 2026-10-19: «Приведи друга — получи $1000» и списки по кодам — сразу после голосования, до остальных бонусов
+      var rc = $("ref-card"), rr = $("tab-refs"), rest = $("bn-rest");
+      if (rc) tabBox.insertBefore(rc, rest);
+      if (rr) tabBox.insertBefore(rr, rest);
       renderGift();
     }
     bonusStatus().then(renderBonus);
