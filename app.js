@@ -60,7 +60,7 @@
       ' <span class="lvl" title="Рекомендуемый уровень">ур. ' + esc(w.level) + "</span></h3>" + dl + notes + maplink + "</div></article>";
   }).join("");
   // веб-карта: кнопки на каждый мир (лобби — карточка в WORLDS, последняя)
-  function mapUrl(id) { return S.map + "/#" + id + ":0:64:0:1500:0:0:0:1:flat"; }
+  function mapUrl(id) { return S.map + "#" + id; }   // У280: своя карта map.html#мир (точка прибытия мира)
   var mb = $("map-buttons");
   if (mb && S.map) mb.innerHTML = (window.WORLDS || []).filter(function (w) { return w.map; }).map(function (w) { return [w.map, w.name]; })
     .map(function (x) { return '<a class="btn small" href="' + mapUrl(x[0]) + '" target="_blank" rel="noopener">' + esc(x[1]) + "</a>"; }).join("");

@@ -144,9 +144,10 @@
 
   function pref(k, v) { try { if (v === undefined) return localStorage.getItem("daviart.home." + k); localStorage.setItem("daviart.home." + k, v); } catch (e) { return null; } }
 
-  // ---------------------------------------------------------------- карта мира под радаром (BlueMap: lowres-тайлы 500×500 блоков, 1 пиксель = 1 блок;
-  // картинка — верхняя половина PNG 501×1002). Обновляется, когда BlueMap перерисует участок (обычно через несколько минут).
-  var MAP_ROOT = "https://mc.daviart.com/map/maps/", TILE = 500, tiles = {}, mapOn = false, zoom = 100, ZOOMS = [25, 50, 100, 200, 300];
+  // ---------------------------------------------------------------- карта мира под радаром — своя карта (У280): плитки z=0 с GitHub Pages
+  // (daviart-map: tiles/<мир>/0/<x>_<y>.webp, 512×512 блоков, 1 пиксель = 1 блок). Обновляется раз в ~3 ч (раньше — BlueMap с mc.daviart.com).
+  var MAP_ROOT = "https://david-artur.github.io/daviart-map/tiles/", TILE = 512, tiles = {}, mapOn = false, zoom = 100, ZOOMS = [25, 50, 100, 200, 300];
+  var MAP_V = Math.floor(Date.now() / 3600000);   // кэш плиток — на час
   var RIM = 26, northUp = true;   // ширина рамки компаса (CSS px); север вверху (по умолчанию) или «по взгляду»
   function viewYaw() { return northUp || sm.yaw == null ? 180 : sm.yaw; }   // 180 = смотришь на север → север вверху
   function isDark() { var t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
@@ -165,7 +166,7 @@
     t = tiles[k] = {img: new Image(), ok: false};
     t.img.onload = function () { t.ok = true; };
     t.img.onerror = function () { t.bad = true; };
-    t.img.src = MAP_ROOT + encodeURIComponent(world) + "/tiles/1/x" + numPath(tx) + "/z" + numPath(tz) + ".png";
+    t.img.src = MAP_ROOT + encodeURIComponent(world) + "/0/" + tx + "_" + tz + ".webp?v=" + MAP_V;
     return null;
   }
   function drawMap() {
@@ -657,7 +658,7 @@
     if (el.getAttribute("data-kind") === kind && el.firstChild) return;
     el.setAttribute("data-kind", kind);
     el.innerHTML = (w ? o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Открыть карту — где я")
-      : '<a class="btn small" target="_blank" rel="noopener" href="https://mc.daviart.com/map/">🗺 Открыть карту мира</a>') +
+      : '<a class="btn small" target="_blank" rel="noopener" href="map.html">🗺 Открыть карту мира</a>') +
       // 2026-10-18 (владелец): рядом с картой — сразу Discord
       ' <a class="btn small hm-discord" target="_blank" rel="noopener" href="https://discord.gg/sTgZM8Kh">💬 Discord</a>';
   }

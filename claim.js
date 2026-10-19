@@ -26,7 +26,7 @@
     return '<span class="rank role-pill" style="background:' + hex + ";border-color:" + hex + ";color:" + ((r * 299 + g * 587 + b * 114) / 1000 > 140 ? "#1a1a1a" : "#fff") + '">' + esc(text) + "</span>";
   }
   function mapLink(worldId, x, y, z) {   // тот же формат, что в кабинете
-    return '<a class="btn small" target="_blank" rel="noopener" href="https://mc.daviart.com/map/#' + encodeURIComponent(worldId || "") + ":" + x + ":" + (y || 64) + ":" + z + ':120:0:0:0:0:perspective">🗺 Открыть на карте</a>';
+    return '<a class="btn small" target="_blank" rel="noopener" href="map.html#' + encodeURIComponent(worldId || "") + "/" + Math.round(x) + "/" + Math.round(z) + '/19">🗺 Открыть на карте</a>';   // У280: своя карта
   }
   var toastT;
   function toast(msg, bad) {

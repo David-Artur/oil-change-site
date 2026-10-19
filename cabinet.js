@@ -87,8 +87,8 @@
   document.addEventListener("mouseover", function (e) { var s = e.target.closest && e.target.closest("[data-tip]"); if (s) showTip(s); else tipEl.hidden = true; });
   document.addEventListener("scroll", function () { tipEl.hidden = true; }, true);
   function mapLink(worldId, x, y, z, label) {
-    var base = "https://mc.daviart.com/map";   // через Caddy: https + сжатие (прямой :8100 без сжатия грузится на телефоне очень долго)
-    return '<a class="btn small" target="_blank" rel="noopener" href="' + esc(base) + "/#" + encodeURIComponent(worldId) + ":" + x + ":" + (y || 64) + ":" + z + ':120:0:0:0:0:perspective">' + (label || "🗺 На карте") + "</a>";
+    // У280: своя карта daviart.com/map.html#мир/x/z/зум (раньше — BlueMap на mc.daviart.com, у части игроков не открывался)
+    return '<a class="btn small" target="_blank" rel="noopener" href="map.html#' + encodeURIComponent(worldId) + "/" + Math.round(x) + "/" + Math.round(z) + '/19">' + (label || "🗺 На карте") + "</a>";
   }
   function ago(t) { var s = Math.max(0, Math.round((Date.now() - t) / 1000)); return s < 60 ? s + " с" : Math.round(s / 60) + " мин"; }
   // У276: цвета Minecraft «&x» (роли и теги кланов) → значок-«таблетка» с читаемым текстом в обеих темах
@@ -1201,7 +1201,7 @@
       try { history.pushState({vpMap: 1}, ""); } catch (e) { }
     }
     document.addEventListener("click", function (e) {
-      var a = e.target.closest && e.target.closest('a[href^="https://mc.daviart.com/map"]');
+      var a = e.target.closest && e.target.closest('a[href^="map.html"], a[href^="/map.html"], a[href^="https://daviart.com/map.html"], a[href^="https://mc.daviart.com/map"]');
       if (!a || a.id === "map-ext") return;
       e.preventDefault();
       openMap(a.href);

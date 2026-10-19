@@ -48,3 +48,26 @@ body { background: var(--bg); color: var(--ink); font-family: Rubik, system-ui, 
 }
 .claim-tip { font-family: Rubik, system-ui, sans-serif; }
 .claim-tip b { display: block; }
+/* v2 (MapLibre) */
+[hidden] { display: none !important; }
+button.mh-3d { font: inherit; font-weight: 700; color: var(--ink); background: var(--chip); cursor: pointer; min-height: 36px; padding: 7px 12px; }
+button.mh-3d.on { background: var(--green); border-color: var(--green); color: #fff; }
+.maplibregl-ctrl-top-left { top: 60px; }
+.mside { position: fixed; z-index: 1000; right: 12px; top: 106px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.mbtn { font: inherit; font-weight: 500; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; cursor: pointer; min-height: 40px; }
+.mlayers { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; max-width: 250px; }
+.mlayers label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.mlegend { display: flex; flex-direction: column; gap: 3px; font-size: .78rem; color: var(--soft); border-top: 1px solid var(--line); padding-top: 6px; }
+.mlegend i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.mhint { margin: 0; font-size: .8rem; color: var(--soft); }
+.mhint a { color: var(--green); }
+.mnote { top: auto; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 56px); right: 12px; }
+.mk-player { display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.mk-player img, .mk-player i { width: 22px; height: 22px; border: 2px solid #fff; border-radius: 4px; image-rendering: pixelated; background: #555; font-style: normal; text-align: center; line-height: 18px; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); }
+.mk-player span, .mk-mine, .mk-go { font: 600 12px Rubik, system-ui, sans-serif; color: #fff; background: rgba(0, 0, 0, .62); border-radius: 6px; padding: 1px 6px; margin-top: 2px; white-space: nowrap; }
+.mk-me { width: 34px; height: 34px; display: grid; place-items: center; pointer-events: none; }
+.mk-me b { width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 22px solid #3b82f6; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 1px 3px rgba(0, 0, 0, .6)); }
+.mk-me span { position: absolute; font: 700 10px Rubik, sans-serif; color: #fff; margin-top: 26px; text-shadow: 0 1px 2px #000; }
+.mk-mine.mk-home { background: rgba(34, 120, 60, .85); }
+.mk-go { background: #2563eb; }
+.maplibregl-popup-content { font-family: Rubik, system-ui, sans-serif; font-size: .85rem; color: #1d1a16; padding: 8px 10px; border-radius: 10px; }

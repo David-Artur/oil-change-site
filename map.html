@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Карта мира — DaviArt Craft</title>
-<meta name="description" content="Карта миров сервера DaviArt Craft: Святые земли, Долины, Пограничье, Пустоши, Незер, Энд и лобби — прямо на сайте.">
+<meta name="description" content="Карта миров сервера DaviArt Craft прямо на сайте: 2D и 3D, приваты, зоны у спавнов, игроки онлайн, твои метки и дом.">
 <meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
@@ -14,16 +14,33 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="/map.css?v=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="/map.css?v=3">
 </head>
 <body>
 <header class="mh">
   <a class="mh-home" href="/" aria-label="На главную"><img src="/img/icon-192.png" alt="" width="32" height="32"><span>DaviArt</span></a>
   <nav class="mh-worlds" id="worlds" aria-label="Миры"></nav>
-  <a class="mh-3d" href="https://mc.daviart.com/map/" target="_blank" rel="noopener" title="Старая 3D-карта (BlueMap)">3D</a>
+  <button class="mh-3d" id="b3d" type="button" title="Объёмный вид: горы и рельеф">3D</button>
 </header>
 <div id="map" aria-label="Карта мира"></div>
+<div class="mside">
+  <button type="button" id="bme" class="mbtn" hidden title="Показать, где я">📍 Где я</button>
+  <button type="button" id="blayers" class="mbtn" title="Слои карты">☰ Слои</button>
+  <div class="mlayers" id="layers" hidden>
+    <label><input type="checkbox" id="lclaims" checked> Приваты</label>
+    <label><input type="checkbox" id="lzones" checked> Зоны у точки прибытия</label>
+    <label><input type="checkbox" id="lplayers" checked> Игроки онлайн</label>
+    <label><input type="checkbox" id="lmine" checked> Мои метки и дом</label>
+    <label>Горы в 3D <select id="exag"><option value="1">как в игре</option><option value="2" selected>×2</option><option value="4">×4</option></select></label>
+    <div class="mlegend">
+      <span><i style="background:#ef4444"></i>без PvP</span><span><i style="background:#f59e0b"></i>ничего не ломается</span>
+      <span><i style="background:#3b82f6"></i>дальше — можно приватить</span>
+      <span><i style="background:#22c55e"></i>личный приват</span><span><i style="background:#eab308"></i>клан-приват</span>
+    </div>
+    <p class="mhint" id="loginhint">Свои метки, дом и «Где я» — <a href="/cabinet.html">войди в кабинет</a>.</p>
+  </div>
+</div>
 <div class="mpanel">
   <div class="mcoord" id="coord">X — · Z —</div>
   <form class="mgo" id="go" autocomplete="off">
@@ -31,10 +48,9 @@
     <input id="gz" inputmode="numeric" placeholder="Z" aria-label="Координата Z">
     <button type="submit">Найти</button>
   </form>
-  <label class="mtog"><input type="checkbox" id="tclaims" checked> Приваты</label>
 </div>
-<div class="mnote" id="note">🧪 Новая карта — тест. Обновляется раз в несколько часов.</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="/map.js?v=1"></script>
+<div class="mnote" id="note"></div>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="/map.js?v=3"></script>
 </body>
 </html>
