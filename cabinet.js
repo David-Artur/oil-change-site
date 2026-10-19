@@ -264,31 +264,39 @@
   }
   function renderRefs() {
     var box = $("tab-refs"); if (!box || !me) return;
+    // владелец 2026-10-19: несколько кодов у игрока — свой ник (у всех) и коды партнёра (ютуберам); у каждого кода — свой список
     var r = me.ref, h = "";
-    if (r && r.code) {
-      var s = r.stats || {};
-      h += '<div class="card cab-card ref-partner"><h2>🎥 Твой код партнёра: <code>' + esc(r.code) + "</code></h2>" +
-        '<p class="cab-meta">Новичок в <b>первые ' + (r.windowMinutes || 60) + " мин</b> игры пишет в чат <code>/ref " + esc(String(r.code).toLowerCase()) +
-        "</code> (большие или маленькие буквы — не важно) — ему <b>прокачка ×" + (r.mult || 2) + " до " + (r.untilLevel || 20) + " уровня</b>.</p>" +
-        '<div class="ref-code"><code id="ref-pcmd">/ref ' + esc(String(r.code).toLowerCase()) + '</code><button class="btn small gold" type="button" id="ref-pcopy">Копировать</button></div>' +
-        '<div class="ref-stats"><span>Пришло: <b>' + (s.players || 0) + "</b></span><span>Активны: <b>" + (s.active || 0) + "</b></span>" +
-        "<span>Донаты их: <b>" + esc(s.donations || "0 ₽") + "</b></span><span>Тебе начислено: <b>" + esc(s.earned || "0 ₽") + "</b></span>" +
-        "<span>К выплате: <b>" + esc(s.available || "0 ₽") + "</b></span></div></div>";
-    }
-    var list = (r && r.referrals) || [];
-    h += '<div class="card cab-card"><h2>👥 Кто пришёл по твоим кодам' + (list.length ? ' <span class="cab-meta">· ' + list.length + "</span>" : "") + "</h2>";
-    if (!list.length) h += '<p class="cab-meta">Пока никого. Дай другу свой код — <code>/ref ' + esc(me.nick) + "</code>" + (r && r.code ? " или код партнёра <code>/ref " + esc(String(r.code).toLowerCase()) + "</code>" : "") + ".</p>";
-    else {
-      h += '<div class="ref-table"><div class="ref-row ref-head"><span>Игрок</span><span>Откуда</span><span>Уровень</span><span>Ускорение</span><span>В игре</span></div>';
-      h += list.map(function (x) {
-        var boost = x.boostEnded || !x.boostLeft ? '<span class="cab-meta">закончилось</span>' : '<span class="ref-on">×' + (r.mult || 2) + " идёт</span>";
-        var from = x.kind === "friend" ? "друг (ник)" + (x.reward === "paid" ? " · <b>$ получено</b>" : x.reward ? " · " + esc(x.reward) : " · ждём " + (r.friendUntilLevel || 10) + " ур.")
-          : "код " + esc(r.code || "");
-        return '<div class="ref-row"><span>' + profileLink(x.name) + '<small class="cab-meta"> · ' + day(x.enteredAt) + "</small></span><span>" + from + "</span><span>ур. <b>" +
-          (x.level || "—") + "</b></span><span>" + boost + "</span><span>" + (x.online ? '<span class="ref-on">● сейчас</span>' : since(x.lastSeen)) + "</span></div>";
-      }).join("") + "</div>";
-    }
-    h += "</div>";
+    var codes = (r && r.codes) || [{code: me.nick, kind: "friend", referrals: []}];
+    codes.forEach(function (c, i) {
+      var list = c.referrals || [], cmd = "/ref " + (c.kind === "partner" ? String(c.code).toLowerCase() : c.code);
+      if (c.kind === "partner") {
+        var s = c.stats || {};
+        h += '<div class="card cab-card ref-partner"><h2>🎥 Код партнёра: <code>' + esc(c.code) + "</code></h2>" +
+          '<p class="cab-meta">Новичок в <b>первые ' + (r.windowMinutes || 60) + " мин</b> игры пишет в чат <code>" + esc(cmd) +
+          "</code> (большие или маленькие буквы — не важно) — ему <b>прокачка ×" + (r.mult || 2) + " до " + (r.untilLevel || 20) + " уровня</b>.</p>";
+        h += '<div class="ref-code"><code id="ref-c' + i + '">' + esc(cmd) + '</code><button class="btn small gold" type="button" data-copy="ref-c' + i + '">Копировать</button></div>' +
+          '<div class="ref-stats"><span>Пришло: <b>' + (s.players || 0) + "</b></span><span>Активны: <b>" + (s.active || 0) + "</b></span>" +
+          "<span>Донаты их: <b>" + esc(s.donations || "0 ₽") + "</b></span><span>Тебе начислено: <b>" + esc(s.earned || "0 ₽") + "</b></span>" +
+          "<span>К выплате: <b>" + esc(s.available || "0 ₽") + "</b></span></div>";
+      } else {
+        h += '<div class="card cab-card"><h2>👥 Пришли по твоему нику <code>' + esc(cmd) + "</code></h2>" +
+          '<p class="cab-meta">«Приведи друга»: новичку — прокачка ×' + (r && r.mult || 2) + " до " + (r && r.friendUntilLevel || 10) + " уровня, тебе — " +
+          money(r && r.friendReward || 1000) + ", когда он дорастёт до " + (r && r.friendUntilLevel || 10) + " уровня.</p>";
+      }
+      h += '<h3 class="ref-sub">Кто пришёл' + (list.length ? ' <span class="cab-meta">· ' + list.length + "</span>" : "") + "</h3>";
+      if (!list.length) h += '<p class="cab-meta">По этому коду пока никого.</p>';
+      else {
+        h += '<div class="ref-table"><div class="ref-row ref-head"><span>Игрок</span><span>' + (c.kind === "friend" ? "Награда тебе" : "Пришёл") + "</span><span>Уровень</span><span>Ускорение</span><span>В игре</span></div>";
+        h += list.map(function (x) {
+          var boost = x.boostEnded || !x.boostLeft ? '<span class="cab-meta">закончилось</span>' : '<span class="ref-on">×' + (r.mult || 2) + " идёт</span>";
+          var mid = c.kind === "friend" ? (x.reward === "paid" ? "<b>" + money(r.friendReward || 1000) + " получено</b>" : x.reward ? esc(x.reward) : "ждём " + (r.friendUntilLevel || 10) + " ур.")
+            : day(x.enteredAt);
+          return '<div class="ref-row"><span>' + profileLink(x.name) + (c.kind === "friend" ? '<small class="cab-meta"> · ' + day(x.enteredAt) + "</small>" : "") + "</span><span>" + mid +
+            "</span><span>ур. <b>" + (x.level || "—") + "</b></span><span>" + boost + "</span><span>" + (x.online ? '<span class="ref-on">● сейчас</span>' : since(x.lastSeen)) + "</span></div>";
+        }).join("") + "</div>";
+      }
+      h += "</div>";
+    });
     if (refFriends) {
       h += '<div class="card cab-card"><h2>🤝 Друзья' + (refFriends.length ? ' <span class="cab-meta">· ' + refFriends.length + "</span>" : "") + "</h2>";
       h += refFriends.length ? '<div class="ref-friends">' + refFriends.map(function (f) {
@@ -297,8 +305,9 @@
       h += "</div>";
     }
     box.innerHTML = h;
-    var pc = $("ref-pcopy");
-    if (pc) pc.onclick = function () { try { navigator.clipboard.writeText($("ref-pcmd").textContent); toast("Скопировано: " + $("ref-pcmd").textContent); } catch (e) { } };
+    Array.prototype.forEach.call(box.querySelectorAll("[data-copy]"), function (b) {
+      b.onclick = function () { var t = $(b.getAttribute("data-copy")).textContent; try { navigator.clipboard.writeText(t); toast("Скопировано: " + t); } catch (e) { } };
+    });
   }
 
   // 2026-10-19 (владелец: «на „Рынке“ горит 1, нажимаешь — ничего, не пропадает»): раньше на «Рынке» считалось и приглашение в клан,
