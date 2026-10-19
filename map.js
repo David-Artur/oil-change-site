@@ -44,8 +44,8 @@
   function flatDem(level) {
     if (FLAT[level]) return FLAT[level];
     var v = level * MPB + 32768, R = Math.floor(v / 256), G = Math.floor(v - R * 256), B = Math.floor((v - R * 256 - G) * 256);
-    var c = document.createElement("canvas"); c.width = c.height = 256;
-    var g = c.getContext("2d"); g.fillStyle = "rgb(" + R + "," + G + "," + B + ")"; g.fillRect(0, 0, 256, 256);
+    var c = document.createElement("canvas"); c.width = c.height = 512;
+    var g = c.getContext("2d"); g.fillStyle = "rgb(" + R + "," + G + "," + B + ")"; g.fillRect(0, 0, 512, 512);
     FLAT[level] = new Promise(function (r) { c.toBlob(function (b) { b.arrayBuffer().then(r); }, "image/png"); });
     return FLAT[level];
   }
@@ -115,16 +115,16 @@
     var dark = w === "vp_nether" ? "#1a0b08" : w === "world_the_end" ? "#0b0a12" : "#0e0c0a";
     return {version: 8,
       sources: {
-        tiles: {type: "raster", tiles: ["dav://t/" + w + "/{z}/{x}/{y}"], tileSize: 512, minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0},
-        dem: {type: "raster-dem", tiles: ["dav://d/" + w + "/{z}/{x}/{y}"], tileSize: 256, encoding: "terrarium", minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0},
-        shade: {type: "raster-dem", tiles: ["dav://d/" + w + "/{z}/{x}/{y}"], tileSize: 256, encoding: "terrarium", minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0}
+        tiles: {type: "raster", tiles: ["dav://t/" + w + "/{z}/{x}/{y}"], tileSize: 512, minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0 + 1},   // z19 — 2 пикселя на блок (чётче в 3D)
+        dem: {type: "raster-dem", tiles: ["dav://d/" + w + "/{z}/{x}/{y}"], tileSize: 512, encoding: "terrarium", minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0},
+        shade: {type: "raster-dem", tiles: ["dav://d/" + w + "/{z}/{x}/{y}"], tileSize: 512, encoding: "terrarium", minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0}
       },
       layers: [
         {id: "bg", type: "background", paint: {"background-color": dark}},
         {id: "tiles", type: "raster", source: "tiles", paint: {"raster-resampling": "nearest", "raster-fade-duration": 0}},
         // светотень от солнца — только в 3D (в 2D тень уже нарисована в плитках)
         {id: "hill", type: "hillshade", source: "shade", layout: {visibility: is3d ? "visible" : "none"},
-          paint: {"hillshade-exaggeration": 0.35, "hillshade-shadow-color": "rgba(0,0,0,0.55)", "hillshade-highlight-color": "rgba(255,255,230,0.25)", "hillshade-illumination-anchor": "map"}}
+          paint: {"hillshade-exaggeration": 0.22, "hillshade-shadow-color": "rgba(0,0,0,0.4)", "hillshade-highlight-color": "rgba(255,255,230,0.12)", "hillshade-illumination-anchor": "map"}}
       ]};
   }
 
