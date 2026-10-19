@@ -116,11 +116,15 @@
     return {version: 8,
       sources: {
         tiles: {type: "raster", tiles: ["dav://t/" + w + "/{z}/{x}/{y}"], tileSize: 512, minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0},
-        dem: {type: "raster-dem", tiles: ["dav://d/" + w + "/{z}/{x}/{y}"], tileSize: 256, encoding: "terrarium", minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0}
+        dem: {type: "raster-dem", tiles: ["dav://d/" + w + "/{z}/{x}/{y}"], tileSize: 256, encoding: "terrarium", minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0},
+        shade: {type: "raster-dem", tiles: ["dav://d/" + w + "/{z}/{x}/{y}"], tileSize: 256, encoding: "terrarium", minzoom: zoomOf(info.minZoom || -5), maxzoom: Z0}
       },
       layers: [
         {id: "bg", type: "background", paint: {"background-color": dark}},
-        {id: "tiles", type: "raster", source: "tiles", paint: {"raster-resampling": "nearest", "raster-fade-duration": 0}}
+        {id: "tiles", type: "raster", source: "tiles", paint: {"raster-resampling": "nearest", "raster-fade-duration": 0}},
+        // светотень от солнца — только в 3D (в 2D тень уже нарисована в плитках)
+        {id: "hill", type: "hillshade", source: "shade", layout: {visibility: is3d ? "visible" : "none"},
+          paint: {"hillshade-exaggeration": 0.35, "hillshade-shadow-color": "rgba(0,0,0,0.55)", "hillshade-highlight-color": "rgba(255,255,230,0.25)", "hillshade-illumination-anchor": "map"}}
       ]};
   }
 
@@ -164,6 +168,7 @@
     is3d = on;
     $("b3d").classList.toggle("on", on);
     $("b3d").textContent = on ? "2D" : "3D";
+    if (map.getLayer("hill")) map.setLayoutProperty("hill", "visibility", on ? "visible" : "none");
     if (on) { if (map.getSource("dem")) map.setTerrain({source: "dem", exaggeration: EXAG}); map.easeTo({pitch: 60, duration: 700}); }
     else { map.setTerrain(null); map.easeTo({pitch: 0, bearing: 0, duration: 500}); }
     writeHash();
