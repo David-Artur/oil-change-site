@@ -45,7 +45,8 @@
                     : '<div class="pic ' + (w.art || "") + '" aria-hidden="true">';
     pic += '<span class="badge">' + esc(w.tag) + "</span></div>";
     var st = w.stats ? w.stats.slice() : [["Сложность", w.diff], ["PvP", w.pvp], ["Смерть: навыки", w.loss], ["Вещи при смерти", w.items],
-              ["Приваты", w.claims ? "есть" : "нет"], ["Телепорт", w.tp || "—"]];
+              ["Телепорт", w.tp || "—"]];
+    if (!w.stats) st.splice(4, 0, ["Приваты", typeof w.claims === "string" ? w.claims : (w.claims ? "есть" : "нет"), typeof w.claims === "string" ? 1 : 0]);
     if (w.grief) st.push(["Гриферство", w.grief, 1]);
     if (w.boom) st.push(["Взрывы", w.boom, 1]);
     var hasNo = w.noOres && w.noOres !== "—";
