@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Приват · DaviArt Craft</title>
+<meta name="description" content="Страница привата игрока DaviArt Craft: название, друзья и гости, настройки, продажа или передача.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
+<script>/* тема до отрисовки — без вспышки белого */ try { var th = localStorage.getItem("daviart.theme"); if (th === "light" || th === "dark") document.documentElement.setAttribute("data-theme", th); } catch (e) { }</script>
+<link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="cabinet.css?v=38">
+</head>
+<body>
+<header class="cab-top">
+  <div class="wrap">
+    <a class="cab-brand" href="index.html"><img src="img/favicon-32.png" alt="" width="28" height="28">DaviArt Craft</a>
+    <span class="cab-title">Приват</span>
+    <span class="cab-tools"><button class="btn small" type="button" id="theme-btn" title="Тема: светлая / тёмная / как в системе">🌗</button></span>
+    <a class="btn small" href="cabinet.html#land">← Кабинет</a>
+  </div>
+</header>
+
+<main class="wrap cab" id="cl-root">
+  <p class="empty">Загружаю…</p>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="claim.js?v=1"></script>
+<script src="ui.js?v=1"></script>
+<script src="consent.js?v=1"></script>
+</body>
+</html>

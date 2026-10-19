@@ -91,6 +91,21 @@
     return '<a class="btn small" target="_blank" rel="noopener" href="' + esc(base) + "/#" + encodeURIComponent(worldId) + ":" + x + ":" + (y || 64) + ":" + z + ':120:0:0:0:0:perspective">' + (label || "🗺 На карте") + "</a>";
   }
   function ago(t) { var s = Math.max(0, Math.round((Date.now() - t) / 1000)); return s < 60 ? s + " с" : Math.round(s / 60) + " мин"; }
+  // У276: цвета Minecraft «&x» (роли и теги кланов) → значок-«таблетка» с читаемым текстом в обеих темах
+  var MC_COL = {"0": "#000000", "1": "#0000AA", "2": "#00AA00", "3": "#00AAAA", "4": "#AA0000", "5": "#AA00AA", "6": "#FFAA00", "7": "#AAAAAA",
+    "8": "#555555", "9": "#5555FF", "a": "#55FF55", "b": "#55FFFF", "c": "#FF5555", "d": "#FF55FF", "e": "#FFFF55", "f": "#FFFFFF"};
+  function mcColor(c) {
+    var s = String(c == null ? "" : c).trim(), m = /^[&§]([0-9a-f])$/i.exec(s);
+    if (m) return MC_COL[m[1].toLowerCase()];
+    return /^#[0-9a-f]{6}$/i.test(s) ? s : null;
+  }
+  function pill(text, col, cls) {
+    var hex = mcColor(col);
+    if (!hex) return '<span class="rank' + (cls ? " " + cls : "") + '">' + esc(text) + "</span>";
+    var r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+    return '<span class="rank role-pill' + (cls ? " " + cls : "") + '" style="background:' + hex + ";border-color:" + hex + ";color:" + ((r * 299 + g * 587 + b * 114) / 1000 > 140 ? "#1a1a1a" : "#fff") + '">' + esc(text) + "</span>";
+  }
+  function when(t) { return t ? new Date(t).toLocaleString("ru-RU", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"}) : "—"; }
 
   // У215: скопировать «/ref <ник>» для друга
   document.addEventListener("click", function (e) {
@@ -324,8 +339,9 @@
     if (land) {
       var lb = land.querySelector(".badge");
       if (!lb) { lb = document.createElement("span"); lb.className = "badge"; land.appendChild(document.createTextNode(" ")); land.appendChild(lb); }
-      var inv = me.invite && !me.clan ? 1 : 0;
-      lb.textContent = inv ? "1" : ""; lb.hidden = !inv; lb.title = inv ? "Тебя зовут в клан" : "";
+      var inv = me.invite && !me.clan ? 1 : 0, dl = Array.isArray(me.deals) ? me.deals.length : 0;   // У276: + входящие предложения приватов
+      lb.textContent = inv + dl ? String(inv + dl) : ""; lb.hidden = !(inv + dl);
+      lb.title = [inv ? "Тебя зовут в клан" : "", dl ? "Тебе предлагают приват" : ""].filter(Boolean).join(" · ");
     }
   }
   function markNoticesSeen() { if (!me) return; try { localStorage.setItem("cab-mk-seen:" + me.nick, noticesKey()); } catch (e) { } renderBadges(); }
@@ -393,13 +409,43 @@
   }
 
   function renderClaims() {
-    var list = me.claims || [];
-    if (!list.length) {
-      $("tab-claims").innerHTML = '<div class="card cab-card"><h2>Приватов нет</h2><p class="cab-meta">Приват ставится в игре: возьми компас (вторая рука пустая) и держи ЛКМ по блоку 10 секунд — получится 11×11×11. Подробнее — на <a href="index.html#claims">странице приватов</a>.</p></div>';
-      return;
-    }
-    $("tab-claims").innerHTML = '<div class="cab-cards">' + list.map(claimCard).join("") + "</div>";
-    Array.prototype.forEach.call(document.querySelectorAll("[data-claim]"), wireClaim);
+    var list = me.claims || [], deals = Array.isArray(me.deals) ? me.deals : [], h = "";
+    if (deals.length) h += dealsHtml(deals);   // У276: входящие предложения — сверху
+    if (!list.length) h += '<div class="card cab-card"><h2>Приватов нет</h2><p class="cab-meta">Приват ставится в игре: возьми компас (вторая рука пустая) и держи ЛКМ по блоку 10 секунд — получится 11×11×11. Подробнее — на <a href="index.html#claims">странице приватов</a>.</p></div>';
+    // У276: сервер 0.9.13+ присылает claim.can — тогда список карточек со ссылкой на страницу привата; старый сервер — как раньше
+    else h += '<div class="cab-cards">' + list.map(function (c) { return c && c.can && typeof c.can === "object" ? claimItem(c) : claimCard(c); }).join("") + "</div>";
+    $("tab-claims").innerHTML = h;
+    Array.prototype.forEach.call(document.querySelectorAll("#tab-claims [data-claim]"), wireClaim);
+    Array.prototype.forEach.call(document.querySelectorAll("#tab-claims [data-deal]"), function (b) {
+      b.onclick = function () {
+        var id = b.getAttribute("data-id"), d = deals.filter(function (x) { return String(x.id) === id; })[0] || {}, yes = b.getAttribute("data-deal") === "accept";
+        if (yes && !confirm("Принять приват «" + (d.claim || "?") + "»" + (d.forClan ? " для клана" : "") + (Number(d.price) > 0 ? " за " + money(d.price) : " бесплатно") + "?")) return;
+        if (!yes && !confirm("Отказаться от привата «" + (d.claim || "?") + "»?")) return;
+        act("/claim", {action: yes ? "deal_accept" : "deal_decline", deal: id});
+      };
+    });
+  }
+  function dealsHtml(deals) {
+    return '<div class="card cab-card note-card deal-card"><h2>📨 Тебе предлагают приват</h2>' + deals.map(function (d) {
+      return '<div class="deal"><div class="deal-main"><b>' + esc(d.claim || "Приват") + "</b>" + (d.forClan ? ' <span class="rank r2">клану</span>' : "") +
+        '<p class="cab-meta">' + esc(d.world || "") + (d.size ? " · " + esc(d.size) : "") + (d.center ? " · центр " + esc(d.center) : "") +
+        " · от <b>" + esc(d.from || "?") + "</b> · " + (Number(d.price) > 0 ? "цена <b>" + money(d.price) + "</b>" : "<b>бесплатно</b>") +
+        (d.expires ? " · до " + when(d.expires) : "") + "</p></div>" +
+        '<div class="cab-row"><button class="btn small green" type="button" data-deal="accept" data-id="' + esc(d.id) + '">Принять</button>' +
+        '<button class="btn small" type="button" data-deal="decline" data-id="' + esc(d.id) + '">Отказаться</button></div></div>';
+    }).join("") + "</div>";
+  }
+  // У276: карточка в списке — коротко, управление — на отдельной странице claim.html (новая вкладка)
+  function claimItem(c) {
+    var xyz = String(c.center || "0 64 0").split(" "), role = c.role >= 3 ? "хозяин" : c.role >= 2 ? "управляющий" : "участник";
+    var who = c.clan ? (c.clanTag ? pill("[" + c.clanTag + "]" + (c.clanName ? " " + c.clanName : ""), c.clanColor) : "клан") : "хозяин " + esc(c.owner || "?");
+    return '<div class="card cab-card claim-li"><h2>' + esc(c.name) + " " + (c.clan ? '<span class="rank r2">клан</span>' : '<span class="rank">личный</span>') + "</h2>" +
+      '<p class="cab-meta">' + esc(c.world) + " · " + esc(c.size) + " · центр " + esc(c.center) + "</p>" +
+      '<p class="cab-meta">' + who + (c.clan && c.owner ? " · поставил " + esc(c.owner) : "") + " · твоя роль: " + role +
+      " · " + (c.members ? c.members.length : 0) + (c.clan ? " гост." : " друз.") + "</p>" +
+      (c.deal ? '<p class="cab-meta">⏳ Предложен ' + esc(c.deal.to) + (Number(c.deal.price) > 0 ? " за " + money(c.deal.price) : " бесплатно") + "</p>" : "") +
+      '<div class="cab-row"><a class="btn small green" href="claim.html?id=' + encodeURIComponent(c.id) + '" target="_blank" rel="noopener">Открыть страницу привата ↗</a>' +
+      mapLink(c.worldId, xyz[0], xyz[1], xyz[2]) + "</div></div>";
   }
 
   function claimCard(c) {
@@ -474,15 +520,11 @@
       wireClan();
       return;
     }
+    if (Array.isArray(c.roles) && c.roles.length) { renderClanRoles(c, h); return; }   // У276: сервер с ролями (0.9.13+); старый — как раньше
     var r = c.rank;
     h += '<div class="card cab-card"><h2>[' + esc(c.tag) + "] " + esc(c.name) + ' <span class="rank r' + r + '">' + RANK[r] + "</span></h2>" +
       '<div class="cab-stats">' + stat("Участников", c.members.length) + stat("Банк", money(c.bank)) + stat("Налог", c.tax + "%") + stat("Клан-приватов", c.claims) + "</div></div>";
-    // клан-чат
-    var chat = c.chat || [];
-    h += '<div class="card cab-card"><h2>Клан-чат</h2><div class="chat" id="chat">' + (chat.length ? chat.map(function (l) {
-      return '<div class="cl"><span class="tm">' + new Date(l.t).toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}) + '</span> <b>' + esc(l.name) + "</b>" + (l.web ? ' <span class="cab-meta">(сайт)</span>' : "") + ": " + esc(l.text) + "</div>";
-    }).join("") : '<p class="cab-meta">Пока тихо. Сообщения из игры (<code>!текст</code>) и с сайта видны всем в клане.</p>') + "</div>" +
-      '<div class="cab-row"><input type="text" id="cl-msg" maxlength="200" placeholder="Сообщение клану" aria-label="Сообщение"><button class="btn small green" data-c="chat">Отправить</button></div></div>';
+    h += chatHtml(c);
     // участники
     h += '<div class="card cab-card"><h2>Участники</h2>' + c.members.slice().sort(function (a, b) { return b.rank - a.rank || a.name.localeCompare(b.name); }).map(function (m) {
       var btns = "";
@@ -507,6 +549,115 @@
     wireClan();
   }
 
+  function chatHtml(c) {
+    var chat = c.chat || [];
+    return '<div class="card cab-card"><h2>Клан-чат</h2><div class="chat" id="chat">' + (chat.length ? chat.map(function (l) {
+      return '<div class="cl"><span class="tm">' + new Date(l.t).toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}) + '</span> <b>' + esc(l.name) + "</b>" + (l.web ? ' <span class="cab-meta">(сайт)</span>' : "") + ": " + esc(l.text) + "</div>";
+    }).join("") : '<p class="cab-meta">Пока тихо. Сообщения из игры (<code>!текст</code>) и с сайта видны всем в клане.</p>') + "</div>" +
+      '<div class="cab-row"><input type="text" id="cl-msg" maxlength="200" placeholder="Сообщение клану" aria-label="Сообщение"><button class="btn small green" data-c="chat">Отправить</button></div></div>';
+  }
+
+  // ---------------------------------------------------------------- У276: клан с ролями (права вместо званий; иерархия = роли группами, лидер сверху)
+  function renderClanRoles(c, h) {
+    var box = $("tab-clan"), open = {};
+    Array.prototype.forEach.call(box.querySelectorAll("details[data-k]"), function (d) { open[d.getAttribute("data-k")] = d.open; });
+    var roles = c.roles, byId = {}, members = c.members || [], permList = Array.isArray(c.permList) ? c.permList : [], label = {};
+    roles.forEach(function (x) { byId[x.id] = x; });
+    permList.forEach(function (p) { label[p.id] = p.label; });
+    var meM = members.filter(function (m) { return m.name === me.nick; })[0] || {};
+    var isLeader = !!(meM.leader || (c.leader && c.leader === me.nick));
+    var myPerms = Array.isArray(c.myPerms) ? c.myPerms : [];
+    var can = function (p) { return isLeader || myPerms.indexOf(p) >= 0; };
+    var mine = byId[c.myRole] || byId[meM.role];
+    var permText = function (r) { return r.leader ? "все права" : (r.perms || []).length ? (r.perms || []).map(function (p) { return label[p] || p; }).join(", ") : "без особых прав"; };
+    // шапка
+    h += '<div class="card cab-card"><h2>' + pill("[" + c.tag + "]", c.color) + " " + esc(c.name) + (mine ? " " + pill(mine.name, mine.color) : "") + "</h2>" +
+      '<div class="cab-stats">' + stat("Лидер", esc(c.leader || "—")) + stat("Участников", members.length) + stat("Банк", money(c.bank)) + stat("Налог", c.tax + "%") + stat("Клан-приватов", c.claims) + "</div>" +
+      '<p class="cab-note">' + (isLeader ? "Ты лидер — у тебя все права." : "Твои права: " + (myPerms.length ? esc(myPerms.map(function (p) { return label[p] || p; }).join(", ")) : "обычный участник")) + "</p></div>";
+    h += chatHtml(c);
+    // состав по ролям
+    var order = roles.slice().sort(function (a, b) { return (b.leader ? 1 : 0) - (a.leader ? 1 : 0) || (a.builtin && !a.leader ? 1 : 0) - (b.builtin && !b.leader ? 1 : 0); });
+    var leaderRole = roles.filter(function (x) { return x.leader; })[0];
+    var roleOf = function (m) { return m.leader && leaderRole ? leaderRole.id : m.role; };
+    var setOpts = roles.filter(function (x) { return !x.leader; });
+    var memRow = function (m) {
+      var btns = "";
+      if (m.name !== me.nick && !m.leader) {
+        if (can("roles") && setOpts.length) btns += '<select class="cab-sel role-sel" data-rs="' + esc(m.name) + '" aria-label="Роль ' + esc(m.name) + '">' +
+          setOpts.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === m.role ? " selected" : "") + ">" + esc(x.name) + "</option>"; }).join("") + "</select>";
+        if (isLeader) btns += '<button class="btn small gold" data-c="transfer" data-n="' + esc(m.name) + '">Передать лидерство</button>';
+        if (can("kick")) btns += '<button class="btn small red" data-c="kick" data-n="' + esc(m.name) + '">Исключить</button>';
+      }
+      return '<div class="mem"><span class="nm">' + (m.leader ? "👑 " : "") + esc(m.name) + (m.name === me.nick ? ' <span class="cab-meta">(ты)</span>' : "") + (m.online ? ' <span class="on">● в игре</span>' : "") + "</span>" + btns + "</div>";
+    };
+    var used = {};
+    h += '<div class="card cab-card"><h2>Состав клана</h2><p class="cab-meta">Роли сверху вниз: лидер, свои роли, обычные участники. У каждой роли — свой набор прав.</p>';
+    order.forEach(function (r) {
+      var ms = members.filter(function (m) { return roleOf(m) === r.id; }).sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0) || a.name.localeCompare(b.name); });
+      ms.forEach(function (m) { used[m.name] = 1; });
+      h += '<div class="role-grp"' + (mcColor(r.color) ? ' style="border-left-color:' + mcColor(r.color) + '"' : "") + '><div class="role-grp-h">' + pill(r.name, r.color) +
+        ' <span class="cab-meta">· ' + ms.length + "</span></div>" + '<p class="role-perms">' + esc(permText(r)) + "</p>" +
+        (ms.length ? ms.map(memRow).join("") : '<p class="cab-meta">Никого.</p>') + "</div>";
+    });
+    var rest = members.filter(function (m) { return !used[m.name]; });
+    if (rest.length) h += '<div class="role-grp"><div class="role-grp-h"><span class="rank">Без роли</span> <span class="cab-meta">· ' + rest.length + "</span></div>" + rest.map(memRow).join("") + "</div>";
+    h += "</div>";
+    // редактор ролей
+    if (can("roles")) {
+      var cols = Array.isArray(c.roleColors) ? c.roleColors : [];
+      h += '<details class="card cab-card cab-fold" data-k="roles"' + (open.roles ? " open" : "") + "><summary><h2>🎭 Роли и права</h2></summary>" +
+        '<p class="cab-meta">Права работают сами по себе — старшинства нет. Галочка сразу сохраняется. Лидеру доступно всё.</p>';
+      roles.forEach(function (r) {
+        var k = "re:" + r.id;
+        h += '<details class="role-ed" data-k="' + esc(k) + '"' + (open[k] ? " open" : "") + "><summary>" + pill(r.name, r.color) + ' <span class="cab-meta">· ' + (r.count != null ? r.count : 0) + (r.builtin ? " · встроенная" : "") + "</span></summary>" +
+          '<div class="cab-row"><input type="text" data-rn="' + esc(r.id) + '" maxlength="16" value="' + esc(r.name) + '" aria-label="Название роли"><button class="btn small" type="button" data-re="name" data-id="' + esc(r.id) + '">Переименовать</button></div>' +
+          (cols.length ? '<div class="swatches" role="group" aria-label="Цвет роли">' + cols.map(function (col) {
+            return '<button type="button" class="swatch' + (col === r.color ? " on" : "") + '" style="background:' + (mcColor(col) || "#888") + '" data-re="color" data-id="' + esc(r.id) + '" data-v="' + esc(col) + '" title="Цвет ' + esc(col) + '" aria-label="Цвет ' + esc(col) + '"></button>';
+          }).join("") + "</div>" : "") +
+          (r.leader ? '<p class="cab-meta">У лидера все права — их не изменить.</p>' : '<div class="perm-grid">' + permList.map(function (p) {
+            return '<label class="perm"><input type="checkbox" data-rp="' + esc(p.id) + '" data-id="' + esc(r.id) + '"' + ((r.perms || []).indexOf(p.id) >= 0 ? " checked" : "") + "><span>" + esc(p.label) + "</span></label>";
+          }).join("") + "</div>") +
+          (r.builtin ? "" : '<div class="cab-row"><button class="btn small red" type="button" data-c="role-delete" data-n="' + esc(r.id) + '" data-rname="' + esc(r.name) + '">Удалить роль</button></div>') + "</details>";
+      });
+      h += '<h3 style="margin-top:14px">Новая роль' + (c.maxRoles ? ' <span class="cab-meta">· ' + roles.length + " из " + c.maxRoles + "</span>" : "") + "</h3>" +
+        '<div class="cab-row"><input type="text" id="cl-role-new" maxlength="16" placeholder="Название: 2–16 букв, цифр" aria-label="Название новой роли"><button class="btn small green" data-c="role-create">Создать</button></div></details>';
+    }
+    // журнал (только с правом «журнал» — сервер присылает journal лишь тогда)
+    if (Array.isArray(c.journal)) {
+      h += '<details class="card cab-card cab-fold" data-k="journal"' + (open.journal ? " open" : "") + "><summary><h2>📜 Журнал клана</h2></summary>" +
+        (c.journal.length ? '<div class="chat journal">' + c.journal.map(function (l) {
+          return '<div class="cl"><span class="tm">' + when(l.t) + "</span> <b>" + esc(l.who) + "</b>: " + esc(l.text) + "</div>";
+        }).join("") + "</div>" : '<p class="cab-meta">Записей пока нет.</p>') + '<p class="cab-note">Последние 200 действий: кто вступил, ушёл, сменил роль, взял из банка и т. д.</p></details>';
+    }
+    h += '<div class="cab-cards">';
+    if (can("invite")) h += '<div class="card cab-card"><h3>Пригласить</h3><p class="cab-meta">Игрок должен хоть раз зайти на сервер. Приглашение — 24 часа; если он не в сети, увидит при входе (и в своём кабинете).</p><div class="cab-row"><input type="text" id="cl-inv" maxlength="16" placeholder="Ник"><button class="btn small green" data-c="invite">Пригласить</button></div></div>';
+    h += '<div class="card cab-card"><h3>Банк клана</h3><p class="cab-meta">Из банка оплачивается расширение клан-приватов. Снимать могут роли с правом «банк».</p><div class="cab-row"><input type="number" id="cl-sum" min="1" step="1" placeholder="Сумма, $"><button class="btn small green" data-c="deposit">Внести</button>' + (can("bank") ? '<button class="btn small" data-c="withdraw">Снять</button>' : "") + "</div></div>";
+    if (can("tax")) h += '<div class="card cab-card"><h3>Налог клана</h3><p class="cab-meta">Доля от продаж меди, продаж на Рынке и полученных переводов участников идёт в банк. 0–' + c.maxTax + '%.</p><div class="cab-row"><input type="number" id="cl-tax" min="0" max="' + c.maxTax + '" value="' + c.tax + '"><button class="btn small" data-c="tax">Сохранить</button></div></div>';
+    h += '<div class="card cab-card"><h3>' + (isLeader ? "Распустить клан" : "Выйти из клана") + '</h3><p class="cab-meta">' + (isLeader ? "Клан-приваты исчезнут, вложенное в них вернётся в банк, банк поделят поровну между участниками. Чтобы уйти, не распуская, — передай лидерство (кнопка у участника в «Составе клана»)." : "Ты перестанешь быть участником; вернуться — по новому приглашению.") +
+      '</p><button class="btn small red" data-c="' + (isLeader ? "disband" : "leave") + '">' + (isLeader ? "Распустить" : "Выйти") + "</button></div>";
+    h += "</div>" + clanList();
+    var keep = $("cl-msg") ? $("cl-msg").value : "";
+    box.innerHTML = h;
+    if (keep && $("cl-msg")) $("cl-msg").value = keep;
+    var ch = $("chat"); if (ch) ch.scrollTop = ch.scrollHeight;
+    wireClan();
+    Array.prototype.forEach.call(box.querySelectorAll("[data-rs]"), function (s) {
+      s.onchange = function () { act("/clan", {action: "role-set", args: [s.getAttribute("data-rs"), s.value]}); };
+    });
+    Array.prototype.forEach.call(box.querySelectorAll("[data-re]"), function (b) {
+      b.onclick = function () {
+        var id = b.getAttribute("data-id"), k = b.getAttribute("data-re");
+        if (k === "name") {
+          var inp = b.parentNode.querySelector("[data-rn]"), v = inp ? inp.value.trim() : "";
+          if (v) act("/clan", {action: "role-edit", args: [id, "name", v]});
+        } else act("/clan", {action: "role-edit", args: [id, "color", b.getAttribute("data-v")]});
+      };
+    });
+    Array.prototype.forEach.call(box.querySelectorAll("[data-rp]"), function (i) {
+      i.onchange = function () { act("/clan", {action: "role-edit", args: [i.getAttribute("data-id"), "perm", i.getAttribute("data-rp"), i.checked ? "on" : "off"]}); };
+    });
+  }
+
   function wireClan() {
     var msg = $("cl-msg");
     if (msg) msg.onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); sendChat(); } };
@@ -518,9 +669,11 @@
         else if (a === "invite") args = [$("cl-inv").value.trim()];
         else if (a === "deposit" || a === "withdraw") args = [$("cl-sum").value];
         else if (a === "tax") args = [$("cl-tax").value];
+        else if (a === "role-create") { var rn = $("cl-role-new") ? $("cl-role-new").value.trim() : ""; if (!rn) { toast("Напиши название роли.", true); return; } args = [rn]; }
         else if (n) args = [n];
+        if (a === "role-delete" && !confirm("Удалить роль «" + (b.getAttribute("data-rname") || n) + "»? У кого она была, станут обычными участниками.")) return;
         if (a === "kick" && !confirm("Исключить " + n + " из клана?")) return;
-        if (a === "transfer" && !confirm("Передать лидерство " + n + "? Ты станешь заместителем.")) return;
+        if (a === "transfer" && !confirm("Передать лидерство " + n + "?\n\n" + n + " станет лидером и получит все права, а ты станешь «Заместителем». Вернуть лидерство сможет только новый лидер.")) return;
         if (a === "disband" && !confirm("Точно распустить клан? Это нельзя отменить.")) return;
         if (a === "leave" && !confirm("Выйти из клана?")) return;
         act("/clan", {action: a, args: args});
@@ -914,8 +1067,8 @@
     $("tab-help").innerHTML = '<div class="card cab-card"><h2>Как это работает</h2><ul class="cab-steps" style="list-style:disc">' +
       "<li><b>Синхронизация:</b> кабинет берёт данные прямо с сервера и сам обновляется каждые 20 секунд (пока ты ничего не печатаешь). Всё, что ты меняешь здесь, сразу действует в игре — и наоборот.</li>" +
       "<li><b>Профиль:</b> где ты сейчас, здоровье, снаряжение и инвентарь (когда в игре), дома по мирам, места в рейтингах, тело, все навыки, статистика.</li>" +
-      "<li><b>Приваты:</b> название, друзья и их права, двери для гостей, взрывы, видимость на карте, кнопка «На карте». Расширить, уменьшить или удалить — только в игре, компасом.</li>" +
-      "<li><b>Клан:</b> создать, вступить по приглашению, клан-чат (сообщения видят и в игре), звания, исключить, передать лидерство, банк и налог, список всех кланов.</li>" +
+      "<li><b>Приваты:</b> у каждого привата — своя страница (кнопка «Открыть страницу привата»): название, друзья или гости и их права, настройки клан-привата, продажа или передача привата другому игроку или клану. Входящие предложения — вверху «Приватов». Расширить, уменьшить или удалить — только в игре, компасом.</li>" +
+      "<li><b>Клан:</b> создать, вступить по приглашению, клан-чат (сообщения видят и в игре), роли и их права, журнал клана, исключить, передать лидерство, банк и налог, список всех кланов.</li>" +
       "<li><b>Рынок:</b> купить с сайта откуда угодно (предмет — на Склад, забрать в лобби), продать из инвентаря, когда ты в лобби (окно с ценой), снять свой лот, Склад и что продалось, пока тебя не было. В игре — <code>/market</code> из любого мира.</li>" +
       "<li><b>Аккаунт:</b> вход — ником и паролем от сервера (тем же, что в <code>/login</code>). Здесь же — смена пароля, почта для восстановления, Discord, доверенные адреса (вход в игру без /login), выход на других устройствах.</li>" +
       "<li><b>Безопасность:</b> пароль проверяет сервер, сайт его не хранит. 5 неверных паролей — вход для ника закрыт на 15 минут. Потерял телефон — в игре <code>/account logout</code> или кнопка во вкладке «Аккаунт».</li></ul></div>";

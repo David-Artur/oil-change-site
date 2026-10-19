@@ -457,3 +457,35 @@ body.hm-noscroll { overflow: hidden; }
 }
 .ref-sub { margin: 12px 0 6px; font-size: 1rem; }
 #tab-refs h2 code { white-space: nowrap; }
+
+/* 2026-10-19 (У276): страницы приватов, входящие предложения, клан с ролями */
+#tab-claims, #tab-clan { display: grid; gap: 14px; }
+#tab-claims > *, #tab-clan > * { min-width: 0; }
+.role-pill { font-weight: 600; text-shadow: none; }
+.deal-card .deal { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.deal-card .deal:last-child { border-bottom: 0; padding-bottom: 0; }
+.deal-card .deal .cab-row { margin-top: 6px; }
+.deal-card .deal-main .cab-meta { margin: 4px 0 0; }
+.claim-li h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.claim-li .cab-meta { margin-bottom: 4px; overflow-wrap: anywhere; }
+.role-grp { border-left: 4px solid var(--line2); padding: 6px 0 6px 12px; margin: 10px 0; }
+.role-grp-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.role-perms { color: var(--soft); font-size: .85rem; margin: 4px 0 2px; }
+.role-sel { min-height: 36px; padding: 4px 8px; font-size: .9rem; max-width: 100%; }
+.role-ed { border-top: 1px solid var(--line); padding: 8px 0; }
+.role-ed > summary { cursor: pointer; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 36px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line2); cursor: pointer; padding: 0; }
+.swatch.on { box-shadow: 0 0 0 3px var(--grass); border-color: var(--card); }
+.perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; margin-top: 10px; }
+.perm { display: flex; align-items: center; gap: 8px; font-size: .92rem; min-height: 32px; }
+.perm input { width: 20px; height: 20px; flex: none; accent-color: var(--grass); }
+.journal { max-height: 340px; }
+/* claim.html */
+.cl-page { display: grid; gap: 14px; }
+.cl-page > * { min-width: 0; }
+.cl-head h1 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; overflow-wrap: anywhere; }
+.cl-head .cab-meta { overflow-wrap: anywhere; }
+.cl-facts .cab-stat b { font-size: 1rem; overflow-wrap: anywhere; }
+.cl-sell .cab-row select { flex: none; }
+.tog input { flex: none; }
