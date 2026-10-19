@@ -489,3 +489,25 @@ body.hm-noscroll { overflow: hidden; }
 .cl-facts .cab-stat b { font-size: 1rem; overflow-wrap: anywhere; }
 .cl-sell .cab-row select { flex: none; }
 .tog input { flex: none; }
+
+/* Компас 3D (holo.js, 2026-10-19): в стиле Minecraft и сайта — рамка с объёмными краями, как окна интерфейса игры; подписи — как ники
+   над головой; стрелка — как метка игрока на карте Minecraft. Наклон — проведи пальцем вверх-вниз (0° сверху … 85°). */
+.hm-rwrap.holo-on > canvas { visibility: hidden; }
+.holo { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; touch-action: none; cursor: ns-resize;
+  background: #1b1712; border: 6px solid #6b4f32; box-sizing: border-box;
+  box-shadow: inset 3px 3px 0 #9c7a52, inset -3px -3px 0 #3a2a1a, 0 0 0 3px #2a1f14, 0 6px 14px rgba(0, 0, 0, .45); }
+.holo-map { position: absolute; inset: 0; }
+.holo-map .maplibregl-canvas { outline: none; }
+.holo-ring { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 22px rgba(0, 0, 0, .55); }
+.holo-n { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); pointer-events: none; font: 700 12px/1 Rubik, system-ui, sans-serif;
+  color: #ffd93d; text-shadow: 1px 1px 0 #3a2a1a; }
+.holo-me { position: absolute; left: 50%; top: 50%; width: 18px; height: 22px; pointer-events: none; transform: translate(-50%, -50%);
+  background: #fff; clip-path: polygon(50% 0, 100% 100%, 50% 74%, 0 100%); filter: drop-shadow(0 0 0 #000) drop-shadow(1px 1px 0 #000) drop-shadow(-1px -1px 0 #000); }
+.holo-load { position: absolute; inset: 0; display: grid; place-items: center; color: #e8e2d4; font-size: .85rem; text-shadow: 1px 1px 0 #000; }
+.holo-tilt { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); pointer-events: none; font: 600 11px Rubik, system-ui, sans-serif;
+  color: #f4f0e6; background: rgba(0, 0, 0, .45); border-radius: 4px; padding: 2px 6px; white-space: nowrap; transition: opacity .4s; }
+.holo-p { display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.holo-p i { width: 9px; height: 9px; background: #e84a4a; border: 1px solid #000; }
+.holo-p.friend i { background: #5fd35f; }
+.holo-p.clan i { background: #ffd93d; }
+.holo-p span { font: 600 11px Rubik, system-ui, sans-serif; color: #fff; background: rgba(0, 0, 0, .35); padding: 0 4px; margin-top: 2px; white-space: nowrap; }

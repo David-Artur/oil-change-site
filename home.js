@@ -24,7 +24,9 @@
           '<div class="hm-rwrap"><canvas id="hm-mapc" width="320" height="320" aria-hidden="true"></canvas>' +
           '<canvas id="hm-radar" width="320" height="320" aria-label="Радар: игроки рядом"></canvas></div>' +
           '<div class="hm-rbtns"><button class="btn small" type="button" id="hm-zout" title="Дальше">−</button><span class="hm-zl" id="hm-zoom"></span><button class="btn small" type="button" id="hm-zin" title="Ближе">+</button>' +
-          '<button class="btn small" type="button" id="hm-north">🧭</button><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button><button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
+          '<button class="btn small" type="button" id="hm-north">🧭</button><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button>' +
+          '<button class="btn small" type="button" id="hm-3d" title="Компас 3D: наклонённая карта с рельефом, крутится вместе с камерой; наклон — проведи по компасу вверх-вниз">⛰ 3D</button>' +
+          '<button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
           '<p class="cab-meta hm-note" id="hm-radar-note"></p>' +
           '<div class="hm-info"><button class="hm-coords" type="button" id="hm-coords" title="Нажми — скопировать координаты">📍 <b id="hm-xyz">—</b> <span class="hm-copy">⧉</span></button>' +
           '<div class="hm-pois" id="hm-pois"></div>' +
@@ -51,6 +53,18 @@
       drawRadar(); drawMap();
     };
     $("hm-mapbtn").onclick = function () { mapOn = !mapOn; pref("map", mapOn ? "1" : "0"); upd(); };
+    // компас-голограмма (holo.js): вкл/выкл, запоминается
+    var setHolo = function (on) {
+      holoOn = on && !!window.VPHolo; pref("holo", holoOn ? "1" : "0");
+      var wrap = box.querySelector(".hm-rwrap");
+      wrap.classList.toggle("holo-on", holoOn);
+      if (holoOn && !holo) holo = window.VPHolo.create(wrap);
+      if (!holoOn && holo) { holo.destroy(); holo = null; }
+      $("hm-3d").classList.toggle("on", holoOn); $("hm-3d").textContent = holoOn ? "⛰ 3D: вкл" : "⛰ 3D";
+      holoPush();
+    };
+    $("hm-3d").onclick = function () { setHolo(!holoOn); };
+    if (pref("holo") === "1") setTimeout(function () { setHolo(true); }, 0);
     $("hm-north").onclick = function () { northUp = !northUp; pref("north", northUp ? "1" : "0"); upd(); };
     var zstep = function (d) { var i = ZOOMS.indexOf(zoom) + d; if (i < 0 || i >= ZOOMS.length) return; zoom = ZOOMS[i]; pref("zoom", String(zoom)); upd(); };
     $("hm-zin").onclick = function () { zstep(-1); };
@@ -60,7 +74,7 @@
       rc.classList.toggle("full", on); document.body.classList.toggle("hm-noscroll", on);
       // на весь экран: сверху — голосовой чат, по центру — компас, снизу — управление компасом
       if (on) rc.insertBefore(vb, rc.querySelector(".hm-rwrap")); else box.insertBefore(vb, box.firstChild);
-      sizeCanvases(); drawMap(); drawRadar();
+      sizeCanvases(); drawMap(); drawRadar(); if (holo) setTimeout(holo.resize, 50);
     };
     $("hm-full").onclick = function () { full(true); try { history.pushState({vpRadar: 1}, ""); } catch (e) { } };
     $("hm-rclose").onclick = function () { full(false); if (history.state && history.state.vpRadar) history.back(); };
@@ -149,6 +163,12 @@
   var MAP_ROOT = "https://david-artur.github.io/daviart-map/tiles/", TILE = 512, tiles = {}, mapOn = false, zoom = 100, ZOOMS = [25, 50, 100, 200, 300];
   var MAP_V = Math.floor(Date.now() / 3600000);   // кэш плиток — на час
   var RIM = 26, northUp = true;   // ширина рамки компаса (CSS px); север вверху (по умолчанию) или «по взгляду»
+  var holoOn = false, holo = null;   // компас-голограмма (holo.js)
+  function holoPush() {
+    if (!holo || !live || !live.online || !live.me || sm.x == null) return;
+    holo.update({world: live.me.worldId, x: sm.x, z: sm.z, yaw: sm.yaw == null ? live.me.yaw : sm.yaw, radius: zoom, northUp: northUp,
+      players: Object.keys(sm.pts).map(function (n) { return sm.pts[n]; })});
+  }
   function viewYaw() { return northUp || sm.yaw == null ? 180 : sm.yaw; }   // 180 = смотришь на север → север вверху
   function isDark() { var t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
   // холсты — в размер на экране × плотность пикселей (во всю ширину телефона и на весь экран — чётко)
@@ -337,8 +357,7 @@
     sm.yaw += d * k;
     Object.keys(sm.pts).forEach(function (n) { var p = sm.pts[n]; p.dx += (p.tdx - p.dx) * k; p.dz += (p.tdz - p.dz) * k; });
     sm.x += (live.me.x + 0.5 - sm.x) * k; sm.z += (live.me.z + 0.5 - sm.z) * k;
-    drawMap();
-    drawRadar();
+    if (holo) holoPush(); else { drawMap(); drawRadar(); }
     requestAnimationFrame(frame);
   }
 
