@@ -195,7 +195,7 @@
     if (t === "market" && !market) loadMarket();
     if (t === "land" && !clansAll) loadClans();
     if (t === "donate" && me) renderDonate();
-    if (t === "rewards" && me) loadBonus();
+    if (t === "rewards" && me) { loadBonus(); loadRefFriends(); }
     if (t === "home" && !homeMounted && me) {
       homeMounted = true;
       if (window.VPHome) window.VPHome.mount($("home-live"), {api: api, toast: toast, me: function () { return me; }, money: money, mapLink: mapLink, skills: SKILLS,
@@ -248,10 +248,63 @@
     });
   }
 
+  // ---------------------------------------------------------------- 2026-10-19 (У271): «Награды» — твой партнёрский код, кто пришёл, друзья
+  var refFriends = null;
+  function profileLink(n) { return '<a class="ref-nick" href="https://daviart.com/p/' + encodeURIComponent(n) + '" target="_blank" rel="noopener">' + esc(n) + "</a>"; }
+  function since(t) {
+    if (!t) return "—";
+    var m = Math.floor((Date.now() - ms(t)) / 60000);
+    return m < 2 ? "только что" : m < 60 ? m + " мин назад" : m < 1440 ? Math.floor(m / 60) + " ч назад" : Math.floor(m / 1440) + " дн назад";
+  }
+  function ms(t) { return t && t < 1e12 ? t * 1000 : t; }   // VPRef хранит время в секундах, Bukkit — в мс
+  function day(t) { return t ? new Date(ms(t)).toLocaleDateString("ru-RU", {day: "numeric", month: "short"}) : "—"; }
+  function loadRefFriends() {
+    api("/friends", {action: "list"}).then(function (j) { if (j && j.friends) { refFriends = j.friends; renderRefs(); } });
+  }
+  function renderRefs() {
+    var box = $("tab-refs"); if (!box || !me) return;
+    var r = me.ref, h = "";
+    if (r && r.code) {
+      var s = r.stats || {};
+      h += '<div class="card cab-card ref-partner"><h2>🎥 Твой код партнёра: <code>' + esc(r.code) + "</code></h2>" +
+        '<p class="cab-meta">Новичок в <b>первые ' + (r.windowMinutes || 60) + " мин</b> игры пишет в чат <code>/ref " + esc(String(r.code).toLowerCase()) +
+        "</code> (большие или маленькие буквы — не важно) — ему <b>прокачка ×" + (r.mult || 2) + " до " + (r.untilLevel || 20) + " уровня</b>.</p>" +
+        '<div class="ref-code"><code id="ref-pcmd">/ref ' + esc(String(r.code).toLowerCase()) + '</code><button class="btn small gold" type="button" id="ref-pcopy">Копировать</button></div>' +
+        '<div class="ref-stats"><span>Пришло: <b>' + (s.players || 0) + "</b></span><span>Активны: <b>" + (s.active || 0) + "</b></span>" +
+        "<span>Донаты их: <b>" + esc(s.donations || "0 ₽") + "</b></span><span>Тебе начислено: <b>" + esc(s.earned || "0 ₽") + "</b></span>" +
+        "<span>К выплате: <b>" + esc(s.available || "0 ₽") + "</b></span></div></div>";
+    }
+    var list = (r && r.referrals) || [];
+    h += '<div class="card cab-card"><h2>👥 Кто пришёл по твоим кодам' + (list.length ? ' <span class="cab-meta">· ' + list.length + "</span>" : "") + "</h2>";
+    if (!list.length) h += '<p class="cab-meta">Пока никого. Дай другу свой код — <code>/ref ' + esc(me.nick) + "</code>" + (r && r.code ? " или код партнёра <code>/ref " + esc(String(r.code).toLowerCase()) + "</code>" : "") + ".</p>";
+    else {
+      h += '<div class="ref-table"><div class="ref-row ref-head"><span>Игрок</span><span>Откуда</span><span>Уровень</span><span>Ускорение</span><span>В игре</span></div>';
+      h += list.map(function (x) {
+        var boost = x.boostEnded || !x.boostLeft ? '<span class="cab-meta">закончилось</span>' : '<span class="ref-on">×' + (r.mult || 2) + " идёт</span>";
+        var from = x.kind === "friend" ? "друг (ник)" + (x.reward === "paid" ? " · <b>$ получено</b>" : x.reward ? " · " + esc(x.reward) : " · ждём " + (r.friendUntilLevel || 10) + " ур.")
+          : "код " + esc(r.code || "");
+        return '<div class="ref-row"><span>' + profileLink(x.name) + '<small class="cab-meta"> · ' + day(x.enteredAt) + "</small></span><span>" + from + "</span><span>ур. <b>" +
+          (x.level || "—") + "</b></span><span>" + boost + "</span><span>" + (x.online ? '<span class="ref-on">● сейчас</span>' : since(x.lastSeen)) + "</span></div>";
+      }).join("") + "</div>";
+    }
+    h += "</div>";
+    if (refFriends) {
+      h += '<div class="card cab-card"><h2>🤝 Друзья' + (refFriends.length ? ' <span class="cab-meta">· ' + refFriends.length + "</span>" : "") + "</h2>";
+      h += refFriends.length ? '<div class="ref-friends">' + refFriends.map(function (f) {
+        return '<div class="ref-fr">' + profileLink(f.name || f.nick) + ' <span class="cab-meta">' + (f.online ? '<span class="ref-on">● в игре</span>' + (f.world ? " · " + esc(f.world) : "") : (f.lastSeen ? "был " + since(f.lastSeen) : "")) + "</span></div>";
+      }).join("") + "</div>" : '<p class="cab-meta">Друзей пока нет — добавь на «Главной» или в игре: <code>/friend add Ник</code>.</p>';
+      h += "</div>";
+    }
+    box.innerHTML = h;
+    var pc = $("ref-pcopy");
+    if (pc) pc.onclick = function () { try { navigator.clipboard.writeText($("ref-pcmd").textContent); toast("Скопировано: " + $("ref-pcmd").textContent); } catch (e) { } };
+  }
+
   // ---------------------------------------------------------------- отрисовка
   function render() {
     $("me-nick").textContent = me.nick;
     if ($("ref-cmd")) $("ref-cmd").textContent = "/ref " + me.nick;   // У215: «Приведи друга» — код = ник
+    renderRefs();
     $("me-dot").className = "dot" + (me.online ? " on" : "");
     $("me-online").textContent = me.online ? "в игре сейчас" + (me.where ? " · " + me.where.world : "") : (me.lastSeen ? "был в игре " + new Date(me.lastSeen).toLocaleString("ru-RU") : "");
     $("me-bal").textContent = money(me.balance);

@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <script>/* тема до отрисовки — без вспышки белого */ try { var th = localStorage.getItem("daviart.theme"); if (th === "light" || th === "dark") document.documentElement.setAttribute("data-theme", th); } catch (e) { }</script>
 <link rel="stylesheet" href="style.css?v=20">
-<link rel="stylesheet" href="cabinet.css?v=35">
+<link rel="stylesheet" href="cabinet.css?v=36">
 </head>
 <body>
 <header class="cab-top">
@@ -120,9 +120,10 @@
       <h2>🤝 Приведи друга — получи $1000</h2>
       <p class="cab-meta">Позови друга на сервер. В <b>первый час игры</b> он пишет в чат твой код — ему <b>прокачка ×2 до 10 уровня</b>, а тебе <b>$1000</b>, когда он дойдёт до 10 уровня. Твой код — твой ник.</p>
       <div class="ref-code"><code id="ref-cmd">/ref Ник</code><button class="btn small gold" type="button" id="ref-copy">Копировать</button></div>
-      <p class="cab-note">Звать можно сколько угодно друзей — $1000 за каждого (не больше 5 наград в сутки; с одного интернета с тобой — не считается). Кого ты пригласил — в игре: <code>/ref friends</code>.</p>
+      <p class="cab-note">Звать можно сколько угодно друзей — $1000 за каждого (не больше 5 наград в сутки; с одного интернета с тобой — не считается). Кого ты пригласил — ниже, в списке «Кто пришёл по твоим кодам».</p>
       <a class="btn blue ref-pro" href="partners.html">⭐ Получить продвинутую рефералку</a>
     </div>
+    <div id="tab-refs"></div>
       <h2 class="cab-sec">🏆 Ачивки</h2><div id="tab-ach"></div>
     </div>
     <div id="tab-acct" class="cab-tab" hidden>
@@ -164,7 +165,7 @@
 <script src="shop.js?v=3"></script>
 <script src="voice.js?v=11"></script>
 <script src="home.js?v=20"></script>
-<script src="cabinet.js?v=31"></script>
+<script src="cabinet.js?v=32"></script>
 <script src="ui.js?v=1"></script>
 <script src="consent.js?v=1"></script>
 </body>

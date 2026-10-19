@@ -433,3 +433,25 @@ body.hm-noscroll { overflow: hidden; }
 .vc-report div { margin: 2px 0; }
 .vc-report .sum { margin-top: 6px; font-weight: 600; }
 .vc-hint { font-size: .76rem; line-height: 1.3; color: var(--muted); margin: 6px 0 0; }
+
+/* 2026-10-19 (У271): «Награды» — код партнёра, кто пришёл по кодам, друзья (ссылки на профиль daviart.com/p/Ник) */
+.ref-partner h2 code { font-size: 1.05em; color: #ffd54a; white-space: nowrap; }
+.ref-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; color: var(--muted); font-size: .92rem; }
+.ref-stats b { color: var(--text, #fff); }
+.ref-table { display: grid; gap: 4px; margin-top: 6px; }
+.ref-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.4fr) 56px minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: center;
+  padding: 8px 10px; background: var(--card2); border: 1px solid var(--line); border-radius: 6px; font-size: .92rem; }
+.ref-row > span { min-width: 0; overflow-wrap: anywhere; }
+.ref-head { background: none; border: none; padding: 0 10px; color: var(--muted); font-size: .8rem; }
+.ref-nick { color: #7fc8ff; font-weight: 600; text-decoration: none; }
+.ref-nick:hover { text-decoration: underline; }
+.ref-on { color: #5fd38a; }
+.ref-friends { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+.ref-fr { padding: 8px 10px; background: var(--card2); border: 1px solid var(--line); border-radius: 6px; }
+@media (max-width: 560px) {
+  .ref-head { display: none; }
+  .ref-row { grid-template-columns: 1fr auto; }
+  .ref-row { grid-template-columns: 1fr auto; row-gap: 2px; }
+  .ref-row > span:nth-child(2), .ref-row > span:nth-child(4) { color: var(--muted); font-size: .85rem; }
+  .ref-row > span:nth-child(3), .ref-row > span:nth-child(5) { text-align: right; }
+}
