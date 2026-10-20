@@ -45,7 +45,10 @@
     "  vec4 c = texture2D(map, vUv); if (c.a < 0.5) discard;",
     "  vec3 d = tgt - cam; float L = length(d); vec3 f = d / L; vec3 v = vW - cam; float t = dot(v, f);",
     "  float off = length(v - f * t);",
-    "  if (t > 0.0 && t < L - 3.0 && off < cone * t + 6.0) {",   // передний план в конусе взгляда — сквозь него видно
+    // сквозной — только то, что поднимается выше линии взгляда камера → ты (горы, скалы); ровная земля перед тобой — обычная
+    // (2026-10-20: раньше прозрачной была и земля под линией взгляда — сквозь неё виднелся тёмный фон, «чёрная тень»)
+    "  vec3 P = cam + f * t;",
+    "  if (t > 0.0 && t < L - 3.0 && off < cone * t + 6.0 && vW.y > P.y - 1.5) {",
     "    float k = clamp((L - 3.0 - t) / 12.0, 0.0, 1.0) * clamp(1.0 - off / (cone * t + 6.0), 0.0, 1.0);",
     "    if (bayer(gl_FragCoord.xy) < 0.25 + 0.6 * k) discard; }",
     "  float sh = 0.72 + 0.38 * max(dot(normalize(vN), light), 0.0);",
