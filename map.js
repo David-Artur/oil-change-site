@@ -272,6 +272,16 @@
         el.style.display = $("lmine").checked ? "" : "none";
         myMarks.push(new maplibregl.Marker({element: el, anchor: "bottom"}).setLngLat(ll(q.x + 0.5, q.z + 0.5)).addTo(map));
       });
+      // У289: дом и точки своего клана (VPLand 0.9.19 отдаёт их только участникам клана) — в любом мире, который сейчас открыт
+      var c = j.clan, spots = [];
+      if (c) { if (c.home != null) spots.push({label: "Дом клана [" + c.tag + "]", s: c.home, big: true}); (c.points || []).forEach(function (p) { spots.push({label: p.name, s: p}); }); }
+      spots.forEach(function (q) {
+        if (q.s.world !== cur || q.s.x == null) return;
+        var el = document.createElement("div"); el.className = "mk-mine mk-clan" + (q.big ? " mk-clan-home" : "");
+        el.textContent = "⚑ " + q.label; el.title = "Точка клана · " + q.s.x + " " + q.s.y + " " + q.s.z + (q.s.by ? " · поставил " + q.s.by : "");
+        el.style.display = $("lmine").checked ? "" : "none";
+        myMarks.push(new maplibregl.Marker({element: el, anchor: "bottom"}).setLngLat(ll(q.s.x + 0.5, q.s.z + 0.5)).addTo(map));
+      });
     }).catch(function () { });
   }
   $("bme").onclick = function () {

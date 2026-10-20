@@ -71,5 +71,6 @@ a.mbtn { display: inline-flex; align-items: center; text-decoration: none; }
 .mk-me b { width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 22px solid #3b82f6; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 1px 3px rgba(0, 0, 0, .6)); }
 .mk-me span { position: absolute; font: 700 10px Rubik, sans-serif; color: #fff; margin-top: 26px; text-shadow: 0 1px 2px #000; }
 .mk-mine.mk-home { background: rgba(34, 120, 60, .85); }
+.mk-mine.mk-clan { background: rgba(14, 120, 104, .9); } .mk-mine.mk-clan-home { font-weight: 800; outline: 1px solid #1abc9c; }   /* У289 */
 .mk-go { background: #2563eb; }
 .maplibregl-popup-content { font-family: Rubik, system-ui, sans-serif; font-size: .85rem; color: #1d1a16; padding: 8px 10px; border-radius: 10px; }

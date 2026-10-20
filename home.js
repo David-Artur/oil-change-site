@@ -603,9 +603,10 @@
 
   // У256 (владелец 2026-10-18): фильтры радара — «⚙» в углу, галочки, что показывать; запоминается в браузере
   var FLT = [["pvoice", "Игроки с голосом"], ["pother", "Игроки без голоса"], ["friends", "Друзья и клан"], ["spawn", "Спавн"],
-    ["portal", "Порталы"], ["home", "Мой дом"], ["claim", "Мои приваты"], ["member", "Приваты, где я участник"], ["mark", "Мои метки"],
+    ["portal", "Порталы"], ["home", "Мой дом"], ["clan", "Дом и точки клана"], ["claim", "Мои приваты"], ["member", "Приваты, где я участник"], ["mark", "Мои метки"],
     ["mapmarks", "Метки карты в руке (крестики, флаги)"], ["ring", "Круг слышимости голоса"]];
-  var POI_FLT = {spawn: "spawn", portal: "portal", home: "home", claim: "claim", "claim-member": "member", mark: "mark"};
+  // У289: дом и точки клана (VPLand 0.9.19 кладёт их в live.pois только участникам клана)
+  var POI_FLT = {spawn: "spawn", portal: "portal", home: "home", "clan-home": "clan", "clan-point": "clan", claim: "claim", "claim-member": "member", mark: "mark"};
   var flt = (function () {
     var f = {}; FLT.forEach(function (x) { f[x[0]] = true; });
     try { var s = JSON.parse(pref("filters") || "{}"); Object.keys(s).forEach(function (k) { if (k in f) f[k] = !!s[k]; }); } catch (e) { }
@@ -645,6 +646,12 @@
         g.beginPath(); g.moveTo(x, y - 8 * u); g.lineTo(x + 7 * u, y - 2 * u); g.lineTo(x + 5 * u, y - 2 * u); g.lineTo(x + 5 * u, y + 6 * u);
         g.lineTo(x - 5 * u, y + 6 * u); g.lineTo(x - 5 * u, y - 2 * u); g.lineTo(x - 7 * u, y - 2 * u); g.closePath(); g.fill(); g.stroke();
         g.fillStyle = "#5a2a10"; g.fillRect(x - 1.5 * u, y + 1 * u, 3 * u, 5 * u);
+      } else if (p.kind === "clan-home" || p.kind === "clan-point") {   // У289: флаг клана — бирюзовый (дом клана — крупнее, с домиком на полотнище)
+        var big = p.kind === "clan-home" ? 1.25 : 1;
+        g.strokeStyle = "#0b2e2a"; g.lineWidth = 1.6 * u; g.fillStyle = "#5b3a1e";
+        g.fillRect(x - 1 * u, y - 9 * u * big, 2 * u, 15 * u * big);   // древко
+        g.fillStyle = "#1abc9c"; g.beginPath(); g.moveTo(x + 1 * u, y - 9 * u * big); g.lineTo(x + 10 * u * big, y - 6 * u * big); g.lineTo(x + 1 * u, y - 2.5 * u * big); g.closePath(); g.fill(); g.stroke();
+        if (big > 1) { g.fillStyle = "#fff"; g.fillRect(x + 3 * u, y - 7 * u, 3 * u, 2.5 * u); }
       } else if (p.kind === "claim" || p.kind === "claim-member") {   // У255: свой приват — зелёный квадрат, где участник — жёлтый
         g.fillStyle = p.kind === "claim" ? "rgba(63,210,94,.85)" : "rgba(247,209,84,.9)"; g.strokeStyle = "#16300c"; g.lineWidth = 1.5 * u;
         g.beginPath(); g.rect(x - 6 * u, y - 6 * u, 12 * u, 12 * u); g.fill(); g.stroke();
@@ -680,7 +687,7 @@
     var el = $("hm-pois");
     if (!el) return;
     list.sort(function (a, b) { return a.d - b.d; });
-    var ICON = {spawn: "★ ", portal: "▣ ", home: "🏠 ", claim: "🟩 ", "claim-member": "🟨 ", mark: "📍 "};
+    var ICON = {spawn: "★ ", portal: "▣ ", home: "🏠 ", "clan-home": "🏰 ", "clan-point": "", claim: "🟩 ", "claim-member": "🟨 ", mark: "📍 "};   // у точки клана «⚑» уже в label
     var h = list.map(function (q) {
       return '<span class="hm-poiw"><button class="hm-poi" type="button" data-xz="' + q.p.x + ' ' + q.p.z + '" data-name="' + esc(q.p.label) + '" title="Нажми — скопировать координаты">' +
         (ICON[q.p.kind] || "• ") + esc(q.p.label) + " · <b>" + q.d + " бл.</b> " + q.dir + "</button>" +

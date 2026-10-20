@@ -635,6 +635,38 @@
     wireClan();
   }
 
+  // ---------------------------------------------------------------- У289: дом и точки клана (VPLand 0.9.19 — /api/me clan.home/points, только участникам)
+  var WNAME = {world: "Святые земли", world_valley: "Долины", world_frontier: "Пограничье", world_wastes: "Пустоши", vp_nether: "Ад", world_the_end: "Энд", world_lobby: "Лобби"};
+  function clanSpots(c) {
+    if (c.points == null && c.home == null) return "";   // старый сервер (до 0.9.19) — блока нет
+    var spots = [];
+    if (c.home != null) spots.push({key: "clan:home", label: "⌂ Дом клана", s: c.home});
+    (c.points || []).forEach(function (p) { spots.push({key: "clan:point:" + String(p.name).toLowerCase(), label: "⚑ " + p.name, s: p, by: p.by}); });
+    var row = function (x) {
+      var s = x.s, where = (WNAME[s.world] || s.world) + " · " + s.x + " " + s.y + " " + s.z, btn = "";
+      if (c.canTp) {
+        if (!c.online) btn = '<span class="cab-meta">зайди в игру</span>';
+        else if (s.price == null) btn = '<span class="cab-meta">' + esc(s.why || "отсюда нельзя") + "</span>";
+        else btn = '<button class="btn small green" type="button" data-ctp="' + esc(x.key) + '" data-cl="' + esc(x.label) + '" data-cp="' + s.price + '" data-cd="' + (s.delay || 0) + '">Телепорт · ' +
+          (s.price > 0 ? money(s.price) : "бесплатно") + "</button>";
+      }
+      return '<div class="mem"><span class="nm"><b>' + esc(x.label) + '</b> <span class="cab-meta">' + esc(where) + (x.by ? " · поставил " + esc(x.by) : "") + "</span></span>" + btn + "</div>";
+    };
+    return '<div class="card cab-card"><h2>⚑ Дом и точки клана</h2>' +
+      (spots.length ? spots.map(row).join("") : '<p class="cab-meta">Точек пока нет.</p>') +
+      '<p class="cab-note">Видят только участники клана. ' + (c.canSet ? "Поставить точку: в игре, в Пограничье, внутри привата клана — <code>/clan point set имя</code> (до " + (c.pointsMax || 5) + "), убрать — <code>/clan point del имя</code>. " : "") +
+      "В игре: <code>/clan points</code>. Телепорт — с отсчётом в игре, деньги в конце.</p></div>";
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-ctp]"); if (!b) return;
+    var price = +b.getAttribute("data-cp"), label = b.getAttribute("data-cl");
+    if (!confirm(label + " — " + (price > 0 ? money(price) : "бесплатно") + ", отсчёт " + b.getAttribute("data-cd") + " с. В игре не двигайся и не получай урон. Телепорт?")) return;
+    b.disabled = true;
+    api("/home", {action: "tp", key: b.getAttribute("data-ctp")}).then(function (j) {
+      b.disabled = false; toast((j && j.message) || (j && j.ok ? "Телепорт начат." : "Не получилось."), !(j && j.ok));
+    });
+  });
+
   function chatHtml(c) {
     var chat = c.chat || [];
     return '<div class="card cab-card"><h2>Клан-чат</h2><div class="chat" id="chat">' + (chat.length ? chat.map(function (l) {
@@ -661,6 +693,7 @@
       '<div class="cab-stats">' + stat("Лидер", esc(c.leader || "—")) + stat("Участников", members.length) + stat("Банк", money(c.bank)) + stat("Налог", c.tax + "%") + stat("Клан-приватов", c.claims) + "</div>" +
       '<p class="cab-note">' + (isLeader ? "Ты лидер — у тебя все права." : "Твои права: " + (myPerms.length ? esc(myPerms.map(function (p) { return label[p] || p; }).join(", ")) : "обычный участник")) + "</p></div>";
     h += chatHtml(c);
+    h += clanSpots(c);
     // состав по ролям
     var order = roles.slice().sort(function (a, b) { return (b.leader ? 1 : 0) - (a.leader ? 1 : 0) || (a.builtin && !a.leader ? 1 : 0) - (b.builtin && !b.leader ? 1 : 0); });
     var leaderRole = roles.filter(function (x) { return x.leader; })[0];

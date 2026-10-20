@@ -24,7 +24,7 @@
   }
   function ey(h) { return SEA + (h - SEA) * EXAG; }   // высота блока → высота в сцене (горы ×2 от уровня моря)
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); }
-  var POI_ICON = {home: "⌂", claim: "■", "claim-member": "■", mark: "●", spawn: "✦", portal: "◎"};
+  var POI_ICON = {home: "⌂", "clan-home": "⚑", "clan-point": "⚑", claim: "■", "claim-member": "■", mark: "●", spawn: "✦", portal: "◎"};   // У289: флаги клана
   var markersP = null;   // markers.json (приваты и зоны у точки прибытия всех миров) — один раз
   function markers() {
     if (!markersP) markersP = fetch(BASE + "markers.json?t=" + Math.floor(Date.now() / 600000)).then(function (r) { return r.json(); }).catch(function () { return {worlds: {}}; });
