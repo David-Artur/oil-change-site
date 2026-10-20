@@ -40,9 +40,49 @@
     if (!on) return;
     api("/home", {action: "live", since: 9e15}).then(function (j) {
       if (!on) return;
-      pos = j && j.online && j.me && j.me.worldId ? {w: j.me.worldId, x: j.me.x, z: j.me.z, yaw: j.me.yaw || 0} : null;
+      pos = j && j.online && j.me && j.me.worldId ? {w: j.me.worldId, x: j.me.x, y: j.me.y, z: j.me.z, yaw: j.me.yaw || 0} : null;
+      caveCheck();
       update();
     });
+  }
+
+  // ---------------------------------------------------------------- пещера (владелец 2026-10-20: «в пещерах — эхо в голосовом чате»)
+  // Высота поверхности — из рельефа карты (dem z=0: 1 пиксель = 1 блок, как у компаса). Ниже поверхности на 4+ блока — пещера: эхо тем сильнее,
+  // чем глубже (полное — с 14 бл.). Ад — пещера всегда, лобби и Энд — нет.
+  var DEM = "https://david-artur.github.io/daviart-map/dem/", MPB = 40075016.686 / (512 * Math.pow(2, 18)), dem = {}, cave = 0;
+  function demTile(w, tx, tz) {
+    var k = w + ":" + tx + ":" + tz;
+    if (dem[k] !== undefined) return dem[k];
+    dem[k] = null;   // грузится
+    var img = new Image(); img.crossOrigin = "anonymous";
+    img.onload = function () {
+      try {
+        var c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+        var g = c.getContext("2d"); g.drawImage(img, 0, 0); dem[k] = {d: g.getImageData(0, 0, img.width, img.height).data, w: img.width};
+      } catch (e) { dem[k] = false; }
+    };
+    img.onerror = function () { dem[k] = false; };
+    img.src = DEM + encodeURIComponent(w) + "/0/" + tx + "_" + tz + ".png";
+    return null;
+  }
+  function ground(w, x, z) {
+    var tx = Math.floor(x / 512), tz = Math.floor(z / 512), t = demTile(w, tx, tz);
+    if (!t) return null;
+    var i = ((Math.floor(z) - tz * 512) * t.w + (Math.floor(x) - tx * 512)) * 4, d = t.d;
+    return ((d[i] * 256 + d[i + 1] + d[i + 2] / 256) - 32768) / MPB;
+  }
+  function caveCheck() {
+    var c = 0;
+    var inRoom = pos && cfg && (cfg.zones || []).some(function (z) { return z.world === pos.w && pos.x >= z.x1 && pos.x <= z.x2 && pos.z >= z.z1 && pos.z <= z.z2; });
+    if (pos && pos.y != null && !inRoom) {   // в клубе крыша высокая — это не пещера
+      if (pos.w === "vp_nether") c = 0.7;
+      else if (pos.w !== "world_lobby" && pos.w !== "world_the_end") {
+        var h = ground(pos.w, pos.x, pos.z);
+        if (h != null) { var depth = h - pos.y; c = depth <= 4 ? 0 : Math.min(1, (depth - 4) / 10); }
+        else c = cave;   // плитка ещё грузится — как было
+      }
+    }
+    cave = c;
   }
   function level() { return enabled ? vol * (ducked ? 0.35 : 1) : 0; }
   function update() {
@@ -89,6 +129,7 @@
       var t = talk[best.id] || (talk[best.id] = {next: Date.now() + 2500, last: -1});
       if (Date.now() > t.next && !speechSynthesis.speaking) say(best, bd, t);
     }
+    if (cave > 0.15) txt.push("🕳 пещера — эхо");
     nowTxt = txt.join(" · ");
     var el = document.getElementById("vc-sndnow"); if (el) el.textContent = nowTxt || (pos ? "здесь тихо" : "звуки — когда ты в игре");
   }
@@ -212,6 +253,7 @@
     volume: function (v) { if (v != null) { vol = Math.max(0, Math.min(1, v)); pref("vol", String(vol)); update(); } return vol; },
     enabled: function () { return enabled; },
     __setCfg: function (j) { cfg = j; },   // для тестовой страницы
+    cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
 
     now: function () { return nowTxt; }
   };

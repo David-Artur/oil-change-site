@@ -205,6 +205,32 @@
     });
   }
 
+  // ---------------------------------------------------------------- У292 (владелец 2026-10-20): эхо в пещерах
+  // Голоса собеседников → (как раньше) в динамики + в «пещеру»: короткий отзвук от стен (0,23 и 0,41 с) и гулкий хвост (свёртка ~2 с).
+  // Громкость «пещеры» — VPSound.cave() (насколько ты под землёй, по рельефу карты), меняется плавно; на поверхности — 0, эха нет.
+  var cave = null;
+  function caveBus() {
+    if (!ctx) return null;
+    if (cave && cave.ctx === ctx) return cave.in;
+    var inp = ctx.createGain(), wet = ctx.createGain(), lp = ctx.createBiquadFilter(), conv = ctx.createConvolver();
+    var d1 = ctx.createDelay(1), d2 = ctx.createDelay(1), fb = ctx.createGain();
+    wet.gain.value = 0; lp.type = "lowpass"; lp.frequency.value = 2600;
+    var len = Math.floor(ctx.sampleRate * 2.2), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (var ch = 0; ch < 2; ch++) { var a = ir.getChannelData(ch); for (var i = 0; i < len; i++) a[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2) * (i < ctx.sampleRate * 0.012 ? 0 : 1); }
+    conv.buffer = ir;
+    d1.delayTime.value = 0.23; d2.delayTime.value = 0.41; fb.gain.value = 0.32;
+    inp.connect(lp); lp.connect(conv); conv.connect(wet);
+    lp.connect(d1); d1.connect(fb); fb.connect(d2); d2.connect(wet); d2.connect(fb); d1.connect(wet);
+    wet.connect(ctx.destination);
+    cave = {ctx: ctx, in: inp, wet: wet};
+    return inp;
+  }
+  function caveLevel() {
+    if (!ctx || !cave || cave.ctx !== ctx) return;
+    var c = window.VPSound && VPSound.cave ? VPSound.cave() : 0;
+    cave.wet.gain.setTargetAtTime(c * 0.35, ctx.currentTime, 1.2);   // владелец: «небольшое эхо»
+  }
+
   function setDuck(v) { if (gate && v !== ducked) { ducked = v; gate.port.postMessage({duck: v}); } }
 
   function leave(tell) {
@@ -318,6 +344,7 @@
         var talking = Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; });
         setDuck(nrMode > 0 && talking);
         if (window.VPSound) VPSound.duck(talking || (micOn && gateOpen));   // У290: говорят (или говоришь ты) — музыка и фразы тише
+        caveLevel();   // У292: эхо в пещере
         if (first) draw(); else { status(); drawPeers(); }
       }
       polling = false;
@@ -461,6 +488,7 @@
           var src = ctx.createMediaStreamSource(s);
           p.gain = ctx.createGain();
           src.connect(p.gain); p.gain.connect(ctx.destination);
+          var cb = caveBus(); if (cb) p.gain.connect(cb);   // У292: в пещере — эхо
         } catch (er) { p.el.muted = false; p.gain = null; }
       }
       var pl = p.el.play(); if (pl && pl.catch) pl.catch(function () { });
