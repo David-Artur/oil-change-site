@@ -113,7 +113,7 @@
         camera = new T.PerspectiveCamera(FOV, 1, 1, 20000);
         uni = {cam: {value: new T.Vector3()}, tgt: {value: new T.Vector3()}, cone: {value: 0.22}, light: {value: new T.Vector3(-0.45, 0.8, -0.35).normalize()}};
         R3 = T;
-        window.__vpHolo = {tiles: function () { return tiles; }, cam: cam, origin: function () { return origin; }, world: function () { return world; }};   // отладка
+        window.__vpHolo = {tiles: function () { return tiles; }, cam: cam, origin: function () { return origin; }, world: function () { return world; }, kick: function () { dirty = true; }, stale: function () { return stale.length; }};   // отладка
         var l = el.querySelector(".holo-load"); if (l) l.remove();
         resize(); buildMarkers(); loop();
       }).catch(function () { var l = el.querySelector(".holo-load"); if (l) l.textContent = "3D не загрузилось"; });
@@ -136,11 +136,29 @@
       for (var tx = x0; tx <= x1; tx++) for (var tz = z0; tz <= z1; tz++) out[world + ":" + lv + ":" + tx + ":" + tz] = {lv: lv, tx: tx, tz: tz, size: size};
       return out;
     }
+    // 2026-10-20: без мигания — ненужные плитки (сменился уровень детализации при зуме/наклоне) не удаляются сразу, а остаются
+    // чуть ниже новых, пока все новые не загрузятся (или 5 с); раньше карта на долю секунды пропадала
+    var stale = [], staleAt = 0;
+    function freeTile(t) { t.dead = true; if (t.mesh) { group.remove(t.mesh); t.mesh.geometry.dispose(); t.mesh.material.dispose(); if (t.tex) t.tex.dispose(); t.mesh = null; } }
+    function sweepStale(force) {
+      if (!stale.length) return;
+      var ready = Object.keys(tiles).every(function (k) { return tiles[k].mesh || tiles[k].failed; });
+      if (!force && !ready && Date.now() - staleAt < 5000) return;
+      stale.forEach(freeTile); stale = []; dirty = true;
+    }
     function syncTiles() {
       if (!R3 || !world) return;
       var w = want();
-      Object.keys(tiles).forEach(function (k) { if (!w[k]) { var t = tiles[k]; if (t.mesh) { group.remove(t.mesh); t.mesh.geometry.dispose(); t.mesh.material.dispose(); if (t.tex) t.tex.dispose(); } t.dead = true; delete tiles[k]; } });
+      Object.keys(tiles).forEach(function (k) {
+        if (w[k]) return;
+        var t = tiles[k]; delete tiles[k];
+        if (!t.mesh) { t.dead = true; return; }
+        if (!stale.length) { staleAt = Date.now(); setTimeout(function () { sweepStale(); }, 5100); }
+        t.mesh.position.y = -1.5 - stale.length * 0.01; t.mesh.renderOrder = -1; stale.push(t);
+      });
+      while (stale.length > 160) freeTile(stale.shift());   // при долгом зуме — не копить память
       Object.keys(w).forEach(function (k) { if (!tiles[k]) loadTile(k, w[k]); });
+      sweepStale();
     }
     function loadTile(k, d) {
       var T = R3, t = tiles[k] = {x0: d.tx * d.size, z0: d.tz * d.size, size: d.size, n: d.lv === 0 ? 257 : 129};
@@ -153,7 +171,8 @@
         }).catch(function () { return null; });
       var texP = new Promise(function (ok) { img.onload = function () { ok(img); }; img.onerror = function () { ok(null); }; img.src = BASE + "tiles" + q + ".webp" + v; });
       Promise.all([demP, texP]).then(function (r) {
-        if (t.dead || dead || !r[1]) return;
+        if (t.dead || dead) return;
+        if (!r[1]) { t.failed = true; sweepStale(); return; }
         var id = r[0], n = t.n, h = new Float32Array(n * n);
         for (var j = 0; j < n; j++) for (var i = 0; i < n; i++) {
           var hv = 62;
@@ -178,7 +197,7 @@
         var mat = new T.ShaderMaterial({vertexShader: VS, fragmentShader: FS, side: T.DoubleSide,
           uniforms: {map: {value: tex}, cam: uni.cam, tgt: uni.tgt, cone: uni.cone, light: uni.light}});
         t.mesh = new T.Mesh(geo, mat); t.tex = tex;
-        group.add(t.mesh); dirty = true;
+        group.add(t.mesh); dirty = true; sweepStale();
       });
     }
 
@@ -325,8 +344,9 @@
     function apply(s, jump) {
       if (s.world !== world) {   // другой мир — сбросить плитки, новая точка отсчёта
         world = s.world;
-        Object.keys(tiles).forEach(function (k) { var t = tiles[k]; if (t.mesh && group) { group.remove(t.mesh); t.mesh.geometry.dispose(); t.mesh.material.dispose(); } t.dead = true; });
-        tiles = {}; jump = true;
+        if (group) { Object.keys(tiles).forEach(function (k) { freeTile(tiles[k]); }); stale.forEach(freeTile); }
+        Object.keys(tiles).forEach(function (k) { tiles[k].dead = true; });
+        tiles = {}; stale = []; jump = true;
         var c0 = s.world === s.myWorld && s.x != null ? [s.x, s.z] : (s.spawn || [0, 0]);
         origin = [Math.round(c0[0] / 512) * 512, Math.round(c0[1] / 512) * 512];
         buildMarkers();

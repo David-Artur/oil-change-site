@@ -304,9 +304,20 @@
     g.imageSmoothingEnabled = false;
     var lv = tileLevel(), TB = TILE * Math.pow(2, -lv);   // сколько блоков в плитке этого уровня
     var span = zoom * 1.5, x0 = Math.floor((X - span) / TB), x1 = Math.floor((X + span) / TB), z0 = Math.floor((Z - span) / TB), z1 = Math.floor((Z + span) / TB);
+    // 2026-10-20: без мигания — пока плитка нового уровня грузится, на её месте рисуется уже загруженная соседнего уровня
+    function peek(l, x, z) { var t = tiles[world + ":" + l + ":" + x + ":" + z]; return t && t.ok ? t.img : null; }
     for (var tx = x0; tx <= x1; tx++) for (var tz = z0; tz <= z1; tz++) {
-      var img = tileImg(world, tx, tz, lv);
-      if (img) g.drawImage(img, 0, 0, TILE, TILE, tx * TB - X, tz * TB - Z, TB, TB);
+      var img = tileImg(world, tx, tz, lv), dx = tx * TB - X, dz = tz * TB - Z;
+      if (img) { g.drawImage(img, 0, 0, TILE, TILE, dx, dz, TB, TB); continue; }
+      var done = false;
+      for (var d = 1; d <= 3 && !done && lv - d >= -5; d++) {   // крупнее: кусок родительской плитки
+        var m = 1 << d, pi = peek(lv - d, Math.floor(tx / m), Math.floor(tz / m)), s = TILE / m;
+        if (pi) { g.drawImage(pi, (tx - Math.floor(tx / m) * m) * s, (tz - Math.floor(tz / m) * m) * s, s, s, dx, dz, TB, TB); done = true; }
+      }
+      if (!done && lv < 0) for (var ci = 0; ci < 4; ci++) {   // мельче: четыре дочерние
+        var ch = peek(lv + 1, tx * 2 + (ci & 1), tz * 2 + (ci >> 1));
+        if (ch) g.drawImage(ch, 0, 0, TILE, TILE, dx + (ci & 1) * TB / 2, dz + (ci >> 1) * TB / 2, TB / 2, TB / 2);
+      }
     }
     g.restore();
     g.setTransform(1, 0, 0, 1, 0, 0);
