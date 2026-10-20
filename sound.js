@@ -27,11 +27,24 @@
     if (on || !o || !o.ctx) return;
     ctx = o.ctx; api = o.api; on = true;
     master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
-    if (!cfg) fetch("sounds.json?v=1", {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { cfg = j; }).catch(function () { });
+    if (!cfg) fetch("sounds.json?v=1", {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { cfg = j; clubZone(); }).catch(function () { });
     timer = setInterval(tick, 1000); tick();
+    clubT = setInterval(clubZone, 60000); clubZone();
+  }
+  // У291: клуб — где он построен, сервер сам говорит в публичном /api/players (VPLand 0.9.20, поле club); нет поля — клуба нет, музыки тоже
+  var clubT = null, club = null;
+  function clubZone() {
+    fetch("https://mc.daviart.com/api/players", {cache: "no-store"}).then(function (r) { return r.json(); }).then(function (j) {
+      club = j && j.club && j.club.world ? j.club : null; applyClub();
+    }).catch(function () { });
+  }
+  function applyClub() {
+    if (!cfg) return;
+    cfg.zones = (cfg.zones || []).filter(function (z) { return z.id !== "club"; });
+    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "club", vol: 0.8, exclusive: true, fade: 30, title: "DaviArt Club"});
   }
   function stop() {
-    on = false; clearInterval(timer); timer = null;
+    on = false; clearInterval(timer); timer = null; clearInterval(clubT); clubT = null;
     Object.keys(gens).forEach(function (k) { gens[k].kill(); }); gens = {};
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
     master = null; ctx = null; pos = null; nowTxt = ""; speakingNpc = null;
