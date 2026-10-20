@@ -55,7 +55,7 @@
     opts = opts || {};
     var el = document.createElement("div"); el.className = "holo";
     el.innerHTML = '<div class="holo-map"></div><div class="holo-ov"></div><div class="holo-ring"></div><div class="holo-n">С</div>' +
-      '<div class="holo-tilt">☝ двигай · ✌ щипок — масштаб, поверни — крути, вверх-вниз — наклон</div><div class="holo-load">Загружаю 3D…</div>';
+      '<div class="holo-tilt">☝ двигай · ✌ щипок — масштаб, поверни — крути · наклон — полоска сбоку ▲▼</div><div class="holo-load">Загружаю 3D…</div>';
     box.appendChild(el);
     var ov = el.querySelector(".holo-ov");
     var R3 = null, scene, camera, renderer, group, uni = null, dead = false, dirty = true;
@@ -277,14 +277,15 @@
       p.x = e.clientX; p.y = e.clientY;
       var n = Object.keys(pts).length;
       if (n === 1) {
-        if (p.b === 2 || e.ctrlKey) { cam.h = (cam.h - dx * 0.4 + 360) % 360; cam.pitch = Math.max(0, Math.min(85, cam.pitch + dy * 0.35)); free(true); dirty = true; }
+        if (p.b === 2 || e.ctrlKey) { cam.h = (cam.h - dx * 0.4 + 360) % 360; cam.pitch = Math.max(0, Math.min(85, cam.pitch - dy * 0.35)); tiltUi(); free(true); dirty = true; }
         else panBy(dx, dy);
       } else if (n === 2 && g0) {
         var g = gstate();
         if (g0.d > 10 && g.d > 10) cam.radius = Math.max(6, Math.min(3000, cam.radius * g0.d / g.d));
         var da = (g.ang - g0.ang) * 180 / Math.PI; if (da > 180) da -= 360; if (da < -180) da += 360;
         if (Math.abs(da) > 0.3) { cam.h = (cam.h - da + 360) % 360; free(true); }
-        cam.pitch = Math.max(0, Math.min(85, cam.pitch + (g.my - g0.my) * 0.35));
+        cam.pitch = Math.max(0, Math.min(85, cam.pitch - (g.my - g0.my) * 0.35));   // пальцы вверх — сильнее наклон (владелец 2026-10-20)
+        tiltUi();
         g0 = g; dirty = true;
       }
     });
@@ -295,6 +296,26 @@
     };
     el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
     el.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    // наклон одним пальцем — полоска сбоку компаса: вверх — сильнее наклон (виден горизонт), вниз — вид сверху
+    var bar = document.createElement("div"); bar.className = "holo-tiltbar";
+    bar.innerHTML = '<span class="tb-up">▲</span><div class="tb-track"><i></i></div><span class="tb-dn">▼</span><b></b>';
+    box.appendChild(bar);
+    function tiltUi() {
+      var k = cam.pitch / 85, i = bar.querySelector(".tb-track i"), b = bar.querySelector("b");
+      if (i) i.style.bottom = (k * 100) + "%";
+      if (b) b.textContent = Math.round(cam.pitch) + "°";
+    }
+    var tb = null;
+    bar.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); tb = {y: e.clientY, p: cam.pitch}; try { bar.setPointerCapture(e.pointerId); } catch (x) { } bar.classList.add("on"); });
+    bar.addEventListener("pointermove", function (e) {
+      if (!tb) return; e.stopPropagation();
+      var h = bar.clientHeight || 200;
+      cam.pitch = Math.max(0, Math.min(85, tb.p + (tb.y - e.clientY) / h * 85 * 1.2));
+      tiltUi(); dirty = true;
+    });
+    var tbUp = function () { if (!tb) return; tb = null; bar.classList.remove("on"); try { localStorage.setItem("daviart.holo.pitch", String(Math.round(cam.pitch))); } catch (x) { } };
+    bar.addEventListener("pointerup", tbUp); bar.addEventListener("pointercancel", tbUp);
+    tiltUi();
     el.addEventListener("wheel", function (e) { e.preventDefault(); cam.radius = Math.max(6, Math.min(3000, cam.radius * Math.pow(1.0015, e.deltaY))); dirty = true; }, {passive: false});
 
     // ---------------------------------------------------------------- данные от компаса
@@ -323,7 +344,7 @@
       zoomBy: function (k) { cam.radius = Math.max(6, Math.min(3000, cam.radius * k)); dirty = true; },
       resize: function () { resize(); },
       pinching: function () { },
-      destroy: function () { dead = true; if (renderer) { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); } el.remove(); }
+      destroy: function () { dead = true; bar.remove(); if (renderer) { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); } el.remove(); }
     };
   }
   window.VPHolo = {create: create};
