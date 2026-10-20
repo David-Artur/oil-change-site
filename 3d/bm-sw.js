@@ -11,6 +11,8 @@ const HEAD_RE = /\/assets\/playerheads\/([^/]+)\.png$/;
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+// страница, открытая, пока SW ещё ставился (быстрое обновление на первом заходе), просит взять её под управление
+self.addEventListener('message', (e) => { if (e.data === 'claim') e.waitUntil(self.clients.claim()); });
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;

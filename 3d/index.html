@@ -59,9 +59,18 @@
   });
   if (!("serviceWorker" in navigator) || typeof DecompressionStream === "undefined")
     return fail('Этот браузер слишком старый для 3D-карты.<br>Открой <a href="/map.html" style="color:#6cc644">обычную карту</a>.');
+  var started = false;
+  function go() { if (!started && navigator.serviceWorker.controller) { started = true; start(); } }
+  navigator.serviceWorker.addEventListener("controllerchange", go);
   navigator.serviceWorker.register("./bm-sw.js", { scope: "./" }).then(function () {
-    if (navigator.serviceWorker.controller) return start();
-    navigator.serviceWorker.addEventListener("controllerchange", start, { once: true });
+    go();
+    // SW уже активен, но страница открылась раньше — просим его взять страницу (иначе controllerchange не придёт)
+    navigator.serviceWorker.ready.then(function (reg) { if (!started && reg.active) reg.active.postMessage("claim"); });
+    setTimeout(function () {   // запасной путь — одна перезагрузка за сессию
+      if (started) return;
+      var k = "dv3d-reload", n = 0; try { n = +sessionStorage.getItem(k) || 0; sessionStorage.setItem(k, n + 1); } catch (e) { n = 1; }
+      if (n < 1) location.reload(); else fail('3D-карта не запустилась. Обнови страницу или открой <a href="/map.html" style="color:#6cc644">обычную карту</a>.');
+    }, 8000);
   }, function (e) { fail("Не удалось запустить 3D-карту: " + e); });
 })();
 </script>
