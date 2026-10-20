@@ -281,6 +281,32 @@
   };
   setInterval(function () { if (!document.hidden && info) { refreshPlayers(); refreshMe(); } }, 5000);
 
+  // ---------------------------------------------------------------- «🧱 3D-блоки» → то же место на 3D-карте BlueMap (daviart.com/3d/, У280 v3)
+  // Мир и координаты — из адреса #мир/x/z/зум[/наклон/поворот] в момент нажатия; высота y — из рельефа (dem z=0: 1 пиксель = 1 блок), иначе 64.
+  function demY(w, x, z) {
+    var rx = Math.floor(x / 512), rz = Math.floor(z / 512);
+    var ctl = new AbortController(); setTimeout(function () { ctl.abort(); }, 1500);
+    return fetch(BASE + "dem/" + w + "/0/" + rx + "_" + rz + ".png", {signal: ctl.signal}).then(function (r) {
+      if (!r.ok) throw new Error(r.status); return r.blob();
+    }).then(createImageBitmap).then(function (bmp) {
+      var c = document.createElement("canvas"); c.width = c.height = 1;
+      var g = c.getContext("2d"); g.drawImage(bmp, -(Math.floor(x) - rx * 512), -(Math.floor(z) - rz * 512));
+      var d = g.getImageData(0, 0, 1, 1).data, y = Math.round((d[0] * 256 + d[1] + d[2] / 256 - 32768) / MPB);
+      return isFinite(y) && y > -64 && y < 320 ? y : 64;
+    }).catch(function () { return 64; });
+  }
+  $("bblocks").onclick = function (e) {
+    var h = parseHash(); if (!h.w || !isFinite(h.x) || !isFinite(h.z)) return;   // нет адреса — просто /3d/
+    e.preventDefault();
+    var zoom = isFinite(h.zoom) ? h.zoom : 17;
+    var dist = Math.round(Math.min(3000, Math.max(25, Math.max(320, innerWidth) * Math.pow(2, Z0 - zoom) * 0.9)));
+    var pitch = isFinite(h.pitch) && h.pitch > 1 ? h.pitch : 50, bearing = isFinite(h.bearing) ? h.bearing : 0;
+    demY(h.w, h.x, h.z).then(function (y) {
+      location.href = "/3d/#" + h.w + ":" + Math.round(h.x) + ":" + y + ":" + Math.round(h.z) + ":" + dist + ":" +
+        (bearing * Math.PI / 180).toFixed(2) + ":" + (Math.min(80, pitch) * Math.PI / 180).toFixed(2) + ":0:0:perspective";
+    });
+  };
+
   // ---------------------------------------------------------------- слои
   $("blayers").onclick = function () { $("layers").hidden = !$("layers").hidden; };
   ["lclaims", "lzones", "lplayers", "lmine"].forEach(function (id) { $(id).onchange = layerVis; });

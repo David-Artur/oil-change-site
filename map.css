@@ -55,6 +55,8 @@ button.mh-3d.on { background: var(--green); border-color: var(--green); color: #
 .maplibregl-ctrl-top-left { top: 60px; }
 .mside { position: fixed; z-index: 1000; right: 12px; top: 106px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .mbtn { font: inherit; font-weight: 500; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; cursor: pointer; min-height: 40px; }
+a.mbtn { display: inline-flex; align-items: center; text-decoration: none; }
+.mbtn-blocks { font-weight: 700; }
 .mlayers { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; max-width: 250px; }
 .mlayers label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
 .mlegend { display: flex; flex-direction: column; gap: 3px; font-size: .78rem; color: var(--soft); border-top: 1px solid var(--line); padding-top: 6px; }
