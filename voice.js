@@ -48,6 +48,8 @@
         '<button class="vc-chip" type="button" id="vc-leave" title="Отключиться от голоса">Выйти</button></div>' +
         '<button class="btn gold vc-ptt" type="button" id="vc-ptt"' + (ptt ? "" : " hidden") + '>Держи — и говори</button>' +
         '<div class="vc-nr"><button class="vc-chip" type="button" id="vc-nr"></button><span class="vc-nr-hint">🎧 лучше в наушниках — не будет эха</span></div>' +
+        (window.VPSound ? '<div class="vc-snd"><button class="vc-chip" type="button" id="vc-snd"></button><input type="range" id="vc-sndvol" min="0" max="100" aria-label="Громкость звуков мира">' +
+          '<span class="vc-nr-hint" id="vc-sndnow"></span></div>' : "") +   // У290: звучащие точки
         '<div id="vc-peers" class="vc-peers"></div>' +
         '<div class="vc-tools"><button class="vc-chip vc-check" type="button" id="vc-check" title="Проверить сервер, ретранслятор голоса и микрофон">🔧 Проверить связь</button></div>' +
         '<div class="vc-report" id="vc-report"' + (reportHtml ? "" : " hidden") + '>' + reportHtml + '</div>' +
@@ -64,6 +66,14 @@
       if (gate) gate.port.postMessage({mode: nrMode, recal: true});
       ctl();
     };
+    if (window.VPSound && $("vc-snd")) {   // У290: «🎵 Звуки мира» — музыка мест и фразы жителей
+      var sb = $("vc-snd"), sv = $("vc-sndvol");
+      var sl = function () { sb.textContent = VPSound.enabled() ? "🎵 Звуки мира: вкл" : "🔕 Звуки мира: выкл"; sb.classList.toggle("off", !VPSound.enabled()); sv.disabled = !VPSound.enabled(); };
+      sv.value = Math.round(VPSound.volume() * 100); sl();
+      sb.onclick = function () { VPSound.toggle(); sl(); };
+      sv.oninput = function () { VPSound.volume(sv.value / 100); };
+      $("vc-sndnow").textContent = VPSound.now() || "";
+    }
     var b = $("vc-ptt");
     var down = function (e) { e.preventDefault(); pttDown = true; applyMic(); b.classList.add("on"); };
     var up = function (e) { e.preventDefault(); pttDown = false; applyMic(); b.classList.remove("on"); };
@@ -136,6 +146,7 @@
       m.textContent = "Этот браузер не умеет голосовой чат. Открой кабинет в Chrome, Safari или Firefox."; return;
     }
     m.textContent = "Жду разрешение на микрофон…";
+    try { if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance(" ")); } catch (e) { }   // У290: iPhone — голос жителей разрешается только по нажатию
     var AC = window.AudioContext || window.webkitAudioContext;
     ctx = AC ? new AC() : null;   // создаём по нажатию — иначе телефон не даст играть звук
     navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
@@ -156,6 +167,7 @@
       draw();
       startTicker();
       meter();
+      if (window.VPSound && ctx) VPSound.start({ctx: ctx, api: opt.api});   // У290: звучащие точки — тем же звуком, что и голоса
     }).catch(function () {
       m.textContent = "Нет доступа к микрофону. Разреши его в настройках браузера для daviart.com и нажми ещё раз.";
     });
@@ -202,6 +214,7 @@
     Object.keys(peers).forEach(drop);
     if (local) local.getTracks().forEach(function (t) { t.stop(); });
     local = null;
+    if (window.VPSound) VPSound.stop();
     if (ctx) { try { ctx.close(); } catch (e) { } ctx = null; }
     if (wakeLock) { try { wakeLock.release(); } catch (e) { } wakeLock = null; }
     if (tell) opt.api("/voice", {action: "leave"});
@@ -302,7 +315,9 @@
           if (!here[n] && p.d != null) { p.d = null; p.speaking = false; p.waitFrom = 0; silence(p); }
         });
         // У254: собеседник рядом говорит и слышен — свой микрофон приглушаем (без наушников его голос не вернётся ему эхом)
-        setDuck(nrMode > 0 && Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; }));
+        var talking = Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; });
+        setDuck(nrMode > 0 && talking);
+        if (window.VPSound) VPSound.duck(talking || (micOn && gateOpen));   // У290: говорят (или говоришь ты) — музыка и фразы тише
         if (first) draw(); else { status(); drawPeers(); }
       }
       polling = false;

@@ -419,6 +419,10 @@ body.hm-noscroll { overflow: hidden; }
 .vc-nr .vc-chip { height: 32px; padding: 0 10px; }
 .vc-nr .vc-chip.off { opacity: .7; }
 .vc-nr-hint { font-size: .76rem; color: var(--muted); }
+/* У290: звучащие точки */
+.vc-snd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+.vc-snd .vc-chip { height: 32px; padding: 0 10px; } .vc-snd .vc-chip.off { opacity: .7; }
+.vc-snd input[type=range] { width: 110px; accent-color: #1abc9c; }
 
 /* У240: статус связи, «Проверить связь», подсказка про VPN */
 .vc-health { font-size: .8rem; line-height: 1.3; padding: 5px 8px; border-radius: 8px; margin: 4px 0; background: rgba(127,127,127,.14); }
