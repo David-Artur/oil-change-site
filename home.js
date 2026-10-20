@@ -26,7 +26,9 @@
           '<div class="hm-rbtns"><button class="btn small" type="button" id="hm-zout" title="Дальше">−</button><span class="hm-zl" id="hm-zoom"></span><button class="btn small" type="button" id="hm-zin" title="Ближе">+</button>' +
           '<button class="btn small" type="button" id="hm-north">🧭</button><button class="btn small" type="button" id="hm-mapbtn">🗺 Мир</button>' +
           '<button class="btn small" type="button" id="hm-3d" title="Компас 3D: наклонённая карта с рельефом, крутится вместе с камерой; наклон — проведи по компасу вверх-вниз">⛰ 3D</button>' +
-          '<button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button></div>' +
+          '<button class="btn small" type="button" id="hm-full" title="На весь экран">⤢</button>' +
+          '<button class="btn small" type="button" id="hm-center" hidden title="Обратно к твоему персонажу">⌖ Центр</button></div>' +
+          '<div class="hm-wsel" id="hm-wsel" aria-label="Посмотреть мир"></div>' +
           '<p class="cab-meta hm-note" id="hm-radar-note"></p>' +
           '<div class="hm-info"><button class="hm-coords" type="button" id="hm-coords" title="Нажми — скопировать координаты">📍 <b id="hm-xyz">—</b> <span class="hm-copy">⧉</span></button>' +
           '<div class="hm-pois" id="hm-pois"></div>' +
@@ -58,8 +60,8 @@
       holoOn = on && !!window.VPHolo; pref("holo", holoOn ? "1" : "0");
       var wrap = box.querySelector(".hm-rwrap");
       wrap.classList.toggle("holo-on", holoOn);
-      if (holoOn && !holo) holo = window.VPHolo.create(wrap);
-      if (!holoOn && holo) { holo.destroy(); holo = null; }
+      if (holoOn && !holo) holo = window.VPHolo.create(wrap, {onFree: function (f) { holoFree = f; viewChanged(); }});
+      if (!holoOn && holo) { holo.destroy(); holo = null; holoFree = false; }
       $("hm-3d").classList.toggle("on", holoOn); $("hm-3d").textContent = holoOn ? "⛰ 3D: вкл" : "⛰ 3D";
       holoPush();
     };
@@ -73,24 +75,50 @@
       if (save !== false) pref("zoom", String(Math.round(zoom)));
       if (holo) holoPush(); else { drawMap(); drawRadar(); }
     };
-    var zstep = function (d) { setZoom(zoom * (d > 0 ? 1.5 : 1 / 1.5)); };
-    var wrapEl = box.querySelector(".hm-rwrap"), pts = {}, pinch = null;
-    wrapEl.addEventListener("wheel", function (e) { e.preventDefault(); setZoom(zoom * Math.pow(1.0015, e.deltaY)); }, {passive: false});
+    var zstep = function (d) { if (holo) { holo.zoomBy(d > 0 ? 1 / 1.5 : 1.5); return; } setZoom(zoom * (d > 0 ? 1.5 : 1 / 1.5)); };
+    // 2D: щипок — масштаб, один палец (мышь) — двигать карту; 3D — всё делает сама 3D-карта (holo.js)
+    var wrapEl = box.querySelector(".hm-rwrap"), pts = {}, pinch = null, pan = null;
+    wrapEl.addEventListener("wheel", function (e) { if (holo) return; e.preventDefault(); setZoom(zoom * Math.pow(1.0015, e.deltaY)); }, {passive: false});
     var dist = function () { var k = Object.keys(pts); if (k.length < 2) return 0; var a = pts[k[0]], b = pts[k[1]]; return Math.hypot(a.x - b.x, a.y - b.y); };
     wrapEl.addEventListener("pointerdown", function (e) {
+      if (holo) return;
       pts[e.pointerId] = {x: e.clientX, y: e.clientY};
-      if (Object.keys(pts).length === 2) { pinch = {d: dist(), z: zoom}; if (holo) holo.pinching(true); }
-    }, true);
+      var n = Object.keys(pts).length;
+      if (n === 2) { pinch = {d: dist(), z: zoom}; pan = null; }
+      else if (n === 1) { pan = {x: e.clientX, y: e.clientY}; try { wrapEl.setPointerCapture(e.pointerId); } catch (x) { } }
+    });
     wrapEl.addEventListener("pointermove", function (e) {
-      if (!pts[e.pointerId]) return;
+      if (holo || !pts[e.pointerId]) return;
       pts[e.pointerId] = {x: e.clientX, y: e.clientY};
-      if (pinch) { var d = dist(); if (d > 10 && pinch.d > 10) setZoom(pinch.z * pinch.d / d, false); }
-    }, true);
+      if (pinch) { var d = dist(); if (d > 10 && pinch.d > 10) setZoom(pinch.z * pinch.d / d, false); return; }
+      if (pan) {
+        var c = $("hm-radar"), k = c.width / (c.clientWidth || 1), R = c.width / 2 - RIM * U, sc = R / zoom;
+        var sx = -(e.clientX - pan.x) * k / sc, sy = -(e.clientY - pan.y) * k / sc;   // экранный сдвиг → блоки
+        pan = {x: e.clientX, y: e.clientY};
+        if (Math.abs(sx) + Math.abs(sy) < 0.01) return;
+        var yw = (view.world ? 180 : viewYaw()) * Math.PI / 180, fx = -Math.sin(yw), fz = Math.cos(yw), rx = -Math.cos(yw), rz = -Math.sin(yw);
+        view.ox += sx * rx - sy * fx; view.oz += sx * rz - sy * fz;
+        viewChanged();
+      }
+    });
     var lift = function (e) {
       delete pts[e.pointerId];
-      if (pinch && Object.keys(pts).length < 2) { pinch = null; pref("zoom", String(Math.round(zoom))); if (holo) holo.pinching(false); }
+      var n = Object.keys(pts).length;
+      if (pinch && n < 2) { pinch = null; pref("zoom", String(Math.round(zoom))); }
+      if (n === 0) pan = null;
     };
-    wrapEl.addEventListener("pointerup", lift, true); wrapEl.addEventListener("pointercancel", lift, true);
+    wrapEl.addEventListener("pointerup", lift); wrapEl.addEventListener("pointercancel", lift);
+    // «⌖ Центр» и быстрые миры
+    $("hm-center").onclick = function () { view.world = null; view.ox = 0; view.oz = 0; if (holo) holo.center(); viewChanged(); };
+    $("hm-wsel").onclick = function (e) {
+      var b = e.target.closest("[data-w]"); if (!b) return;
+      var w = b.getAttribute("data-w"), mine = live && live.me && live.me.worldId;
+      view.world = w === mine ? null : w; view.ox = 0; view.oz = 0;
+      if (holo) holo.center();
+      viewChanged();
+    };
+    worldChips();
+    loadSpawns();
     $("hm-zin").onclick = function () { zstep(-1); };
     $("hm-zout").onclick = function () { zstep(1); };
     var full = function (on) {
@@ -188,11 +216,50 @@
   var ZMIN = 8, ZMAX = 3000;   // масштаб компаса — радиус в блоках; плавно: щипок, колёсико, кнопки ×1.5
   var MAP_V = Math.floor(Date.now() / 3600000);   // кэш плиток — на час
   var RIM = 26, northUp = true;   // ширина рамки компаса (CSS px); север вверху (по умолчанию) или «по взгляду»
-  var holoOn = false, holo = null;   // компас-голограмма (holo.js)
+  var holoOn = false, holo = null, holoFree = false;   // компас 3D (holo.js); holoFree — карту сдвинули/повернули рукой
+  // что смотрим: свой мир (world: null) со сдвигом ox/oz в блоках или чужой мир (от его точки прибытия). «⌖ Центр» — обратно к себе.
+  var view = {world: null, ox: 0, oz: 0}, spawns = {};
+  var WORLDS_SEL = [["world", "1"], ["world_valley", "2"], ["world_frontier", "3"], ["world_wastes", "4"], ["vp_nether", "5"], ["world_the_end", "6"], ["world_lobby", "Л"]];
+  var WNAME = {world: "Святые земли", world_valley: "Долины", world_frontier: "Пограничье", world_wastes: "Пустоши", vp_nether: "Незер", world_the_end: "Энд", world_lobby: "Лобби"};
+  function loadSpawns() {
+    fetch("https://david-artur.github.io/daviart-map/markers.json?t=" + Math.floor(Date.now() / 600000)).then(function (r) { return r.json(); }).then(function (j) {
+      Object.keys(j.worlds || {}).forEach(function (w) { var z = j.worlds[w].zone, s = j.worlds[w].spawn; spawns[w] = z ? [z.x, z.z] : s || [0, 0]; });
+    }).catch(function () { });
+  }
+  function spawnOf(w) { return spawns[w] || (w === "world_the_end" ? [200, 0] : [0, 0]); }
+  function myWorld() { return live && live.me && live.me.worldId; }
+  function viewWorld() { return view.world || myWorld(); }
+  function isAway() { return !!view.world || Math.abs(view.ox) + Math.abs(view.oz) > 0.5 || holoFree; }
+  function worldChips() {
+    var el = $("hm-wsel"); if (!el) return;
+    var vw = viewWorld(), mine = myWorld();
+    var h = WORLDS_SEL.map(function (w) {
+      return '<button class="btn small' + (w[0] === vw ? " on" : "") + '" type="button" data-w="' + w[0] + '" title="' + WNAME[w[0]] + (w[0] === mine ? " — ты здесь" : "") + '">' +
+        w[1] + (w[0] === mine ? "•" : "") + "</button>";
+    }).join("");
+    if (el.getAttribute("data-v") !== h) { el.innerHTML = h; el.setAttribute("data-v", h); }
+  }
+  function viewChanged() {
+    var c = $("hm-center"); if (c) c.hidden = !isAway();
+    worldChips();
+    var wrap = box && box.querySelector(".hm-rwrap"), tag = wrap && wrap.querySelector(".hm-vtag");
+    if (view.world) { if (!tag && wrap) { tag = document.createElement("div"); tag.className = "hm-vtag"; wrap.appendChild(tag); } tag.textContent = "👁 " + (WNAME[view.world] || view.world); }
+    else if (tag) tag.remove();
+    if (holo) holoPush(); else { drawMap(); drawRadar(); }
+  }
   function holoPush() {
-    if (!holo || !live || !live.online || !live.me || sm.x == null) return;
-    holo.update({world: live.me.worldId, x: sm.x, z: sm.z, yaw: sm.yaw == null ? live.me.yaw : sm.yaw, radius: zoom, northUp: northUp,
-      players: Object.keys(sm.pts).map(function (n) { return sm.pts[n]; })});
+    if (!holo) return;
+    var on = live && live.online && live.me && sm.x != null, vw = viewWorld();
+    if (!vw) return;
+    holo.update({world: vw, myWorld: on ? live.me.worldId : null, x: on ? sm.x : null, y: on ? live.me.y : null, z: on ? sm.z : null, yaw: on ? (sm.yaw == null ? live.me.yaw : sm.yaw) : 180,
+      spawn: spawnOf(vw), radius: zoom, northUp: northUp,
+      // те же метки, что в 2D, с теми же фильтрами (⚙)
+      players: on ? Object.keys(sm.pts).map(function (n) { return sm.pts[n]; }).filter(function (p) { return p.clan || p.friend ? flt.friends : p.voice ? flt.pvoice : flt.pother; }) : [],
+      pois: on ? (live.pois || []).filter(function (p) { var k = POI_FLT[p.kind]; return !k || flt[k]; }).map(function (p) {
+        return {kind: p.kind, label: p.label, x: live.me.x + 0.5 + p.dx, z: live.me.z + 0.5 + p.dz}; }) : [],
+      marks: on && flt.mapmarks ? (live.marks || []).map(function (m) {
+        var t = m.type || "", ban = t.indexOf("banner_") === 0 ? t.slice(7) : null;
+        return {type: t, color: ban ? (BANNER[ban] || "#ddd") : null, label: m.label || MARK_NAME[t] || (ban ? "" : "Метка"), x: live.me.x + 0.5 + m.dx, z: live.me.z + 0.5 + m.dz}; }) : []});
   }
   function viewYaw() { return northUp || sm.yaw == null ? 180 : sm.yaw; }   // 180 = смотришь на север → север вверху
   function isDark() { var t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
@@ -223,9 +290,12 @@
     sizeCanvases();
     var g = c.getContext("2d"), W = c.width, R = W / 2 - RIM * U, cx = W / 2, cy = W / 2;
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W);
-    var me = o.me() || {}, world = (live && live.me && live.me.worldId) || (me.where && me.where.worldId);
-    if (!mapOn || !live || !live.online || !live.me || sm.x == null || !world) return;
-    var sc = R / zoom, psi = viewYaw() * Math.PI / 180, cs = Math.cos(psi), sn = Math.sin(psi);
+    var me = o.me() || {}, world = view.world || (live && live.me && live.me.worldId) || (me.where && me.where.worldId);
+    var away = !!view.world;   // смотрим чужой мир — карта всегда (от точки прибытия мира)
+    if (!(mapOn || away) || !world) return;
+    if (!away && (!live || !live.online || !live.me || sm.x == null)) return;
+    var base = away ? spawnOf(world) : [sm.x, sm.z], X = base[0] + view.ox, Z = base[1] + view.oz;
+    var sc = R / zoom, psi = (away ? 180 : viewYaw()) * Math.PI / 180, cs = Math.cos(psi), sn = Math.sin(psi);
     g.save();
     g.beginPath(); g.arc(cx, cy, R, 0, 7); g.clip();
     g.fillStyle = "#1b1b1b"; g.fillRect(0, 0, W, W);
@@ -233,10 +303,10 @@
     g.setTransform(-cs * sc, sn * sc, -sn * sc, -cs * sc, cx, cy);
     g.imageSmoothingEnabled = false;
     var lv = tileLevel(), TB = TILE * Math.pow(2, -lv);   // сколько блоков в плитке этого уровня
-    var span = zoom * 1.5, x0 = Math.floor((sm.x - span) / TB), x1 = Math.floor((sm.x + span) / TB), z0 = Math.floor((sm.z - span) / TB), z1 = Math.floor((sm.z + span) / TB);
+    var span = zoom * 1.5, x0 = Math.floor((X - span) / TB), x1 = Math.floor((X + span) / TB), z0 = Math.floor((Z - span) / TB), z1 = Math.floor((Z + span) / TB);
     for (var tx = x0; tx <= x1; tx++) for (var tz = z0; tz <= z1; tz++) {
       var img = tileImg(world, tx, tz, lv);
-      if (img) g.drawImage(img, 0, 0, TILE, TILE, tx * TB - sm.x, tz * TB - sm.z, TB, TB);
+      if (img) g.drawImage(img, 0, 0, TILE, TILE, tx * TB - X, tz * TB - Z, TB, TB);
     }
     g.restore();
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -394,7 +464,8 @@
   function drawLive() {
     drawHead();
     radarTarget();
-    if (!rafOn) drawRadar();
+    if (!rafOn) { if (holo) holoPush(); else drawRadar(); }
+    worldChips(); var cb = $("hm-center"); if (cb) cb.hidden = !isAway();
     drawVitals();
     drawSkills();
   }
@@ -666,6 +737,12 @@
     if (flt.ring) { g.beginPath(); g.arc(cx, cy, vr * sc, 0, 7); g.stroke(); }
     g.setLineDash([]);
     var note = $("hm-radar-note"), mapEl = $("hm-map");
+    if (view.world) {   // смотрим чужой мир: без точек и стрелки, север вверху
+      drawRim(g, cx, cy, R, u, 180);
+      var vt = "👁 " + (WNAME[view.world] || view.world) + " · ☝ двигай, щипком — масштаб · «⌖ Центр» — обратно к себе";
+      if (note && note.getAttribute("data-v") !== vt) { note.textContent = vt; note.setAttribute("data-v", vt); }
+      return;
+    }
     if (!live || !live.online || !live.me) {
       g.fillStyle = dark ? "#aaa" : "#777"; g.font = (15 * u) + "px Rubik, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("не в игре", cx, cy); drawRim(g, cx, cy, R, u, 180);
       if (note) note.textContent = "Радар заработает, когда ты зайдёшь на сервер.";
@@ -679,8 +756,11 @@
       if (p.clan || p.friend) return flt.friends;
       return p.voice ? flt.pvoice : flt.pother;
     });
+    // сдвиг карты пальцем: ты и всё «вокруг тебя» — смещены на (−ox, −oz)
+    var mx = cx + (-view.ox * rx - view.oz * rz) * sc, my = cy - (-view.ox * fx - view.oz * fz) * sc;
     list.forEach(function (p) {
-      var sx = p.dx * rx + p.dz * rz, sy = -(p.dx * fx + p.dz * fz);
+      var ddx = p.dx - view.ox, ddz = p.dz - view.oz;
+      var sx = ddx * rx + ddz * rz, sy = -(ddx * fx + ddz * fz);
       var d = Math.sqrt(sx * sx + sy * sy), k = d * sc > R ? R / (d * sc) : 1;
       var x = cx + sx * sc * k, y = cy + sy * sc * k;
       g.fillStyle = p.clan ? "#f7c73c" : p.friend ? "#3a9bff" : p.voice ? "#3fd25e" : "#9a9a9a";
@@ -689,9 +769,11 @@
       g.fillStyle = dark ? "#eee" : "#222"; g.font = (12 * u) + "px Rubik, sans-serif"; g.textBaseline = "top";
       g.fillText(p.name + (Math.abs(p.dy) >= 4 ? (p.dy > 0 ? " ▲" : " ▼") : ""), x, y + 9 * u); g.textBaseline = "middle";
     });
-    drawPois(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
-    if (flt.mapmarks) drawMarks(g, cx, cy, R, sc, u, rx, rz, fx, fz, dark);
-    g.save(); g.translate(cx, cy); g.rotate((sm.yaw - vy) * Math.PI / 180);   // ты — стрелка туда, куда смотришь
+    drawPois(g, mx, my, R, sc, u, rx, rz, fx, fz, dark);
+    if (flt.mapmarks) drawMarks(g, mx, my, R, sc, u, rx, rz, fx, fz, dark);
+    var inside = Math.hypot(mx - cx, my - cy) < R - 6 * u;
+    g.save(); g.translate(inside ? mx : cx + (mx - cx) * (R - 10 * u) / Math.hypot(mx - cx, my - cy), inside ? my : cy + (my - cy) * (R - 10 * u) / Math.hypot(mx - cx, my - cy));
+    g.rotate((sm.yaw - vy) * Math.PI / 180);   // ты — стрелка туда, куда смотришь (ушёл за край — стрелка на ободе)
     g.fillStyle = "#3a9bff"; g.strokeStyle = "#fff"; g.lineWidth = 1.5 * u;
     g.beginPath(); g.moveTo(0, -12 * u); g.lineTo(8 * u, 8 * u); g.lineTo(0, 4 * u); g.lineTo(-8 * u, 8 * u); g.closePath(); g.fill(); g.stroke(); g.restore();
     var nh = list.length ? '<span class="hm-dot g"></span>с голосом <span class="hm-dot s"></span>без голоса <span class="hm-dot y"></span>клан <span class="hm-dot b"></span>друзья · пунктир — слышно голос'

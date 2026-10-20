@@ -493,7 +493,7 @@ body.hm-noscroll { overflow: hidden; }
 /* Компас 3D (holo.js, 2026-10-19): в стиле Minecraft и сайта — рамка с объёмными краями, как окна интерфейса игры; подписи — как ники
    над головой; стрелка — как метка игрока на карте Minecraft. Наклон — проведи пальцем вверх-вниз (0° сверху … 85°). */
 .hm-rwrap.holo-on > canvas { visibility: hidden; }
-.holo { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; touch-action: none; cursor: ns-resize;
+.holo { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; touch-action: none; cursor: grab;
   background: #1b1712; border: 6px solid #6b4f32; box-sizing: border-box;
   box-shadow: inset 3px 3px 0 #9c7a52, inset -3px -3px 0 #3a2a1a, 0 0 0 3px #2a1f14, 0 6px 14px rgba(0, 0, 0, .45); }
 .holo-map { position: absolute; inset: 0; }
@@ -501,7 +501,7 @@ body.hm-noscroll { overflow: hidden; }
 .holo-ring { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 22px rgba(0, 0, 0, .55); }
 .holo-n { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); pointer-events: none; font: 700 12px/1 Rubik, system-ui, sans-serif;
   color: #ffd93d; text-shadow: 1px 1px 0 #3a2a1a; }
-.holo-me { position: absolute; left: 50%; top: 50%; width: 18px; height: 22px; pointer-events: none; transform: translate(-50%, -50%);
+.holo-me { width: 18px; height: 22px; pointer-events: none;
   background: #fff; clip-path: polygon(50% 0, 100% 100%, 50% 74%, 0 100%); filter: drop-shadow(0 0 0 #000) drop-shadow(1px 1px 0 #000) drop-shadow(-1px -1px 0 #000); }
 .holo-load { position: absolute; inset: 0; display: grid; place-items: center; color: #e8e2d4; font-size: .85rem; text-shadow: 1px 1px 0 #000; }
 .holo-tilt { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); pointer-events: none; font: 600 11px Rubik, system-ui, sans-serif;
@@ -513,3 +513,28 @@ body.hm-noscroll { overflow: hidden; }
 .holo-p span { font: 600 11px Rubik, system-ui, sans-serif; color: #fff; background: rgba(0, 0, 0, .35); padding: 0 4px; margin-top: 2px; white-space: nowrap; }
 /* масштаб компаса щипком (home.js): одним пальцем страница листается вертикально, двумя — компас масштабируется, а не вся страница */
 .hm-rwrap { touch-action: pan-y; }
+
+/* компас: «Центр» и быстрые миры (2026-10-20) */
+.hm-wsel { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
+.hm-wsel .btn { min-width: 34px; min-height: 30px; padding: 2px 8px; font-size: .78rem; }
+.hm-wsel .btn.on { background: #3d8a1e; border-color: #3d8a1e; color: #fff; }
+#hm-center { font-weight: 700; }
+.hm-rwrap { touch-action: none; }
+.hm-vtag { position: absolute; left: 50%; top: 8%; transform: translateX(-50%); z-index: 3; pointer-events: none; font: 600 12px Rubik, system-ui, sans-serif; color: #fff; background: rgba(0,0,0,.55); border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+/* компас 3D на своём движке (holo.js v5, three.js): метки — поверх сцены */
+.holo-ov { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.holo-ov > .holo-me { position: absolute; transform: translate(-50%, -50%); }
+.holo-ov > .holo-p { position: absolute; transform: translate(-50%, -100%); }
+.holo-map canvas { display: block; width: 100% !important; height: 100% !important; visibility: visible !important; }
+#hm-center[hidden] { display: none !important; }
+/* компас 3D: точки и метки как в 2D, подписи приватов */
+.holo-ov > .holo-poi, .holo-ov > .holo-claim { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; white-space: nowrap; }
+.holo-poi b { font: 900 14px/1 Rubik, system-ui, sans-serif; color: #fff; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; }
+.holo-poi.k-home b { color: #e8743b; } .holo-poi.k-claim b { color: #3fd25e; } .holo-poi.k-claim-member b { color: #f7d154; }
+.holo-poi.k-mark b { color: #e0262b; } .holo-poi.k-spawn b { color: #ffd93d; } .holo-poi.k-portal b { color: #b56bff; }
+.holo-poi b.ban { width: 9px; height: 7px; border: 1px solid #000; } .holo-poi b.x { color: #e0262b; }
+.holo-poi span { font: 600 10px Rubik, system-ui, sans-serif; color: #fff; background: rgba(0, 0, 0, .4); padding: 0 4px; margin-top: 1px; }
+.holo-poi span:empty { display: none; }
+.holo-claim { font: 600 10px Rubik, system-ui, sans-serif; color: #eaffea; background: rgba(20, 70, 30, .65); border: 1px solid rgba(34, 197, 94, .9); padding: 0 4px; }
+.holo-claim.clan { color: #fff7d6; background: rgba(90, 70, 10, .65); border-color: rgba(234, 179, 8, .9); }
+.holo-ov > .holo-me { width: 24px; height: 28px; filter: drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000) drop-shadow(0 0 6px rgba(255,255,255,.9)); z-index: 5; }

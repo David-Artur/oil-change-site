@@ -76,11 +76,14 @@
   function overlays() {
     var m = marks && marks.worlds && marks.worlds[cur] || {};
     var claims = (m.claims || []).map(function (c, i) {
-      return {type: "Feature", id: i, properties: {n: c.n, o: c.o || "", c: !!c.c, s: c.s || "", m: (c.m || []).join(", ")}, geometry: {type: "Polygon", coordinates: rect(c.b)}};
+      return {type: "Feature", id: i, properties: {n: c.n, o: c.o || "", c: !!c.c, s: c.s || "", m: (c.m || []).join(", "), h: ((c.y ? c.y[1] - c.y[0] : 11) * EXAG) * MPB}, geometry: {type: "Polygon", coordinates: rect(c.b)}};
     });
     map.addSource("claims", {type: "geojson", data: {type: "FeatureCollection", features: claims}});
     map.addLayer({id: "claims-fill", type: "fill", source: "claims", paint: {"fill-color": ["case", ["get", "c"], "#eab308", "#22c55e"], "fill-opacity": 0.22}});
     map.addLayer({id: "claims-line", type: "line", source: "claims", paint: {"line-color": ["case", ["get", "c"], "#eab308", "#22c55e"], "line-width": 2}});
+    // в 3D — приваты полупрозрачными коробками (как на старой карте BlueMap), в 2D — рамки
+    map.addLayer({id: "claims-3d", type: "fill-extrusion", source: "claims", layout: {visibility: is3d ? "visible" : "none"},
+      paint: {"fill-extrusion-color": ["case", ["get", "c"], "#eab308", "#22c55e"], "fill-extrusion-opacity": 0.38, "fill-extrusion-height": ["get", "h"], "fill-extrusion-base": 0}});
     var zf = [], zn = m.zone;
     if (zn) {
       if (zn.safe > 0) zf.push({type: "Feature", properties: {t: "Без PvP — " + Math.round(zn.safe) + " бл.", col: "#ef4444"}, geometry: {type: "LineString", coordinates: circle(zn.x, zn.z, zn.safe, 96)}});
@@ -93,7 +96,7 @@
   }
   function layerVis() {
     var v = function (id, on) { if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none"); };
-    v("claims-fill", $("lclaims").checked); v("claims-line", $("lclaims").checked); v("zones-line", $("lzones").checked);
+    v("claims-fill", $("lclaims").checked && !is3d); v("claims-line", $("lclaims").checked); v("claims-3d", $("lclaims").checked && is3d); v("zones-line", $("lzones").checked);
     Object.keys(pMarks).forEach(function (k) { pMarks[k].getElement().style.display = $("lplayers").checked ? "" : "none"; });
     myMarks.forEach(function (mk) { mk.getElement().style.display = $("lmine").checked ? "" : "none"; });
   }
@@ -169,6 +172,7 @@
     $("b3d").classList.toggle("on", on);
     $("b3d").textContent = on ? "2D" : "3D";
     if (map.getLayer("hill")) map.setLayoutProperty("hill", "visibility", on ? "visible" : "none");
+    layerVis();
     if (on) { if (map.getSource("dem")) map.setTerrain({source: "dem", exaggeration: EXAG}); map.easeTo({pitch: 60, duration: 700}); }
     else { map.setTerrain(null); map.easeTo({pitch: 0, bearing: 0, duration: 500}); }
     writeHash();
