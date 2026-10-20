@@ -415,6 +415,7 @@
     // У276: сервер 0.9.13+ присылает claim.can — тогда список карточек со ссылкой на страницу привата; старый сервер — как раньше
     else h += '<div class="cab-cards">' + list.map(function (c) { return c && c.can && typeof c.can === "object" ? claimItem(c) : claimCard(c); }).join("") + "</div>";
     $("tab-claims").innerHTML = h;
+    loadHere(false);   // У284: кнопка «📍 Создать приват здесь»
     Array.prototype.forEach.call(document.querySelectorAll("#tab-claims [data-claim]"), wireClaim);
     Array.prototype.forEach.call(document.querySelectorAll("#tab-claims [data-deal]"), function (b) {
       b.onclick = function () {
@@ -423,6 +424,91 @@
         if (!yes && !confirm("Отказаться от привата «" + (d.claim || "?") + "»?")) return;
         act("/claim", {action: yes ? "deal_accept" : "deal_decline", deal: id});
       };
+    });
+  }
+  // ---------------------------------------------------------------- 2026-10-20 (У284): «📍 Создать приват здесь» — там, где игрок стоит в игре.
+  // POST /api/home claimhere-check → {ok, why, world, kind: personal|clan|choice|none}; claimhere {kind} → отсчёт 10 с в игре;
+  // claimhere-status → {claimhere: {state: running|done|cancelled, why, seconds_left}}. Сервер без У284 (VPLand < 0.9.16) не знает
+  // этих действий и отвечает обычным live (без поля kind) — тогда кнопку не показываем вовсе.
+  var here = null, hereAt = 0, hereBusy = false, hereRun = null, hereSupported = null;
+  function hereBox() {
+    var el = $("claim-here");
+    if (!el) {
+      var tc = $("tab-claims"); if (!tc) return null;
+      el = document.createElement("div"); el.id = "claim-here"; el.className = "card cab-card"; el.hidden = true;
+      tc.parentNode.insertBefore(el, tc);
+    }
+    return el;
+  }
+  function loadHere(force) {
+    if (hereBusy || hereSupported === false || hereRun) return;
+    var key = me && me.online ? (me.where ? me.where.world + ":" + me.where.x + ":" + me.where.z : "on") : "off";
+    if (!force && here && here._key === key && Date.now() - hereAt < 15000) { drawHere(); return; }
+    hereBusy = true;
+    api("/home", {action: "claimhere-check"}).then(function (j) {
+      hereBusy = false; hereAt = Date.now();
+      if (!j || j.status === 404 || j.offline || typeof j.kind !== "string") { if (j && !j.offline) hereSupported = false; drawHere(); return; }
+      hereSupported = true; here = j; here._key = key; drawHere();
+    });
+  }
+  function drawHere() {
+    var el = hereBox(); if (!el) return;
+    if (!hereSupported || !here) { el.hidden = true; return; }
+    el.hidden = false;
+    var h = "<h3>📍 Приват там, где ты стоишь</h3>";
+    if (hereRun) {
+      var left = Math.max(0, hereRun.left != null ? hereRun.left : Math.ceil((hereRun.until - Date.now()) / 1000));
+      h += '<div class="tp-run">⏳ <b>Стой на месте в игре</b>' + (left ? ": " + left + " с" : "…") + ' <span class="cab-meta">не двигайся и не получай урон</span></div>';
+    }
+    var off = !here.ok || !!hereRun;
+    var sub = !here.online ? "Зайди в игру — приват ставится там, где ты стоишь"
+      : !here.ok ? (here.why || "Здесь нельзя")
+      : (here.world ? here.world + " · " : "") + "11×11 · бесплатно · " + (here.seconds || 10) + " с" + (here.kind === "clan" ? " · клановый" : here.kind === "choice" ? " · личный или клановый" : "");
+    h += '<div class="tp-grid"><button class="tp-btn" type="button" id="claim-here-btn"' + (off ? " disabled" : "") + (!here.ok && here.why ? ' title="' + esc(here.why) + '"' : "") + ">" +
+      "<b>📍 Создать приват здесь</b><span>" + esc(sub) + "</span></button></div>";
+    el.innerHTML = h;
+    var b = $("claim-here-btn"); if (b && !off) b.onclick = askHere;
+  }
+  function askHere() {
+    var m = document.createElement("div");
+    m.className = "tp-ask";
+    var choice = here.kind === "choice", secs = here.seconds || 10;
+    m.innerHTML = '<div class="card tp-ask-box"><h3>📍 Создать приват здесь</h3><p>Стой на месте <b>' + secs + " с</b> в игре — приват 11×11 появится вокруг блока под ногами" + (here.world ? " (" + esc(here.world) + ")" : "") + ".</p>" +
+      '<p class="cab-meta">Сдвинешься, получишь урон или сменишь мир — отмена. Компас привата выдадим, если его нет.</p>' +
+      '<div class="cab-row">' + (choice ? '<button class="btn green" type="button" data-k="personal">Личный</button><button class="btn green" type="button" data-k="clan">Клановый</button>'
+        : '<button class="btn green" type="button" data-k="">Создать</button>') + '<button class="btn" type="button" data-no>Отмена</button></div></div>';
+    document.body.appendChild(m);
+    var close = function () { m.remove(); };
+    m.onclick = function (e) { if (e.target === m) close(); };
+    m.querySelector("[data-no]").onclick = close;
+    Array.prototype.forEach.call(m.querySelectorAll("[data-k]"), function (b) {
+      b.onclick = function () {
+        close();
+        var body = {action: "claimhere"}, k = b.getAttribute("data-k"); if (k) body.kind = k;
+        api("/home", body).then(function (j) {
+          if (!j || !j.ok) { toast((j && (j.why || j.message)) || "Не получилось.", true); loadHere(true); return; }
+          toast(j.message || "Стой на месте в игре.");
+          hereRun = {until: Date.now() + (j.seconds || secs) * 1000, left: null};
+          drawHere(); pollHere();
+        });
+      };
+    });
+  }
+  function pollHere() {
+    if (!hereRun) return;
+    api("/home", {action: "claimhere-status"}).then(function (j) {
+      var s = j && j.claimhere;
+      if (s && s.state === "running") { hereRun.left = s.seconds_left; drawHere(); setTimeout(pollHere, 1000); return; }
+      if (s && (s.state === "done" || s.state === "cancelled")) {
+        hereRun = null;
+        if (s.state === "done") toast("Приват создан ✔" + (s.name ? " — «" + s.name + "»" : ""));
+        else toast("Отменён: " + (s.why || "причина — в чате игры"), true);
+        if (s.state === "done") load(false);   // перерисовать список приватов
+        here = null; loadHere(true);
+        return;
+      }
+      if (Date.now() - hereRun.until > 15000) { hereRun = null; toast("Не дождался ответа сервера — посмотри в игре.", true); loadHere(true); return; }
+      hereRun.left = null; drawHere(); setTimeout(pollHere, 1000);
     });
   }
   function dealsHtml(deals) {
