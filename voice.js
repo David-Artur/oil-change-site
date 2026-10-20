@@ -312,7 +312,7 @@
         Object.keys(peers).forEach(function (n) {
           var p = peers[n];
           if (now - (p.seen || 0) > GONE_MS) { drop(n); return; }
-          if (!here[n] && p.d != null) { p.d = null; p.speaking = false; p.waitFrom = 0; silence(p); }
+          if (!here[n] && p.d != null) { p.d = null; p.speaking = false; p.waitFrom = 0; silence(p, true); }
         });
         // У254: собеседник рядом говорит и слышен — свой микрофон приглушаем (без наушников его голос не вернётся ему эхом)
         var talking = Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; });
@@ -507,17 +507,32 @@
 
   // громкость по расстоянию: до 4 блоков — полная, к краю слышимости — тише, дальше — тишина
   function volume(p) {
-    if (p.d == null) { silence(p); return; }   // сервер не говорит, где он, — не слышно
+    if (p.d == null) { silence(p, true); return; }   // сервер не говорит, где он, — не слышно (плавно гаснет)
     var g = p.d <= NEAR ? 1 : Math.max(0, 1 - (p.d - NEAR) / Math.max(1, range - NEAR));
     // 2026-10-18: у самого края (до 100 бл.) — очень тихо, но слышно; дальше — тишина
-    g = p.muted || p.d > range ? 0 : 0.03 + 0.97 * g * g;
+    if (p.muted) { silence(p); return; }   // выключил сам — сразу
+    if (p.d > range) { silence(p, true); return; }
+    g = 0.03 + 0.97 * g * g;
+    if (p.fading && p.gain && ctx) { p.gain.gain.cancelScheduledValues(ctx.currentTime); p.gain.gain.setValueAtTime(p.gain.gain.value, ctx.currentTime); }
+    p.fading = false;   // вернулся в радиус — снова слышно (плавно)
     if (p.gain && ctx) p.gain.gain.setTargetAtTime(g, ctx.currentTime, 0.15);
     else if (p.el) p.el.volume = g;
   }
 
-  function silence(p) {
-    if (p.gain && ctx) p.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
-    else if (p.el) p.el.volume = 0;
+  // slow — собеседник ушёл (из радиуса, в другой мир, в портал): плавно гаснет ~3 с, а не обрывается (владелец 2026-10-20)
+  function silence(p, slow) {
+    if (p.gain && ctx) {
+      if (slow && p.fading) return;   // уже гаснет — не перезапускать кривую
+      p.fading = !!slow;
+      p.gain.gain.cancelScheduledValues(ctx.currentTime);
+      p.gain.gain.setValueAtTime(p.gain.gain.value, ctx.currentTime);
+      p.gain.gain.setTargetAtTime(0, ctx.currentTime, slow ? 0.9 : 0.05);
+    } else if (p.el) {
+      if (!slow) { p.el.volume = 0; return; }
+      var el = p.el, v0 = el.volume, t0 = Date.now(), iv = setInterval(function () {
+        var k = Math.min(1, (Date.now() - t0) / 3000); el.volume = Math.max(0, v0 * (1 - k)); if (k >= 1) clearInterval(iv);
+      }, 100);
+    }
   }
 
   function closePc(p) {

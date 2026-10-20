@@ -13,7 +13,9 @@
     frontier: {root: 57, bpm: 76, chords: [[0, 3, 7], [-2, 2, 5], [-4, 0, 3], [-5, -1, 2]], scale: [0, 2, 3, 5, 7, 9, 10], pad: "sawtooth", cut: 850, arp: 0.35, arpOct: 0, drum: true, bass: true, fb: 0.3},
     wastes: {root: 38, bpm: 40, chords: [[0, 7, 13], [0, 6, 12]], scale: [0, 1, 5, 6], pad: "sawtooth", cut: 420, arp: 0.08, arpOct: 1, wind: 0.5, drone: true, fb: 0.5},
     nether: {root: 40, bpm: 52, chords: [[0, 3, 7], [1, 5, 8]], scale: [0, 1, 3, 5, 7, 8], pad: "sawtooth", cut: 600, arp: 0.2, arpOct: 1, drum: true, crackle: 0.35, drone: true, fb: 0.35},
-    end: {root: 59, bpm: 48, chords: [[0, 4, 7, 11, 18], [2, 6, 9, 13, 18]], scale: [0, 2, 4, 6, 7, 9, 11], pad: "sine", cut: 3000, arp: 0.5, arpOct: 2, bell: true, fb: 0.6}
+    end: {root: 59, bpm: 48, chords: [[0, 4, 7, 11, 18], [2, 6, 9, 13, 18]], scale: [0, 2, 4, 6, 7, 9, 11], pad: "sine", cut: 3000, arp: 0.5, arpOct: 2, bell: true, fb: 0.6},
+    // У291: ночной клуб — хаус 124 уд/мин: бочка на каждую долю, хэт на «и», хлопок на 2 и 4, бас на «и», аккорды-стабы
+    club: {root: 57, bpm: 124, chords: [[0, 3, 7, 10], [-4, 0, 3, 7], [-2, 2, 5, 9], [-5, -2, 2, 5]], scale: [0, 3, 5, 7, 10], pad: "sawtooth", cut: 1800, arp: 0.3, arpOct: 1, house: true, fb: 0.22, padVol: 0.012}
   };
   var cfg = null, ctx = null, api = null, master = null, on = false, timer = null, pos = null, gens = {}, talk = {}, ducked = false;
   var enabled = pref("on") !== "0", vol = pref("vol") == null ? 0.7 : Math.max(0, Math.min(1, +pref("vol"))), nowTxt = "", speakingNpc = null;
@@ -47,19 +49,37 @@
     if (!master || !ctx) return;
     master.gain.setTargetAtTime(level(), ctx.currentTime, 0.4);
     if (!cfg) return;
-    var txt = [];
+    var txt = [], zoneK = 0;
+    // У291: зоны-помещения (клуб): внутри — своя музыка в полную силу и только она; снаружи у стен — тише и глуше (за 10 бл. — тишина)
+    (cfg.zones || []).forEach(function (z) {
+      var de = Infinity;
+      if (pos && pos.w === z.world) {
+        var ex = Math.max(z.x1 - pos.x, 0, pos.x - z.x2), ez = Math.max(z.z1 - pos.z, 0, pos.z - z.z2);
+        de = Math.hypot(ex, ez);
+      }
+      // владелец 2026-10-20: «снаружи клуба слышно дальше, но не сильно; зашёл — включается нормальная музыка»: у стены 30% и глухо,
+      // дальше — тише и ещё глуше, за z.fade блоков (30) — тишина
+      var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
+      if (k > 0.002 && enabled) {
+        if (!g) g = gens["z:" + z.id] = new Gen(PRESETS[z.preset] || PRESETS.club);
+        g.set(z.vol * k, de === 0 ? 0 : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25));
+        if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
+        txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id));
+      } else if (g) { g.fade(); delete gens["z:" + z.id]; }
+    });
     (cfg.music || []).forEach(function (m) {
       var d = pos && pos.w === m.world ? Math.hypot(pos.x - m.x, pos.z - m.z) : Infinity, g = gens[m.id];
       if (d < m.radius * 1.1 && enabled) {
         if (!g) g = gens[m.id] = new Gen(PRESETS[m.preset] || PRESETS.lobby);
         var k = d < m.radius * 0.3 ? 1 : Math.max(0, 1 - (d - m.radius * 0.3) / (m.radius * 0.7));
+        k *= 1 - Math.min(1, zoneK);   // в клубе музыка спавна не слышна
         g.set(m.vol * k * k, d < 6 ? 0 : pan(m.x, m.z));
         if (k > 0.05) txt.push("🎵 " + (m.title || m.id));
       } else if (g) { g.fade(); delete gens[m.id]; }
     });
-    // жители: ближайший в радиусе — иногда говорит
+    // жители: ближайший в радиусе — иногда говорит (в клубе и у его стен — молчат, не перебивают музыку)
     var best = null, bd = 1e9;
-    if (pos && enabled && window.speechSynthesis) (cfg.speech || []).forEach(function (n) {
+    if (pos && enabled && window.speechSynthesis && zoneK < 0.3) (cfg.speech || []).forEach(function (n) {
       if (n.world !== pos.w) return;
       var d = Math.hypot(pos.x - n.x, pos.z - n.z);
       if (d < n.radius && d < bd) { bd = d; best = n; }
@@ -122,8 +142,30 @@
     var droneO = null;
     if (p.drone) { droneO = ctx.createOscillator(); var dg = ctx.createGain(), df = ctx.createBiquadFilter(); droneO.type = "sawtooth"; droneO.frequency.value = hz(p.root - 12);
       df.type = "lowpass"; df.frequency.value = 220; dg.gain.value = 0.05; droneO.connect(df); df.connect(dg); dg.connect(bus); droneO.start(); srcs.push(droneO); }
+    var hit = null;
+    function burst(t, d, g, type, f) {   // короткий шум: хэт / хлопок
+      if (!hit) { var n = ctx.sampleRate * 0.5; hit = ctx.createBuffer(1, n, ctx.sampleRate); var a = hit.getChannelData(0); for (var i = 0; i < n; i++) a[i] = Math.random() * 2 - 1; }
+      var s = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), e = ctx.createGain();
+      s.buffer = hit; fl.type = type; fl.frequency.value = f; e.gain.setValueAtTime(g, t); e.gain.exponentialRampToValueAtTime(0.001, t + d);
+      s.connect(fl); fl.connect(e); e.connect(out); s.start(t); s.stop(t + d + 0.02);   // мимо эха — сухо
+    }
+    function kick(t, g) {
+      var k = ctx.createOscillator(), kg = ctx.createGain(); k.type = "sine";
+      k.frequency.setValueAtTime(130, t); k.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+      kg.gain.setValueAtTime(g, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.32); k.connect(kg); kg.connect(out); k.start(t); k.stop(t + 0.35);
+    }
     function playStep(s, t) {
       var bar = Math.floor(s / 8), ch = p.chords[bar % p.chords.length], beat = s % 8;
+      if (p.house) {   // У291: клуб
+        if (beat % 2 === 0) kick(t, 0.32);
+        if (beat % 2 === 1) burst(t, 0.06, 0.09, "highpass", 7000);
+        if (beat === 2 || beat === 6) burst(t, 0.16, 0.12, "bandpass", 1500);
+        if (beat % 2 === 1) note(hz(p.root + ch[0] - 24 + (beat === 7 ? 12 : 0)), t, dur8 * 0.9, "sawtooth", 0.07, 0.005, dur8 * 0.5, 500);
+        if (beat === 0 || beat === 3 || (beat === 6 && bar % 2)) ch.forEach(function (iv) { note(hz(p.root + iv), t, dur8 * 0.8, "sawtooth", 0.022, 0.005, dur8 * 0.6, 2600); });
+        if (Math.random() < p.arp) note(hz(p.root + p.scale[Math.floor(Math.random() * p.scale.length)] + 24), t, dur8 * 0.7, "square", 0.012, 0.003, dur8 * 0.5, 3500);
+        if (beat === 0 && bar % 4 === 0) ch.forEach(function (iv) { note(hz(p.root + iv + 12), t, dur8 * 30, "sine", p.padVol || 0.012, dur8 * 6, dur8 * 8); });
+        return;
+      }
       if (beat === 0) {   // пэд на такт
         ch.forEach(function (iv, k) { [-6, 6].forEach(function (det) { var o = note(hz(p.root + iv), t, dur8 * 8.2, p.pad, 0.028, dur8 * 2.5, dur8 * 3); o.detune.value = det + k; }); });
         if (p.bass) note(hz(p.root + ch[0] - 12), t, dur8 * 7.5, "triangle", 0.09, 0.08, dur8 * 2, 600);
@@ -152,8 +194,14 @@
       if (nextT < ctx.currentTime) nextT = ctx.currentTime + 0.05;   // вкладка спала — не наверстываем пачкой
       while (nextT < ctx.currentTime + 0.7) { playStep(step, nextT); nextT += dur8; step++; }
     }, 250);
-    this.set = function (g, pv) { if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3); };
-    this.fade = function () { if (!ctx) return; out.gain.setTargetAtTime(0, ctx.currentTime, 0.8); setTimeout(self.kill, 4000); };
+    var muff = ctx.createBiquadFilter(); muff.type = "lowpass"; muff.frequency.value = 20000;   // «за стеной» — глуше
+    if (pn) { out.disconnect(); out.connect(muff); muff.connect(pn); } else { out.disconnect(); out.connect(muff); muff.connect(master); }
+    this.set = function (g, pv, cut) {
+      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
+      muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
+    };
+    // ушёл из зоны / в портал — плавно гаснет ~3–4 с (владелец 2026-10-20: «не резко, а плавно потухает»)
+    this.fade = function () { if (!ctx) return; out.gain.cancelScheduledValues(ctx.currentTime); out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
     this.kill = function () { alive = false; clearInterval(iv); srcs.forEach(function (s) { try { s.stop(); } catch (e) { } }); try { out.disconnect(); } catch (e) { } };
   }
 
@@ -163,6 +211,8 @@
     toggle: function () { enabled = !enabled; pref("on", enabled ? "1" : "0"); if (!enabled) { try { speechSynthesis.cancel(); } catch (e) { } } update(); return enabled; },
     volume: function (v) { if (v != null) { vol = Math.max(0, Math.min(1, v)); pref("vol", String(vol)); update(); } return vol; },
     enabled: function () { return enabled; },
+    __setCfg: function (j) { cfg = j; },   // для тестовой страницы
+
     now: function () { return nowTxt; }
   };
 })();
