@@ -72,8 +72,9 @@
     try { var p0 = +localStorage.getItem("daviart.holo.pitch"); if (isFinite(p0) && localStorage.getItem("daviart.holo.pitch") != null) pitch = p0; } catch (e) { }
     var drag = null;
     el.addEventListener("pointerdown", function (e) { drag = {y: e.clientY, p: pitch}; try { el.setPointerCapture(e.pointerId); } catch (x) { } });
+    var pinchOn = false;
     el.addEventListener("pointermove", function (e) {
-      if (!drag) return;
+      if (!drag || pinchOn) return;
       pitch = Math.max(0, Math.min(85, drag.p + (drag.y - e.clientY) * 0.45));
       var t = el.querySelector(".holo-tilt"); if (t) { t.textContent = "наклон " + Math.round(pitch) + "°"; t.style.opacity = 1; }
       if (last) apply(last);
@@ -128,6 +129,7 @@
     return {
       update: function (s) { if (!s || s.x == null || !s.world) return; last = s; apply(s); },
       resize: function () { if (map) map.resize(); },
+      pinching: function (on) { pinchOn = on; if (on) drag = null; },   // щипок (масштаб) — наклон пальцем не трогаем
       destroy: function () { dead = true; if (map) map.remove(); el.remove(); }
     };
   }

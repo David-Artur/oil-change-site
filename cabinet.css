@@ -511,3 +511,5 @@ body.hm-noscroll { overflow: hidden; }
 .holo-p.friend i { background: #5fd35f; }
 .holo-p.clan i { background: #ffd93d; }
 .holo-p span { font: 600 11px Rubik, system-ui, sans-serif; color: #fff; background: rgba(0, 0, 0, .35); padding: 0 4px; margin-top: 2px; white-space: nowrap; }
+/* масштаб компаса щипком (home.js): одним пальцем страница листается вертикально, двумя — компас масштабируется, а не вся страница */
+.hm-rwrap { touch-action: pan-y; }
