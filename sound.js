@@ -368,9 +368,10 @@
   }
   function Playlist(name) {
     var self = this, el = zone(); chain(self); zOwner = self;
-    el.preload = "auto";
+    el.preload = "auto"; el.preservesPitch = true;
     var cur = -1, wait = null, born = Date.now();
-    self.__state = function () { return {track: cur, title: nowTrack, at: el.currentTime, paused: el.paused, off: clk.off}; };   // для теста
+    self.__state = function () { return {track: cur, title: nowTrack, at: el.currentTime, paused: el.paused, off: clk.off, rate: el.playbackRate, seeks: self.__seeks || 0,
+      want: lists[name] ? where(lists[name]).at : null}; };   // для теста
     function where(pl) {   // какой трек и с какой секунды играет сейчас у всех
       var t = (serverNow() / 1000) % pl.total, i = 0;   // серверные часы — у всех одно и то же место
       while (i < pl.tracks.length - 1 && t >= pl.tracks[i].length) { t -= pl.tracks[i].length; i++; }
@@ -383,7 +384,8 @@
       if (clk.off == null && Date.now() - born < 4000) { wait = setTimeout(go, 300); return; }   // сначала — серверные часы
       var w = where(pl), tr = pl.tracks[w.i];
       if (w.i !== cur) { cur = w.i; el.src = "music/" + tr.file; }
-      var seek = function () { try { var ww = where(pl); if (ww.i === cur && Math.abs(el.currentTime - ww.at) > 0.6) el.currentTime = ww.at; } catch (e) { } };
+      // при старте трека — один раз на нужное место (+0,3 с на подгрузку); дальше — плавная подстройка
+      var seek = function () { try { var ww = where(pl); if (ww.i === cur && Math.abs(el.currentTime - ww.at) > 1) { el.currentTime = ww.at + 0.3; lastSeek = Date.now(); } } catch (e) { } };
       if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, {once: true});
       nowTrack = "♪ " + tr.author + " — " + tr.title;
       playEl(el);
@@ -396,14 +398,23 @@
     };
     var onErr = function () { if (self.alive && zOwner === self) wait = setTimeout(go, 5000); };
     el.addEventListener("ended", onEnd); el.addEventListener("error", onErr);
-    // подстройка: раз в 2 с сверяемся с серверными часами — уехал больше чем на 0,6 с или не тот трек — на нужное место
+    // подстройка (2026-10-21, владелец: «прерывисто, по кругу»): раньше при расхождении >0,6 с — перескок; на реальном интернете после перескока
+    // плеер подгружается и снова отстаёт → перескок по кругу. Теперь: пока грузится — не трогаем; до 3 с — плавно догоняем скоростью ±6%
+    // (на слух незаметно); перескок — только если разошлось >3 с или не тот трек, и не чаще раза в 8 с.
+    var lastSeek = 0;
+    self.__seeks = 0;
     var sync = setInterval(function () {
       if (!self.alive || zOwner !== self || el.paused) return;
       var pl = lists[name]; if (!pl) return;
       var w = where(pl);
-      if (w.i !== cur) { go(); return; }
-      if (el.readyState >= 1 && Math.abs(el.currentTime - w.at) > 0.6 && w.at < pl.tracks[w.i].length - 1) { try { el.currentTime = w.at; } catch (e) { } }
-    }, 2000);
+      if (w.i !== cur) { el.playbackRate = 1; go(); return; }
+      if (el.seeking || el.readyState < 3) return;   // грузится — не мешать
+      var d = w.at - el.currentTime;   // > 0 — отстаём
+      if (Math.abs(d) > 3 && Date.now() - lastSeek > 8000 && w.at < pl.tracks[w.i].length - 2) {
+        lastSeek = Date.now(); self.__seeks++; el.playbackRate = 1; try { el.currentTime = w.at + 0.3; } catch (e) { }
+      } else if (Math.abs(d) > 0.25) el.playbackRate = d > 0 ? 1.06 : 0.94;
+      else if (el.playbackRate !== 1) el.playbackRate = 1;
+    }, 1000);
     this.play = go;
     go();
     this.kill = function () {
