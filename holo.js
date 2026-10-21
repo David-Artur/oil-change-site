@@ -38,9 +38,9 @@
   var FS = [
     "uniform sampler2D map; uniform vec3 cam; uniform vec3 tgt; uniform float cone; uniform vec3 light;",
     "varying vec2 vUv; varying vec3 vW; varying vec3 vN;",
-    "float bayer(vec2 p) { vec2 q = mod(floor(p), 4.0); int i = int(q.x + q.y * 4.0);",
-    "  float m[16]; m[0]=0.;m[1]=8.;m[2]=2.;m[3]=10.;m[4]=12.;m[5]=4.;m[6]=14.;m[7]=6.;m[8]=3.;m[9]=11.;m[10]=1.;m[11]=9.;m[12]=15.;m[13]=7.;m[14]=13.;m[15]=5.;",
-    "  for (int k = 0; k < 16; k++) { if (k == i) return m[k] / 16.0; } return 0.0; }",
+    // 2026-10-21 (владелец: «компас грузит процессор»): сетка Байера 4×4 — формулой, без массива и цикла на каждый пиксель
+    "float b2(vec2 a) { a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }",
+    "float bayer(vec2 p) { return b2(0.5 * p) * 0.25 + b2(p); }",
     "void main() {",
     "  vec4 c = texture2D(map, vUv); if (c.a < 0.5) discard;",
     "  vec3 d = tgt - cam; float L = length(d); vec3 f = d / L; vec3 v = vW - cam; float t = dot(v, f);",
@@ -93,7 +93,7 @@
           var ln = new T.Line(new T.BufferGeometry().setFromPoints(pts), new T.LineBasicMaterial({color: r[1], transparent: true, opacity: 0.95, depthTest: false}));
           ln.renderOrder = 12; g.add(ln);
         });
-        mkGroup = g; scene.add(g); dirty = true;
+        mkGroup = g; scene.add(g); dirty = true; forceDraw = true;
       });
     }
     var cam = {x: 0, z: 0, h: 0, pitch: 55, radius: 120};   // точка взгляда (блоки), куда смотрим (0 — север), наклон (0 — сверху), радиус
@@ -106,14 +106,14 @@
         if (dead) return;
         var T = window.THREE;
         renderer = new T.WebGLRenderer({antialias: false, alpha: false});
-        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+        renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // 2026-10-21: было до 2× — на телефоне втрое больше пикселей, грелся
         renderer.setClearColor(0x1b1712, 1);
         el.querySelector(".holo-map").appendChild(renderer.domElement);
         scene = new T.Scene(); group = new T.Group(); scene.add(group);
         camera = new T.PerspectiveCamera(FOV, 1, 1, 20000);
         uni = {cam: {value: new T.Vector3()}, tgt: {value: new T.Vector3()}, cone: {value: 0.22}, light: {value: new T.Vector3(-0.45, 0.8, -0.35).normalize()}};
         R3 = T;
-        window.__vpHolo = {tiles: function () { return tiles; }, cam: cam, origin: function () { return origin; }, world: function () { return world; }, kick: function () { dirty = true; }, stale: function () { return stale.length; }};   // отладка
+        window.__vpHolo = {tiles: function () { return tiles; }, cam: cam, origin: function () { return origin; }, world: function () { return world; }, kick: function () { dirty = true; forceDraw = true; }, stale: function () { return stale.length; }};   // отладка
         var l = el.querySelector(".holo-load"); if (l) l.remove();
         resize(); buildMarkers(); loop();
       }).catch(function () { var l = el.querySelector(".holo-load"); if (l) l.textContent = "3D не загрузилось"; });
@@ -144,7 +144,7 @@
       if (!stale.length) return;
       var ready = Object.keys(tiles).every(function (k) { return tiles[k].mesh || tiles[k].failed; });
       if (!force && !ready && Date.now() - staleAt < 5000) return;
-      stale.forEach(freeTile); stale = []; dirty = true;
+      stale.forEach(freeTile); stale = []; dirty = true; forceDraw = true;
     }
     function syncTiles() {
       if (!R3 || !world) return;
@@ -197,7 +197,7 @@
         var mat = new T.ShaderMaterial({vertexShader: VS, fragmentShader: FS, side: T.DoubleSide,
           uniforms: {map: {value: tex}, cam: uni.cam, tgt: uni.tgt, cone: uni.cone, light: uni.light}});
         t.mesh = new T.Mesh(geo, mat); t.tex = tex;
-        group.add(t.mesh); dirty = true; sweepStale();
+        group.add(t.mesh); dirty = true; forceDraw = true; sweepStale();
       });
     }
 
@@ -265,15 +265,24 @@
       });
       Object.keys(ovEls).forEach(function (k) { if (!seen[k]) { ovEls[k].remove(); delete ovEls[k]; } });
     }
-    function loop() {
+    // 2026-10-21: рисуем только если камера/метки правда изменились (раньше — каждый кадр, пока ты в игре) и не чаще 30 раз в секунду;
+    // свёрнутая вкладка — не рисуем
+    var lastKey = "", lastDraw = 0;
+    function loop(t) {
       if (dead) return;
-      if (dirty && R3) { dirty = false; place(); syncTiles(); renderer.render(scene, camera); overlay(); }
+      if (dirty && R3 && !document.hidden && !(t && t - lastDraw < 31)) {
+        dirty = false;
+        var s = last, key = [cam.x.toFixed(2), cam.z.toFixed(2), cam.h.toFixed(1), cam.pitch.toFixed(1), cam.radius.toFixed(1), world, el.clientWidth,
+          s ? JSON.stringify([s.players, s.pois, s.marks, s.yaw && Math.round(s.yaw)]) : ""].join("|");
+        if (key !== lastKey || forceDraw) { lastKey = key; forceDraw = false; lastDraw = t || 0; place(); syncTiles(); renderer.render(scene, camera); overlay(); }
+      }
       requestAnimationFrame(loop);
     }
+    var forceDraw = true;
     function resize() {
       if (!renderer) return;
       var w = el.clientWidth || 300, h = el.clientHeight || 300;
-      renderer.setSize(w, h, true); camera.aspect = w / h; camera.updateProjectionMatrix(); dirty = true;
+      renderer.setSize(w, h, true); camera.aspect = w / h; camera.updateProjectionMatrix(); dirty = true; forceDraw = true;
     }
 
     // ---------------------------------------------------------------- жесты

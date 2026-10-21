@@ -264,10 +264,12 @@
   function viewYaw() { return northUp || sm.yaw == null ? 180 : sm.yaw; }   // 180 = смотришь на север → север вверху
   function isDark() { var t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
   // холсты — в размер на экране × плотность пикселей (во всю ширину телефона и на весь экран — чётко)
-  var U = 1;
+  var U = 1, cssW = 0, cssAt = 0;
   function sizeCanvases() {
     var w = $("hm-radar"); if (!w) return;
-    var css = w.clientWidth || 300, dpr = Math.min(3, window.devicePixelRatio || 1), px = Math.round(css * dpr);
+    // ширину на экране — раз в секунду (а не каждый кадр: чтение clientWidth заставляет браузер пересчитывать вёрстку); плотность ≤ 2×
+    if (!cssW || Date.now() - cssAt > 1000) { cssW = w.clientWidth || 300; cssAt = Date.now(); }
+    var css = cssW, dpr = Math.min(2, window.devicePixelRatio || 1), px = Math.round(css * dpr);
     U = dpr * Math.max(1, Math.min(1.5, css / 320));
     ["hm-radar", "hm-mapc"].forEach(function (id) { var c = $(id); if (c && c.width !== px) { c.width = px; c.height = px; } });
   }
@@ -458,17 +460,29 @@
       else { c.tdx = p.dx; c.tdz = p.dz; c.dy = p.dy; c.voice = p.voice; c.clan = p.clan; c.friend = p.friend; }
     });
     Object.keys(sm.pts).forEach(function (n) { if (!seen[n]) delete sm.pts[n]; });
-    if (!rafOn) { rafOn = true; lastFrame = 0; requestAnimationFrame(frame); }
+    if (!rafOn && !document.hidden) { rafOn = true; lastFrame = 0; requestAnimationFrame(frame); }
   }
+  // 2026-10-21 (владелец: «компас очень грузит процессор, телефон греется»): раньше кадр рисовался 60 раз в секунду всегда, пока ты в игре.
+  // Теперь — не чаще 30 кадров/с и только пока стрелка/точки «доезжают»; доехали — цикл останавливается до новых данных (radarTarget запустит снова).
+  var FRAME_MS = 33;
   function frame(t) {
     if (!shown || !live || !live.online || !live.me) { rafOn = false; drawRadar(); return; }
+    if (document.hidden) { rafOn = false; return; }   // вкладка свёрнута — не рисуем
+    if (lastFrame && t - lastFrame < FRAME_MS - 2) { requestAnimationFrame(frame); return; }
     var dt = lastFrame ? Math.min(0.1, (t - lastFrame) / 1000) : 0.016; lastFrame = t;
     var k = 1 - Math.exp(-dt / 0.18);   // ~0.4 с до нового положения (данные — 3 раза в секунду)
     var d = ((live.me.yaw - sm.yaw + 540) % 360) - 180;   // поворот по кратчайшему пути
     sm.yaw += d * k;
-    Object.keys(sm.pts).forEach(function (n) { var p = sm.pts[n]; p.dx += (p.tdx - p.dx) * k; p.dz += (p.tdz - p.dz) * k; });
-    sm.x += (live.me.x + 0.5 - sm.x) * k; sm.z += (live.me.z + 0.5 - sm.z) * k;
+    var move = Math.abs(d);
+    Object.keys(sm.pts).forEach(function (n) { var p = sm.pts[n], ex = p.tdx - p.dx, ez = p.tdz - p.dz; p.dx += ex * k; p.dz += ez * k; move = Math.max(move, Math.abs(ex), Math.abs(ez)); });
+    var ex0 = live.me.x + 0.5 - sm.x, ez0 = live.me.z + 0.5 - sm.z;
+    sm.x += ex0 * k; sm.z += ez0 * k; move = Math.max(move, Math.abs(ex0), Math.abs(ez0));
     if (holo) holoPush(); else { drawMap(); drawRadar(); }
+    if (move < 0.02) {   // доехали — встать точно и не крутить кадры впустую
+      sm.yaw = live.me.yaw; sm.x = live.me.x + 0.5; sm.z = live.me.z + 0.5;
+      Object.keys(sm.pts).forEach(function (n) { var p = sm.pts[n]; p.dx = p.tdx; p.dz = p.tdz; });
+      rafOn = false; return;
+    }
     requestAnimationFrame(frame);
   }
 

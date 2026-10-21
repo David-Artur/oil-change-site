@@ -260,11 +260,13 @@
   }
 
   // уровень своего голоса: полоска + «говорю» (сервер зажигает 🎤 зелёным над головой)
+  // 2026-10-21 (владелец: «сайт грузит процессор»): 20 раз в секунду (было — каждый кадр, 60–120), буфер — один на всё время
+  var meterBuf = null;
   function meter() {
     if (!on) return;
     var lvl = 0;
-    if (analyser) {
-      var a = new Uint8Array(analyser.fftSize);
+    if (analyser && !document.hidden) {
+      var a = meterBuf && meterBuf.length === analyser.fftSize ? meterBuf : (meterBuf = new Uint8Array(analyser.fftSize));
       analyser.getByteTimeDomainData(a);
       var sum = 0;
       for (var i = 0; i < a.length; i++) { var v = (a[i] - 128) / 128; sum += v * v; }
@@ -276,7 +278,7 @@
     var bar = $("vc-level"), mt = $("vc-meter");
     if (bar) bar.style.transform = "scaleX(" + (live ? Math.min(1, lvl * 4) : 0).toFixed(3) + ")";   // без смены ширины блока — ничего не сдвигается
     if (mt && mt.classList.contains("talk") !== speaking) mt.classList.toggle("talk", speaking);
-    requestAnimationFrame(meter);
+    setTimeout(meter, 50);
   }
 
   // ---------------------------------------------------------------- опрос сервера
