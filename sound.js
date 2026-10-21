@@ -41,7 +41,7 @@
   function applyClub() {
     if (!cfg) return;
     cfg.zones = (cfg.zones || []).filter(function (z) { return z.id !== "club"; });
-    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "club", vol: 0.8, exclusive: true, fade: 30, title: "DaviArt Club"});
+    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "club", vol: 0.8, exclusive: true, fade: 30, title: "DaviArt Holy Club"});
   }
   function stop() {
     on = false; clearInterval(timer); timer = null; clearInterval(clubT); clubT = null;
