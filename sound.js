@@ -45,12 +45,14 @@
   function applyClub() {
     if (!cfg) return;
     cfg.zones = (cfg.zones || []).filter(function (z) { return z.id !== "club"; });
-    var genre = club && /^(house|disco|chill|record|soma)$/.test(club.genre || "") ? club.genre : "house";   // У295/У297/У298: жанр (свои треки) или радио — у DJ
-    var GN = {house: "хаус", disco: "диско", chill: "чилл", record: "📻 Сейчас: Record Club · radiorecord.ru", soma: "📻 Сейчас: SomaFM Beat Blender · somafm.com"};
-    // У298: хаус/диско/чилл — свои треки с нашего сайта (music/…); сгенерированная музыка — только если треки не загрузились
-    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: RADIO[genre] ? "radio_" + genre : "list_" + genre,
-      // треки сведены громко — 0.32 ≈ громкость радио и прежней музыки
-      vol: RADIO[genre] ? 0.9 : 0.32, exclusive: true, fade: 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
+    // У298 (владелец 2026-10-21: «договорились — только скачанная музыка»): в клубе играют ТОЛЬКО свои треки с нашего сайта (music/…).
+    // Радио убрано: если сервер ещё присылает старые жанры радио (record/soma — до VPLand 0.9.22), играем свой хаус / чилл.
+    var genre = club && /^(house|disco|chill|record|soma)$/.test(club.genre || "") ? club.genre : "house";
+    genre = {record: "house", soma: "chill"}[genre] || genre;
+    var GN = {house: "хаус", disco: "диско", chill: "чилл"};
+    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "list_" + genre,
+      // треки сведены громко — 0.32 ≈ громкость остальной музыки
+      vol: 0.32, exclusive: true, fade: 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
   }
   function stop() {
     on = false; clearInterval(timer); timer = null; clearInterval(clubT); clubT = null;
@@ -123,7 +125,7 @@
       // дальше — тише и ещё глуше, за z.fade блоков (30) — тишина
       var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
       if (k > 0.002 && enabled) {
-        if (g && g.preset !== z.preset) { g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
+        if (g && g.preset !== z.preset) { if (g.usesZone) g.kill(); else g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
         if (!g) {
           var rid = z.preset.indexOf("radio_") === 0 ? z.preset.slice(6) : null, lid = z.preset.indexOf("list_") === 0 ? z.preset.slice(5) : null;
           g = gens["z:" + z.id] = rid && RADIO[rid] ? new Radio(RADIO[rid]) : lid ? new Playlist(lid) : new Gen(PRESETS[z.preset] || PRESETS.club); g.preset = z.preset;
@@ -298,25 +300,51 @@
     record: "https://radiorecord.hostingradio.ru/club96.aacp",
     soma: "https://ice1.somafm.com/beatblender-128-mp3"
   };
+  // 2026-10-21 (владелец: «заказали музыку — перестало играть»): радио не заиграло за ~9 с — сами включаем свой плейлист
+  var RADIO_FALLBACK = {record: "house", soma: "chill"};
   var radioBlocked = false;
-  function Radio(url) {
-    var self = this, el = new Audio(), out = ctx.createGain(), muff = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    el.crossOrigin = "anonymous"; el.preload = "none"; el.src = url;
+
+  // Общий проигрыватель музыки клуба: один <audio> на радио и плейлисты. На iPhone/Safari звук разрешается нажатием для конкретного
+  // элемента — раз разрешили, после смены жанра у DJ он играет дальше (раньше каждый жанр создавал новый элемент и молчал).
+  var zEl = null, zSrc = null, zCtx = null, zOwner = null;
+  function zone() {
+    if (!zEl || zCtx !== ctx) {
+      zEl = new Audio(); zEl.crossOrigin = "anonymous"; zEl.setAttribute("playsinline", ""); zCtx = ctx; zSrc = null;
+      try { zSrc = ctx.createMediaElementSource(zEl); } catch (e) { }
+    }
+    return zEl;
+  }
+  function chain(self) {   // общий проигрыватель → громкость → «за стеной» → лево/право → master
+    var out = ctx.createGain(), muff = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
     out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;
-    var src = null;
-    try { src = ctx.createMediaElementSource(el); src.connect(out); } catch (e) { }
     out.connect(muff); if (pn) { muff.connect(pn); pn.connect(master); } else muff.connect(master);
-    function go() { var pr = el.play(); if (pr && pr.catch) pr.then(function () { radioBlocked = false; }).catch(function () { radioBlocked = true; }); }
-    go();
-    el.addEventListener("error", function () { setTimeout(function () { if (self.alive) { el.load(); go(); } }, 5000); });   // эфир оборвался — переподключиться
-    el.addEventListener("stalled", function () { setTimeout(function () { if (self.alive && el.paused) go(); }, 3000); });
-    this.alive = true; this.el = el; this.play = go;
-    this.set = function (g, pv, cut) {
+    zone(); if (zSrc) zSrc.connect(out);
+    self.set = function (g, pv, cut) {
       if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
       muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
     };
-    this.fade = function () { if (!ctx) return; out.gain.cancelScheduledValues(ctx.currentTime); out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
-    this.kill = function () { self.alive = false; try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } try { out.disconnect(); } catch (e) { } };
+    self.fade = function () { if (!ctx) return; out.gain.cancelScheduledValues(ctx.currentTime); out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
+    self.detach = function () { try { if (zSrc) zSrc.disconnect(out); } catch (e) { } try { out.disconnect(); } catch (e) { } };
+    self.alive = true; self.usesZone = true;
+  }
+  function playEl(el) { var pr = el.play(); if (pr && pr.catch) pr.then(function () { radioBlocked = false; }).catch(function (e) { if (e && e.name === "NotAllowedError") radioBlocked = true; }); }
+
+  function Radio(id) {
+    var self = this, el = zone(); chain(self); zOwner = self; self.fallbackList = RADIO_FALLBACK[id] || "house";
+    el.preload = "none"; el.src = RADIO[id];
+    function go() { if (self.alive && zOwner === self) playEl(el); }
+    var onErr = function () { if (self.alive && zOwner === self) setTimeout(function () { if (self.alive && zOwner === self) { el.load(); go(); } }, 5000); };
+    var onStall = function () { if (self.alive && zOwner === self) setTimeout(function () { if (self.alive && zOwner === self && el.paused) go(); }, 3000); };
+    el.addEventListener("error", onErr); el.addEventListener("stalled", onStall);
+    go();
+    // не заиграло (поток не открылся у этого игрока, а не «нужно нажатие») — пусть играет свой плейлист
+    setTimeout(function () { if (self.alive && zOwner === self && !radioBlocked && el.currentTime < 0.5) self.failed = true; }, 9000);
+    this.play = go;
+    this.kill = function () {
+      self.alive = false; el.removeEventListener("error", onErr); el.removeEventListener("stalled", onStall);
+      if (zOwner === self) { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } zOwner = null; }
+      self.detach();
+    };
   }
 
   // ---------------------------------------------------------------- У298: свои треки клуба — лежат на нашем сайте (music/<плейлист>/), без чужих серверов
@@ -330,11 +358,8 @@
     return null;
   }
   function Playlist(name) {
-    var self = this, el = new Audio(), out = ctx.createGain(), muff = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    el.crossOrigin = "anonymous"; el.preload = "auto";
-    out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;
-    try { ctx.createMediaElementSource(el).connect(out); } catch (e) { }
-    out.connect(muff); if (pn) { muff.connect(pn); pn.connect(master); } else muff.connect(master);
+    var self = this, el = zone(); chain(self); zOwner = self;
+    el.preload = "auto";
     var cur = -1, wait = null;
     function where(pl) {   // какой трек и с какой секунды играет сейчас у всех
       var t = (Date.now() / 1000) % pl.total, i = 0;
@@ -342,7 +367,7 @@
       return {i: i, at: t};
     }
     function go() {
-      if (!self.alive) return;
+      if (!self.alive || zOwner !== self) return;
       var pl = loadList(name);
       if (!pl) { wait = setTimeout(go, pl === false ? 10000 : 500); return; }
       var w = where(pl), tr = pl.tracks[w.i];
@@ -350,18 +375,18 @@
       var seek = function () { try { if (Math.abs(el.currentTime - w.at) > 2) el.currentTime = w.at; } catch (e) { } };
       if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, {once: true});
       nowTrack = "♪ " + tr.author + " — " + tr.title;
-      var pr = el.play(); if (pr && pr.catch) pr.then(function () { radioBlocked = false; }).catch(function () { radioBlocked = true; });
+      playEl(el);
     }
-    el.addEventListener("ended", function () { setTimeout(go, 50); });
-    el.addEventListener("error", function () { wait = setTimeout(go, 5000); });
-    this.alive = true; this.play = go;
+    var onEnd = function () { if (self.alive && zOwner === self) setTimeout(go, 50); };
+    var onErr = function () { if (self.alive && zOwner === self) wait = setTimeout(go, 5000); };
+    el.addEventListener("ended", onEnd); el.addEventListener("error", onErr);
+    this.play = go;
     go();
-    this.set = function (g, pv, cut) {
-      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
-      muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
+    this.kill = function () {
+      self.alive = false; clearTimeout(wait); el.removeEventListener("ended", onEnd); el.removeEventListener("error", onErr);
+      if (zOwner === self) { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } zOwner = null; }
+      self.detach();
     };
-    this.fade = function () { if (!ctx) return; out.gain.cancelScheduledValues(ctx.currentTime); out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
-    this.kill = function () { self.alive = false; clearTimeout(wait); try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } try { out.disconnect(); } catch (e) { } };
   }
 
   window.VPSound = {
