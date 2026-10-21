@@ -541,6 +541,11 @@
     if (p.muted) { silence(p); return; }   // выключил сам — сразу
     if (p.d > range) { silence(p, true); return; }
     g = 0.03 + 0.97 * g * g;
+    // У296 (владелец 2026-10-21): в клубе музыка перебивает всех — хорошо слышно только стоящих рядом (до ~2,5 бл.), к ~12 бл. — едва
+    if (window.VPSound && VPSound.room && VPSound.room() === "club") {
+      var c = p.d <= 2.5 ? 1 : Math.max(0, 1 - (p.d - 2.5) / 9.5);
+      g = Math.min(g, 0.02 + 0.98 * c * c);
+    }
     if (p.fading && p.gain && ctx) { p.gain.gain.cancelScheduledValues(ctx.currentTime); p.gain.gain.setValueAtTime(p.gain.gain.value, ctx.currentTime); }
     p.fading = false;   // вернулся в радиус — снова слышно (плавно)
     if (p.gain && ctx) p.gain.gain.setTargetAtTime(g, ctx.currentTime, 0.15);

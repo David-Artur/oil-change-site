@@ -15,8 +15,12 @@
     nether: {root: 40, bpm: 52, chords: [[0, 3, 7], [1, 5, 8]], scale: [0, 1, 3, 5, 7, 8], pad: "sawtooth", cut: 600, arp: 0.2, arpOct: 1, drum: true, crackle: 0.35, drone: true, fb: 0.35},
     end: {root: 59, bpm: 48, chords: [[0, 4, 7, 11, 18], [2, 6, 9, 13, 18]], scale: [0, 2, 4, 6, 7, 9, 11], pad: "sine", cut: 3000, arp: 0.5, arpOct: 2, bell: true, fb: 0.6},
     // У291: ночной клуб — хаус 124 уд/мин: бочка на каждую долю, хэт на «и», хлопок на 2 и 4, бас на «и», аккорды-стабы
-    club: {root: 57, bpm: 124, chords: [[0, 3, 7, 10], [-4, 0, 3, 7], [-2, 2, 5, 9], [-5, -2, 2, 5]], scale: [0, 3, 5, 7, 10], pad: "sawtooth", cut: 1800, arp: 0.3, arpOct: 1, house: true, fb: 0.22, padVol: 0.012}
+    club: {root: 57, bpm: 124, chords: [[0, 3, 7, 10], [-4, 0, 3, 7], [-2, 2, 5, 9], [-5, -2, 2, 5]], scale: [0, 3, 5, 7, 10], pad: "sawtooth", cut: 1800, arp: 0.3, arpOct: 1, house: "house", fb: 0.22, padVol: 0.012},
+    // У295: заказ трека у DJ — диско (бас октавами, открытый хэт, струнные стабы) и чилл (медленно, мягкие аккорды, бочка на 1 и 3)
+    club_disco: {root: 60, bpm: 118, chords: [[0, 4, 7, 11], [-3, 0, 4, 7], [2, 5, 9, 12], [-5, -1, 2, 5]], scale: [0, 2, 4, 7, 9], pad: "sawtooth", cut: 2600, arp: 0.25, arpOct: 1, house: "disco", fb: 0.2, padVol: 0.014},
+    club_chill: {root: 55, bpm: 88, chords: [[0, 4, 7, 11, 14], [-3, 0, 4, 7, 11], [-7, -3, 0, 4, 7], [-5, -1, 2, 5, 9]], scale: [0, 2, 4, 7, 9], pad: "triangle", cut: 1400, arp: 0.4, arpOct: 1, house: "chill", fb: 0.35, padVol: 0.02}
   };
+  PRESETS.club_house = PRESETS.club;
   var cfg = null, ctx = null, api = null, master = null, on = false, timer = null, pos = null, gens = {}, talk = {}, ducked = false;
   var enabled = pref("on") !== "0", vol = pref("vol") == null ? 0.7 : Math.max(0, Math.min(1, +pref("vol"))), nowTxt = "", speakingNpc = null;
   function pref(k, v) { try { if (v === undefined) return localStorage.getItem("daviart.sound." + k); localStorage.setItem("daviart.sound." + k, v); } catch (e) { return null; } }
@@ -41,7 +45,10 @@
   function applyClub() {
     if (!cfg) return;
     cfg.zones = (cfg.zones || []).filter(function (z) { return z.id !== "club"; });
-    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "club", vol: 0.8, exclusive: true, fade: 30, title: "DaviArt Holy Club"});
+    var genre = club && /^(house|disco|chill)$/.test(club.genre || "") ? club.genre : "house";   // У295: жанр заказывают у DJ
+    var GN = {house: "хаус", disco: "диско", chill: "чилл"};
+    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "club_" + genre, vol: 0.8, exclusive: true, fade: 30,
+      title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
   }
   function stop() {
     on = false; clearInterval(timer); timer = null; clearInterval(clubT); clubT = null;
@@ -114,7 +121,8 @@
       // дальше — тише и ещё глуше, за z.fade блоков (30) — тишина
       var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
       if (k > 0.002 && enabled) {
-        if (!g) g = gens["z:" + z.id] = new Gen(PRESETS[z.preset] || PRESETS.club);
+        if (g && g.preset !== z.preset) { g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
+        if (!g) { g = gens["z:" + z.id] = new Gen(PRESETS[z.preset] || PRESETS.club); g.preset = z.preset; }
         g.set(z.vol * k, de === 0 ? 0 : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25));
         if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
         txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id));
@@ -210,7 +218,26 @@
     }
     function playStep(s, t) {
       var bar = Math.floor(s / 8), ch = p.chords[bar % p.chords.length], beat = s % 8;
-      if (p.house) {   // У291: клуб
+      if (p.house === "disco") {   // У295: диско — бочка на долю, открытый хэт на «и», бас октавами каждую восьмую, струнные стабы
+        if (beat % 2 === 0) kick(t, 0.28);
+        if (beat % 2 === 1) burst(t, 0.18, 0.08, "highpass", 6000);
+        if (beat === 2 || beat === 6) burst(t, 0.12, 0.1, "bandpass", 1800);
+        note(hz(p.root + ch[0] - 24 + (beat % 2 ? 12 : 0)), t, dur8 * 0.8, "sawtooth", 0.06, 0.005, dur8 * 0.4, 700);
+        if (beat === 0 || beat === 4) ch.forEach(function (iv) { [-8, 8].forEach(function (det) { var o = note(hz(p.root + iv + 12), t, dur8 * 3.5, "sawtooth", 0.009, 0.03, dur8 * 2, 3200); o.detune.value = det; }); });
+        if (Math.random() < p.arp) note(hz(p.root + p.scale[Math.floor(Math.random() * p.scale.length)] + 24), t, dur8 * 0.9, "triangle", 0.02, 0.003, dur8 * 0.6, 4000);
+        return;
+      }
+      if (p.house === "chill") {   // У295: чилл — бочка на 1 и 3, мягкий хлопок на 2 и 4, тёплые аккорды, редкие ноты
+        if (beat === 0 || beat === 4) kick(t, 0.2);
+        if (beat === 2 || beat === 6) burst(t, 0.2, 0.05, "bandpass", 1200);
+        if (beat % 2 === 1 && Math.random() < 0.6) burst(t, 0.04, 0.03, "highpass", 8000);
+        if (beat === 0) { ch.forEach(function (iv) { note(hz(p.root + iv), t, dur8 * 7.8, p.pad, p.padVol, dur8 * 0.6, dur8 * 3, 1600); });
+          note(hz(p.root + ch[0] - 12), t, dur8 * 3.5, "sine", 0.1, 0.02, dur8 * 1.5, 500); }
+        if (beat === 5) note(hz(p.root + ch[0] - 12 + 7), t, dur8 * 2.5, "sine", 0.07, 0.02, dur8, 500);
+        if (Math.random() < p.arp * 0.5) note(hz(p.root + p.scale[Math.floor(Math.random() * p.scale.length)] + 12), t, dur8 * 2.5, "sine", 0.035, 0.01, dur8 * 2, 3000);
+        return;
+      }
+      if (p.house) {   // У291: клуб (хаус)
         if (beat % 2 === 0) kick(t, 0.32);
         if (beat % 2 === 1) burst(t, 0.06, 0.09, "highpass", 7000);
         if (beat === 2 || beat === 6) burst(t, 0.16, 0.12, "bandpass", 1500);
@@ -267,6 +294,12 @@
     enabled: function () { return enabled; },
     __setCfg: function (j) { cfg = j; },   // для тестовой страницы
     cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
+    // У296: в каком помещении-зоне ты сейчас (клуб) — voice.js: в клубе музыка «съедает» голоса, слышно только стоящих рядом
+    room: function () {
+      if (!on || !pos || !cfg) return null;
+      var z = (cfg.zones || []).filter(function (z) { return z.world === pos.w && pos.x >= z.x1 && pos.x <= z.x2 && pos.z >= z.z1 && pos.z <= z.z2; })[0];
+      return z && enabled ? z.id : null;
+    },
 
     now: function () { return nowTxt; }
   };
