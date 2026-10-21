@@ -967,7 +967,7 @@
     var box = $("tab-donate");
     if (!box || !me) return;
     if (!$("cab-packs")) {
-      box.innerHTML = '<div class="card cab-card"><h2>💛 Донат</h2><p class="cab-meta">Игровые $ — те же, что зарабатываются в игре: у Заклинателя, Торговца, на Рынке. ' +
+      box.innerHTML = '<div class="card cab-card"><h2>💛 Донат</h2><p class="cab-meta">Игровые $ — те же, что зарабатываются в игре: на зелья Бабы Яги, у Торговца, на Рынке. ' +
         'Купи пакет — валюта придёт на ник <b>' + esc(me.nick) + '</b>. Бесплатные $ (подарок дня за голоса и другие) — во вкладке <a href="#bonus" data-go="bonus">«🎁 Бонусы»</a>.</p></div>' +
         '<h3 class="don-sub">💰 Пакеты игровой валюты</h3><div id="cab-packs"><p class="cab-meta">Загружаю пакеты…</p></div>' +
         '<p class="cab-meta">Оплата — картой, СБП, зарубежной картой или PayPal (lava.top). <a href="oferta.html" target="_blank" rel="noopener">Условия покупки и возврата</a>.</p>';
