@@ -33,12 +33,21 @@
     master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
     if (!cfg) fetch("sounds.json?v=1", {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { cfg = j; clubZone(); }).catch(function () { });
     timer = setInterval(tick, 1000); tick();
-    clubT = setInterval(clubZone, 60000); clubZone();
+    clubT = setInterval(clubZone, 15000); clubZone(); setTimeout(clubZone, 1500); setTimeout(clubZone, 3500);   // 3 пробы часов на старте
   }
   // У291: клуб — где он построен, сервер сам говорит в публичном /api/players (VPLand 0.9.20, поле club); нет поля — клуба нет, музыки тоже
-  var clubT = null, club = null;
+  // 2026-10-21 (владелец: «рассинхрон — каждый слышит свой трек»): часы для плейлиста — СЕРВЕРНЫЕ (поле t в /api/players), а не часы устройства:
+  // сдвиг = t − середина запроса; из проб берём ту, где запрос был быстрее всего (точнее), старые пробы «стареют».
+  var clubT = null, club = null, clk = {off: null, rtt: 1e9, at: 0};
+  function serverNow() { return Date.now() + (clk.off || 0); }
   function clubZone() {
+    var t0 = Date.now();
     fetch("https://mc.daviart.com/api/players", {cache: "no-store"}).then(function (r) { return r.json(); }).then(function (j) {
+      var t1 = Date.now(), rtt = t1 - t0;
+      if (j && typeof j.t === "number" && rtt < 5000) {
+        var aged = clk.rtt + (t1 - clk.at) / 60;   // проба минутной давности считается хуже на 1 мс-задержки за секунду
+        if (clk.off == null || rtt <= aged) { clk.off = j.t - (t0 + t1) / 2; clk.rtt = rtt; clk.at = t1; }
+      }
       club = j && j.club && j.club.world ? j.club : null; applyClub();
     }).catch(function () { });
   }
@@ -360,9 +369,10 @@
   function Playlist(name) {
     var self = this, el = zone(); chain(self); zOwner = self;
     el.preload = "auto";
-    var cur = -1, wait = null;
+    var cur = -1, wait = null, born = Date.now();
+    self.__state = function () { return {track: cur, title: nowTrack, at: el.currentTime, paused: el.paused, off: clk.off}; };   // для теста
     function where(pl) {   // какой трек и с какой секунды играет сейчас у всех
-      var t = (Date.now() / 1000) % pl.total, i = 0;
+      var t = (serverNow() / 1000) % pl.total, i = 0;   // серверные часы — у всех одно и то же место
       while (i < pl.tracks.length - 1 && t >= pl.tracks[i].length) { t -= pl.tracks[i].length; i++; }
       return {i: i, at: t};
     }
@@ -370,20 +380,34 @@
       if (!self.alive || zOwner !== self) return;
       var pl = loadList(name);
       if (!pl) { wait = setTimeout(go, pl === false ? 10000 : 500); return; }
+      if (clk.off == null && Date.now() - born < 4000) { wait = setTimeout(go, 300); return; }   // сначала — серверные часы
       var w = where(pl), tr = pl.tracks[w.i];
       if (w.i !== cur) { cur = w.i; el.src = "music/" + tr.file; }
-      var seek = function () { try { if (Math.abs(el.currentTime - w.at) > 2) el.currentTime = w.at; } catch (e) { } };
+      var seek = function () { try { var ww = where(pl); if (ww.i === cur && Math.abs(el.currentTime - ww.at) > 0.6) el.currentTime = ww.at; } catch (e) { } };
       if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, {once: true});
       nowTrack = "♪ " + tr.author + " — " + tr.title;
       playEl(el);
     }
-    var onEnd = function () { if (self.alive && zOwner === self) setTimeout(go, 50); };
+    var onEnd = function () {
+      if (!(self.alive && zOwner === self)) return;
+      var pl = lists[name];   // трек кончился чуть раньше серверных часов — дождаться, а не начать его заново
+      if (pl) { var w = where(pl); if (w.i === cur) { var left = pl.tracks[w.i].length - w.at; wait = setTimeout(go, Math.max(50, left * 1000 + 80)); return; } }
+      setTimeout(go, 50);
+    };
     var onErr = function () { if (self.alive && zOwner === self) wait = setTimeout(go, 5000); };
     el.addEventListener("ended", onEnd); el.addEventListener("error", onErr);
+    // подстройка: раз в 2 с сверяемся с серверными часами — уехал больше чем на 0,6 с или не тот трек — на нужное место
+    var sync = setInterval(function () {
+      if (!self.alive || zOwner !== self || el.paused) return;
+      var pl = lists[name]; if (!pl) return;
+      var w = where(pl);
+      if (w.i !== cur) { go(); return; }
+      if (el.readyState >= 1 && Math.abs(el.currentTime - w.at) > 0.6 && w.at < pl.tracks[w.i].length - 1) { try { el.currentTime = w.at; } catch (e) { } }
+    }, 2000);
     this.play = go;
     go();
     this.kill = function () {
-      self.alive = false; clearTimeout(wait); el.removeEventListener("ended", onEnd); el.removeEventListener("error", onErr);
+      self.alive = false; clearTimeout(wait); clearInterval(sync); el.removeEventListener("ended", onEnd); el.removeEventListener("error", onErr);
       if (zOwner === self) { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } zOwner = null; }
       self.detach();
     };
@@ -399,6 +423,7 @@
     volume: function (v) { if (v != null) { vol = Math.max(0, Math.min(1, v)); pref("vol", String(vol)); update(); } return vol; },
     enabled: function () { return enabled; },
     __setCfg: function (j) { cfg = j; },   // для тестовой страницы
+    __zone: function () { var g = gens["z:club"]; return g && g.__state ? g.__state() : null; },   // для теста синхронизации
     cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
     // У296: в каком помещении-зоне ты сейчас (клуб) — voice.js: в клубе музыка «съедает» голоса, слышно только стоящих рядом
     room: function () {
