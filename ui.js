@@ -86,12 +86,28 @@
   }
   document.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("code[data-copy]")) { e.preventDefault(); e.target.click(); } });
 
+  // 2026-10-21 (владелец: «кабинет грузит процессор»): раньше на КАЖДОЕ изменение страницы (кабинет обновляет блоки 3 раза в секунду)
+  // заново обходилась вся страница; теперь — только добавленные куски
   function start() {
     run(document.body);
-    var pend = false;
-    new MutationObserver(function () {
-      if (pend) return; pend = true;
-      (window.requestAnimationFrame || setTimeout)(function () { pend = false; run(document.body); });
+    var pend = false, roots = [];
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) {
+        for (var i = 0; i < m.addedNodes.length; i++) {
+          var n = m.addedNodes[i], el = n.nodeType === 1 ? n : n.parentNode;
+          if (el && el.nodeType === 1 && roots.indexOf(el) < 0) roots.push(el);
+        }
+      });
+      if (pend || !roots.length) return; pend = true;
+      (window.requestAnimationFrame || setTimeout)(function () {
+        pend = false;
+        var list = roots; roots = [];
+        list.forEach(function (r) {
+          if (!r.isConnected) return;
+          for (var j = 0; j < list.length; j++) if (list[j] !== r && list[j].isConnected && list[j].contains(r)) return;   // внутри другого — его и так обойдём
+          run(r);
+        });
+      });
     }).observe(document.body, {childList: true, subtree: true});
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();

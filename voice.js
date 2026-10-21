@@ -276,7 +276,10 @@
     speaking = live && (gate && nrMode > 0 ? gateOpen : lvl > 0.035);   // с шумодавом «говорю» = звук реально уходит
     if (micPeak >= 0 && live) micPeak = Math.max(micPeak, lvl);   // идёт проверка микрофона
     var bar = $("vc-level"), mt = $("vc-meter");
-    if (bar) bar.style.transform = "scaleX(" + (live ? Math.min(1, lvl * 4) : 0).toFixed(3) + ")";   // без смены ширины блока — ничего не сдвигается
+    // 2026-10-21 (владелец: «кабинет грузит процессор»): полоска перерисовывалась 20 раз/с с плавным переходом — ~5% CPU.
+    // Теперь 20 ступенек и только при смене ступеньки; слой полоски — у видеокарты (will-change в CSS), без перехода
+    var q = live ? Math.round(Math.min(1, lvl * 4) * 20) / 20 : 0;
+    if (bar && bar.__q !== q) { bar.__q = q; bar.style.transform = "scaleX(" + q + ")"; }
     if (mt && mt.classList.contains("talk") !== speaking) mt.classList.toggle("talk", speaking);
     setTimeout(meter, 50);
   }

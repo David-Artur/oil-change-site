@@ -512,7 +512,8 @@
           cold ? '<span class="' + (lv.cold >= 0.3 ? "hm-cold" : "") + '">Холодно ' + Math.round(lv.cold * 100) + "%</span>" : "Норма") + tr +
         (lv.wet >= 0.1 ? " · 💧 " + Math.round(lv.wet * 100) + "%" : "") + "</div>";
     }
-    el.innerHTML = '<h3>Тело и силы</h3><div class="hm-vgrid">' + figure(live.body || {}) + '<div class="hm-vcol">' + rows + "</div></div>";
+    var vh = '<h3>Тело и силы</h3><div class="hm-vgrid">' + figure(live.body || {}) + '<div class="hm-vcol">' + rows + "</div></div>";
+    if (el.__v !== vh) { el.__v = vh; el.innerHTML = vh; }   // 2026-10-21: пересобирать, только если что-то поменялось (было 3 раза/с всегда)
   }
 
   // человечек в стиле Minecraft (пропорции скина 16×32): каждая часть — цветом по здоровью, процент прямо на ней
@@ -558,7 +559,7 @@
     else h += '<p class="cab-meta">' + (live && live.online ? "Качай навыки действием — здесь будут три ближайших к новому уровню." : "Видно, когда ты в игре.") + "</p>";
     var lines = lv && lv.lines || [];
     if (lines.length) h += '<div class="hm-tags">' + lines.map(function (l) { return "<span>" + esc(l) + "</span>"; }).join("") + "</div>";
-    el.innerHTML = h;
+    if (el.__v !== h) { el.__v = h; el.innerHTML = h; }   // 2026-10-21: только при изменении (было 3 раза/с всегда)
   }
 
   function drawQuick() {

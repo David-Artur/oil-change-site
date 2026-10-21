@@ -944,13 +944,13 @@
     // У208.2 (2026-10-16): «Подарок дня» теперь = $25 за голос (с У218 — вкладка «Бонусы»); старый случайный бонус больше не предлагаем —
     // показываем только ещё действующий (взятый раньше), иначе — подсказку про голоса.
     if (!el) return;
-    if (!acts.length) { el.className = "bn-ext ready"; el.innerHTML = '<span class="bc-t">+$25 за голос</span>'; el.title = "Подарок дня — голосуй за сервер"; return; }
+    if (!acts.length) { el.className = "bn-ext ready"; el.__v = null; el.innerHTML = '<span class="bc-t">+$25 за голос</span>'; el.title = "Подарок дня — голосуй за сервер"; return; }
     if (acts.length > 1) { h = '<span class="bc-ico">' + acts.map(function (x) { return BONUS_ICO[x.id] || "🎁"; }).join("") + "</span>Подарки ×" + acts.length + ' <span class="bc-t">· ещё ' + hm(Math.max(0, acts[0].until - Date.now())) + "</span>"; el.title = acts.map(function (x) { return plainTitle(x.title); }).join(", ") + " — подарки дня"; }
     else if (a) { h = '<span class="bc-ico">' + (BONUS_ICO[a.id] || "🎁") + "</span>" + esc(plainTitle(a.title)) + ' <span class="bc-t">· ещё ' + hm(Math.max(0, a.until - Date.now())) + "</span>"; el.title = a.desc + " — подарок дня"; }
     else if (b.nextIn > 0) { h = '<span class="bc-ico">🎁</span><span class="bc-t">подарок через ' + hm(b.nextIn) + "</span>"; el.title = "Следующий подарок дня"; }
     else { h = '<span class="bc-ico gift-glow">🎁</span>Подарок ждёт!'; el.title = "Забрать бесплатный подарок дня"; }
     el.className = "bn-ext" + (a ? " on" : !(b.nextIn > 0) ? " ready" : "");
-    el.innerHTML = h;
+    if (el.__v !== h) { el.__v = h; el.innerHTML = h; }   // 2026-10-21: не пересобирать каждые 20 с (иначе 🎁 снова и снова начинает качаться)
   }
   function hm(ms) { var h = Math.floor(ms / 3600000), m = Math.ceil(ms % 3600000 / 60000); if (m === 60) { h++; m = 0; } return (h ? h + " ч " : "") + (m || !h ? m + " мин" : ""); }
 

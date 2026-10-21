@@ -413,20 +413,24 @@ main > section.pg-on { animation: pgIn .25s ease; }
 }
 .btn.map { --b: #1f8fb3; --bh: #5cd2f2; --bl: #0d4c63; color: #fff; position: relative; }
 .btn.map .live { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 700; background: rgba(0, 0, 0, .3); padding: 1px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: .04em; }
-.btn.map .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7dff6a; box-shadow: 0 0 0 0 rgba(125, 255, 106, .7); animation: livePulse 1.6s infinite; }
-@keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(125, 255, 106, .7); } 70% { box-shadow: 0 0 0 7px rgba(125, 255, 106, 0); } 100% { box-shadow: 0 0 0 0 rgba(125, 255, 106, 0); } }
+.btn.map .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7dff6a; box-shadow: 0 0 0 2px rgba(125, 255, 106, .35); animation: livePulse 1.6s infinite; will-change: transform, opacity; }
+/* 2026-10-21: пульс — прозрачностью и размером (без перерисовки; раньше — анимация box-shadow каждый кадр) */
+@keyframes livePulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: .55; } }
 .nav a.nav-map { color: #1f8fb3; font-weight: 700; border-color: #1f8fb3; }
 
 /* У249 (2026-10-18): большая заметная кнопка «Личный кабинет» в шапке + выделенный пункт меню */
 .btn.cab-big { --b: #3fae1c; --bh: #8ff060; --bl: #22680c; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; margin-top: 16px;
   min-height: 72px; padding: 12px 18px; border-width: 3px; white-space: normal; text-align: center;
   box-shadow: inset 3px 3px 0 var(--bh), inset -3px -4px 0 var(--bl), 0 0 0 3px rgba(143, 240, 96, .35), 0 8px 22px -6px rgba(63, 174, 28, .75);
-  animation: cabGlow 2.4s ease-in-out infinite; }
+  position: relative; }
+/* 2026-10-21: свечение — отдельный слой, у которого меняется только прозрачность (раньше box-shadow каждый кадр — перерисовка всей кнопки) */
+.btn.cab-big::after { content: ""; position: absolute; inset: -3px; border-radius: inherit; pointer-events: none; opacity: 0; will-change: opacity;
+  box-shadow: 0 0 0 5px rgba(143, 240, 96, .55), 0 8px 26px -4px rgba(63, 174, 28, .9); animation: cabGlow 2.4s ease-in-out infinite; }
 .btn.cab-big:active { box-shadow: inset -3px -3px 0 var(--bh), inset 3px 4px 0 var(--bl); }
 .cab-big .cb-t { font-size: clamp(1.35rem, 6.2vw, 1.7rem); font-weight: 800; line-height: 1.15; letter-spacing: .2px; }
 .cab-big .cb-s { font-size: .86rem; font-weight: 500; line-height: 1.25; color: #f1ffe6; opacity: .95; }
-@keyframes cabGlow { 50% { box-shadow: inset 3px 3px 0 var(--bh), inset -3px -4px 0 var(--bl), 0 0 0 5px rgba(143, 240, 96, .55), 0 8px 26px -4px rgba(63, 174, 28, .9); } }
-@media (prefers-reduced-motion: reduce) { .btn.cab-big { animation: none; } }
+@keyframes cabGlow { 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .btn.cab-big::after { animation: none; } }
 @media (min-width: 960px) {
   .hero .cab-big { grid-column: 1; grid-row: 3; margin-top: 18px; }
   .hero .facts { grid-row: 4; }
