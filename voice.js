@@ -70,7 +70,8 @@
       var sb = $("vc-snd"), sv = $("vc-sndvol");
       var sl = function () { sb.textContent = VPSound.enabled() ? "🎵 Звуки мира: вкл" : "🔕 Звуки мира: выкл"; sb.classList.toggle("off", !VPSound.enabled()); sv.disabled = !VPSound.enabled(); };
       sv.value = Math.round(VPSound.volume() * 100); sl();
-      sb.onclick = function () { VPSound.toggle(); sl(); };
+      sb.onclick = function () { VPSound.toggle(); sl(); if (VPSound.enabled() && VPSound.unlock) VPSound.unlock(); };
+      $("vc-sndnow").onclick = function () { if (VPSound.unlock) VPSound.unlock(); };   // У297: радио на iPhone — по нажатию
       sv.oninput = function () { VPSound.volume(sv.value / 100); };
       $("vc-sndnow").textContent = VPSound.now() || "";
     }

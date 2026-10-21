@@ -45,10 +45,10 @@
   function applyClub() {
     if (!cfg) return;
     cfg.zones = (cfg.zones || []).filter(function (z) { return z.id !== "club"; });
-    var genre = club && /^(house|disco|chill)$/.test(club.genre || "") ? club.genre : "house";   // У295: жанр заказывают у DJ
-    var GN = {house: "хаус", disco: "диско", chill: "чилл"};
-    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "club_" + genre, vol: 0.8, exclusive: true, fade: 30,
-      title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
+    var genre = club && /^(house|disco|chill|record|soma)$/.test(club.genre || "") ? club.genre : "record";   // У295/У297: жанр или радио — заказывают у DJ
+    var GN = {house: "хаус", disco: "диско", chill: "чилл", record: "📻 Сейчас: Record Club · radiorecord.ru", soma: "📻 Сейчас: SomaFM Beat Blender · somafm.com"};
+    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: RADIO[genre] ? "radio_" + genre : "club_" + genre,
+      vol: RADIO[genre] ? 0.9 : 0.8, exclusive: true, fade: 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
   }
   function stop() {
     on = false; clearInterval(timer); timer = null; clearInterval(clubT); clubT = null;
@@ -122,7 +122,10 @@
       var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
       if (k > 0.002 && enabled) {
         if (g && g.preset !== z.preset) { g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
-        if (!g) { g = gens["z:" + z.id] = new Gen(PRESETS[z.preset] || PRESETS.club); g.preset = z.preset; }
+        if (!g) {
+          var rid = z.preset.indexOf("radio_") === 0 ? z.preset.slice(6) : null;
+          g = gens["z:" + z.id] = rid && RADIO[rid] ? new Radio(RADIO[rid]) : new Gen(PRESETS[z.preset] || PRESETS.club); g.preset = z.preset;
+        }
         g.set(z.vol * k, de === 0 ? 0 : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25));
         if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
         txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id));
@@ -151,6 +154,7 @@
       if (Date.now() > t.next && !speechSynthesis.speaking) say(best, bd, t);
     }
     if (cave > 0.15) txt.push("🕳 пещера — эхо");
+    if (radioBlocked && Object.keys(gens).some(function (k) { return gens[k].play; })) txt.push("▶ нажми сюда — включить радио");   // У297: iPhone
     nowTxt = txt.join(" · ");
     var el = document.getElementById("vc-sndnow"); if (el) el.textContent = nowTxt || (pos ? "здесь тихо" : "звуки — когда ты в игре");
   }
@@ -286,7 +290,37 @@
     this.kill = function () { alive = false; clearInterval(iv); srcs.forEach(function (s) { try { s.stop(); } catch (e) { } }); try { out.disconnect(); } catch (e) { } };
   }
 
+  // ---------------------------------------------------------------- У297: онлайн-радио в клубе — браузер слушателя сам берёт официальный поток станции
+  // (мы ничего не пересылаем); звук — через WebAudio, поэтому громкость по расстоянию и «глухо за стеной» — как у музыки клуба.
+  var RADIO = {
+    record: "https://radiorecord.hostingradio.ru/club96.aacp",
+    soma: "https://ice1.somafm.com/beatblender-128-mp3"
+  };
+  var radioBlocked = false;
+  function Radio(url) {
+    var self = this, el = new Audio(), out = ctx.createGain(), muff = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    el.crossOrigin = "anonymous"; el.preload = "none"; el.src = url;
+    out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;
+    var src = null;
+    try { src = ctx.createMediaElementSource(el); src.connect(out); } catch (e) { }
+    out.connect(muff); if (pn) { muff.connect(pn); pn.connect(master); } else muff.connect(master);
+    function go() { var pr = el.play(); if (pr && pr.catch) pr.then(function () { radioBlocked = false; }).catch(function () { radioBlocked = true; }); }
+    go();
+    el.addEventListener("error", function () { setTimeout(function () { if (self.alive) { el.load(); go(); } }, 5000); });   // эфир оборвался — переподключиться
+    el.addEventListener("stalled", function () { setTimeout(function () { if (self.alive && el.paused) go(); }, 3000); });
+    this.alive = true; this.el = el; this.play = go;
+    this.set = function (g, pv, cut) {
+      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
+      muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
+    };
+    this.fade = function () { if (!ctx) return; out.gain.cancelScheduledValues(ctx.currentTime); out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
+    this.kill = function () { self.alive = false; try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } try { out.disconnect(); } catch (e) { } };
+  }
+
   window.VPSound = {
+    // iPhone/Safari: радио можно запустить только по нажатию — кнопка «🎵» в панели голоса вызывает unlock()
+    unlock: function () { Object.keys(gens).forEach(function (k) { if (gens[k].play) gens[k].play(); }); },
+    radioBlocked: function () { return radioBlocked; },
     start: start, stop: stop,
     duck: function (v) { if (v !== ducked) { ducked = v; if (master && ctx) master.gain.setTargetAtTime(level(), ctx.currentTime, 0.3); } },
     toggle: function () { enabled = !enabled; pref("on", enabled ? "1" : "0"); if (!enabled) { try { speechSynthesis.cancel(); } catch (e) { } } update(); return enabled; },
