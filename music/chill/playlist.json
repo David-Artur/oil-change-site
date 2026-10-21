@@ -1,0 +1,138 @@
+{
+ "name": "chill",
+ "tracks": [
+  {
+   "title": "Hypnothis",
+   "file": "chill/hypnothis.mp3",
+   "length": 283.51,
+   "bpm": 104,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1100634",
+   "kbps": 112
+  },
+  {
+   "title": "Eternity",
+   "file": "chill/eternity.mp3",
+   "length": 198.09,
+   "bpm": 100,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1600031",
+   "kbps": 112
+  },
+  {
+   "title": "Limit 70",
+   "file": "chill/limit-70.mp3",
+   "length": 301.69,
+   "bpm": 103,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1900042",
+   "kbps": 112
+  },
+  {
+   "title": "Beauty Flow",
+   "file": "chill/beauty-flow.mp3",
+   "length": 433.42,
+   "bpm": 108,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1900008",
+   "kbps": 112
+  },
+  {
+   "title": "Chill Wave",
+   "file": "chill/chill-wave.mp3",
+   "length": 240.09,
+   "bpm": 100,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1600048",
+   "kbps": 112
+  },
+  {
+   "title": "Pamgaea",
+   "file": "chill/pamgaea.mp3",
+   "length": 168.59,
+   "bpm": 94,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1300036",
+   "kbps": 112
+  },
+  {
+   "title": "Unwritten Return",
+   "file": "chill/unwritten-return.mp3",
+   "length": 309.08,
+   "bpm": 80,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1500037",
+   "kbps": 112
+  },
+  {
+   "title": "Babylon",
+   "file": "chill/babylon.mp3",
+   "length": 255.32,
+   "bpm": 104,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1100314",
+   "kbps": 112
+  },
+  {
+   "title": "Severe Tire Damage",
+   "file": "chill/severe-tire-damage.mp3",
+   "length": 411.98,
+   "bpm": 74,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1500018",
+   "kbps": 112
+  },
+  {
+   "title": "Dream Catcher",
+   "file": "chill/dream-catcher.mp3",
+   "length": 377.23,
+   "bpm": 70,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1800019",
+   "kbps": 112
+  },
+  {
+   "title": "Backbay Lounge",
+   "file": "chill/backbay-lounge.mp3",
+   "length": 266.58,
+   "bpm": 120,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1700068",
+   "kbps": 112
+  },
+  {
+   "title": "Airport Lounge",
+   "file": "chill/airport-lounge.mp3",
+   "length": 307.7,
+   "bpm": 129,
+   "author": "Kevin MacLeod",
+   "license": "CC BY 4.0",
+   "source": "https://incompetech.com/",
+   "isrc": "USUAN1100806",
+   "kbps": 112
+  }
+ ],
+ "total": 3553.28
+}
