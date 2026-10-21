@@ -47,6 +47,7 @@
         '<button class="vc-chip" type="button" id="vc-mode"></button>' +
         '<button class="vc-chip" type="button" id="vc-leave" title="Отключиться от голоса">Выйти</button></div>' +
         '<button class="btn gold vc-ptt" type="button" id="vc-ptt"' + (ptt ? "" : " hidden") + '>Держи — и говори</button>' +
+        '<button class="btn green vc-ptt" type="button" id="vc-fix" hidden>🔊 Нажми — вернуть звук</button>' +   // 2026-10-21: iPhone после фона
         '<div class="vc-nr"><button class="vc-chip" type="button" id="vc-nr"></button><span class="vc-nr-hint">🎧 лучше в наушниках — не будет эха</span></div>' +
         (window.VPSound ? '<div class="vc-snd"><button class="vc-chip" type="button" id="vc-snd"></button><input type="range" id="vc-sndvol" min="0" max="100" aria-label="Громкость звуков мира">' +
           '<span class="vc-nr-hint" id="vc-sndnow"></span></div>' : "") +   // У290: звучащие точки
@@ -58,6 +59,7 @@
     box.innerHTML = h + "</div>";
     if (!on) { $("vc-join").onclick = join; return; }
     $("vc-check").onclick = check;
+    $("vc-fix").onclick = fixTap;
     $("vc-mic").onclick = function () { micOn = !micOn; applyMic(); ctl(); };
     $("vc-mode").onclick = function () { ptt = !ptt; store("ptt", ptt ? "1" : "0"); applyMic(); ctl(); };
     $("vc-leave").onclick = function () { leave(true); };
@@ -169,6 +171,7 @@
       startTicker();
       meter();
       if (window.VPSound && ctx) VPSound.start({ctx: ctx, api: opt.api});   // У290: звучащие точки — тем же звуком, что и голоса
+      mediaSession(true);
     }).catch(function () {
       m.textContent = "Нет доступа к микрофону. Разреши его в настройках браузера для daviart.com и нажми ещё раз.";
     });
@@ -193,8 +196,9 @@
 
   function buildGate() {
     if (!ctx || !ctx.audioWorklet || !window.AudioWorkletNode) return Promise.reject(new Error("no worklet"));
-    var url = URL.createObjectURL(new Blob([GATE_SRC], {type: "text/javascript"}));
-    return ctx.audioWorklet.addModule(url).then(function () {
+    var c0 = ctx, url = URL.createObjectURL(new Blob([GATE_SRC], {type: "text/javascript"}));
+    var ready = ctx.__vpGate ? Promise.resolve() : ctx.audioWorklet.addModule(url).then(function () { c0.__vpGate = true; });   // второй раз (новый микрофон) — модуль уже есть
+    return ready.then(function () {
       var src = ctx.createMediaStreamSource(local);
       var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 120; hp.Q.value = 0.7;
       gate = new AudioWorkletNode(ctx, "vp-gate", {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1]});
@@ -242,6 +246,7 @@
     if (local) local.getTracks().forEach(function (t) { t.stop(); });
     local = null;
     if (window.VPSound) VPSound.stop();
+    mediaSession(false);
     if (ctx) { try { ctx.close(); } catch (e) { } ctx = null; }
     if (wakeLock) { try { wakeLock.release(); } catch (e) { } wakeLock = null; }
     if (tell) opt.api("/voice", {action: "leave"});
@@ -524,6 +529,9 @@
     } else if (d.t === "answer") {
       var q = peers[name];
       if (q && q.pc && q.pc.signalingState === "have-local-offer") q.pc.setRemoteDescription(d.sdp).then(function () { flush(q); }).catch(function () { });
+    } else if (d.t === "reset") {   // собеседник не слышит нас — пересоздаём соединение и с этой стороны
+      var rp = peers[name];
+      if (rp) { closePc(rp); rp.bad = 0; rp.lastBytesAt = 0; if (myName < name) setTimeout(function () { if (on && peers[name] && !peers[name].pc) call(name); }, 1200); }
     } else if (d.t === "ice") {
       var r = peers[name];
       if (!r || !r.pc) return;
@@ -578,6 +586,92 @@
 
   function drop(name) { var p = peers[name]; if (p) closePc(p); delete peers[name]; }
 
+  // ---------------------------------------------------------------- 2026-10-21 (владелец): «вышел из вкладки, вернулся — нет музыки или голоса,
+  // пишет „подключено“, а ничего не работает» — восстановление при возврате + сторож: звук от собеседника не приходит 10 с — пересоздать связь.
+  var hiddenAt = 0, reMic = false, lastFixToast = 0;
+  function micTrack() { return local && local.getAudioTracks()[0]; }
+  function needTap(show) { var b = $("vc-fix"); if (b) b.hidden = !show; }
+  function reacquireMic() {   // iPhone/Safari в фоне останавливает микрофон (track «ended») — взять заново и подменить у всех без разрыва связи
+    if (reMic || !on) return; reMic = true;
+    navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
+      if (!on) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      if (local) local.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } });
+      local = s; sendStream = local;
+      if (ctx) { analyser = ctx.createAnalyser(); analyser.fftSize = 512; ctx.createMediaStreamSource(local).connect(analyser); }
+      return buildGate().catch(function () { sendStream = local; gate = null; });
+    }).then(function () {
+      if (!on || !local) return;
+      applyMic();
+      var tr = (sendStream || local).getAudioTracks()[0];
+      Object.keys(peers).forEach(function (n) {
+        var p = peers[n]; if (!p.pc) return;
+        p.pc.getSenders().forEach(function (sd) { if (!sd.track || sd.track.kind === "audio") sd.replaceTrack(tr).catch(function () { }); });
+      });
+    }).catch(function () { needTap(true); }).then(function () { reMic = false; });
+  }
+  function resetPeer(n, tell) {   // соединение «живое», а звука нет — заново (звонит «меньший» ник, как обычно)
+    var p = peers[n]; if (!p) return;
+    if (tell) send(n, {t: "reset"});
+    closePc(p); p.lastBytes = 0; p.lastBytesAt = 0; p.bad = 0;
+    if (myName < n) setTimeout(function () { if (on && peers[n] && !peers[n].pc) call(n); }, 1200);
+    if (Date.now() - lastFixToast > 20000) { lastFixToast = Date.now(); opt.toast("♻ Переподключаю голос с " + n + "…"); }
+  }
+  function audioWatch() {   // раз в 5 с: сколько звука пришло от каждого «подключённого» собеседника рядом
+    if (!on || document.visibilityState !== "visible") return;
+    Object.keys(peers).forEach(function (n) {
+      var p = peers[n];
+      if (!p.pc || p.pc.connectionState !== "connected" || p.d == null) { p.bad = 0; p.lastBytesAt = 0; return; }
+      p.pc.getStats().then(function (r) {
+        var b = 0;
+        r.forEach(function (s) { if (s.type === "inbound-rtp" && (s.kind === "audio" || s.mediaType === "audio")) b += s.bytesReceived || 0; });
+        if (p.lastBytesAt && b - (p.lastBytes || 0) < 400) p.bad = (p.bad || 0) + 1; else p.bad = 0;   // даже молчание — пакеты идут; 0 байт 10 с — связь мёртвая
+        p.lastBytes = b; p.lastBytesAt = Date.now();
+        if (p.bad >= 2) resetPeer(n, true);
+      }).catch(function () { });
+      if (p.el && p.el.paused) { var pl = p.el.play(); if (pl && pl.catch) pl.catch(function () { }); }
+    });
+    var t = micTrack(); if (t && t.readyState === "ended") reacquireMic();
+    if (ctx && ctx.state !== "running") ctx.resume().catch(function () { }).then(function () { needTap(ctx && ctx.state !== "running"); });
+  }
+  setInterval(audioWatch, 5000);
+  function recover() {
+    if (!on) return;
+    if (ctx && ctx.state !== "running") ctx.resume().then(function () { needTap(ctx.state !== "running"); }).catch(function () { needTap(true); });
+    var t = micTrack(); if (!t || t.readyState === "ended") reacquireMic();
+    Object.keys(peers).forEach(function (n) {
+      var p = peers[n];
+      if (p.el && p.el.paused) { var pl = p.el.play(); if (pl && pl.catch) pl.catch(function () { }); }
+      if (p.pc && (p.pc.connectionState === "failed" || p.pc.connectionState === "disconnected")) resetPeer(n, true);
+      p.bad = 0; p.lastBytesAt = 0;   // сторож начнёт считать заново
+    });
+    if (window.VPSound && VPSound.unlock) VPSound.unlock();
+    try { if (navigator.wakeLock && (!wakeLock || wakeLock.released)) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; w.addEventListener && w.addEventListener("release", function () { if (wakeLock === w) wakeLock = null; }); }).catch(function () { }); } catch (e) { }
+    polling = false; tickPoll();   // сразу узнать, кто рядом
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") { if (hiddenAt) recover(); } else hiddenAt = Date.now();
+  });
+  window.addEventListener("pageshow", function () { recover(); });
+  window.addEventListener("focus", function () { if (on && ctx && ctx.state !== "running") recover(); });
+  function fixTap() {   // нажатие — браузер разрешает вернуть звук и микрофон
+    needTap(false);
+    if (ctx) ctx.resume().catch(function () { });
+    var t = micTrack(); if (!t || t.readyState === "ended") reacquireMic();
+    Object.keys(peers).forEach(function (n) { var p = peers[n]; if (p.el) { var pl = p.el.play(); if (pl && pl.catch) pl.catch(function () { }); } });
+    if (window.VPSound && VPSound.unlock) VPSound.unlock();
+  }
+  function mediaSession(on2) {   // Android/ПК: «плеер» на экране блокировки — система реже усыпляет вкладку
+    try {
+      if (!("mediaSession" in navigator)) return;
+      if (!on2) { navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = "none"; return; }
+      navigator.mediaSession.metadata = new MediaMetadata({title: "Голос и звуки мира", artist: "DaviArt Craft", album: "daviart.com",
+        artwork: [{src: "img/favicon-192.png", sizes: "192x192", type: "image/png"}]});
+      navigator.mediaSession.playbackState = "playing";
+      navigator.mediaSession.setActionHandler("pause", function () { micOn = false; applyMic(); ctl(); });
+      navigator.mediaSession.setActionHandler("play", function () { micOn = true; applyMic(); ctl(); fixTap(); });
+    } catch (e) { }
+  }
+
   window.addEventListener("pagehide", function () { if (on) leave(true); });
   // для проверки (тест/админ в консоли браузера): состояние соединений и сколько звука пришло
   function stats() {
@@ -591,5 +685,8 @@
       });
     })).then(function (l) { var o = {}; l.forEach(function (x) { o[x[0]] = x[1]; }); return {on: on, me: myName, inGame: lastState && lastState.inGame, peers: o, nr: NR_NAMES[nrMode], gate: !!gate, open: gateOpen, duck: ducked}; });
   }
-  window.VPVoice = {mount: mount, active: function () { return on; }, stats: stats, range: function () { return range; }};
+  window.VPVoice = {mount: mount, active: function () { return on; }, stats: stats, range: function () { return range; },
+    __dbg: function () { var t = micTrack(); return {ctx: ctx && ctx.state, mic: t ? t.readyState : null, micId: t ? t.id : null, gate: !!gate, on: on}; },   // для теста
+    __stopMic: function () { var t = micTrack(); if (t) { t.stop(); t.dispatchEvent(new Event("ended")); } },
+    __suspend: function () { return ctx ? ctx.suspend() : null; }};
 })();

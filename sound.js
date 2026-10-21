@@ -21,7 +21,20 @@
     club_chill: {root: 55, bpm: 88, chords: [[0, 4, 7, 11, 14], [-3, 0, 4, 7, 11], [-7, -3, 0, 4, 7], [-5, -1, 2, 5, 9]], scale: [0, 2, 4, 7, 9], pad: "triangle", cut: 1400, arp: 0.4, arpOct: 1, house: "chill", fb: 0.35, padVol: 0.02}
   };
   PRESETS.club_house = PRESETS.club;
-  var cfg = null, ctx = null, api = null, master = null, on = false, timer = null, pos = null, gens = {}, talk = {}, ducked = false;
+  // 2026-10-21 (владелец: «чтобы играло и в свёрнутой вкладке»): таймеры — из фонового потока (Worker). Обычные таймеры свёрнутая вкладка
+  // замедляет до раза в минуту — музыка рвалась; таймеры Worker идут как надо. Нет Worker — обычные таймеры.
+  var WT = (function () {
+    try {
+      var w = new Worker(URL.createObjectURL(new Blob(["var t={};onmessage=function(e){var d=e.data;if(d.c){clearInterval(t[d.id]);delete t[d.id]}else t[d.id]=setInterval(function(){postMessage(d.id)},d.ms)}"], {type: "text/javascript"})));
+      var cb = {}, n = 0;
+      w.onmessage = function (e) { var f = cb[e.data]; if (f) f(); };
+      return {set: function (f, ms) { var id = ++n; cb[id] = f; w.postMessage({id: id, ms: ms}); return id; },
+        clear: function (id) { if (id == null || !cb[id]) return; delete cb[id]; w.postMessage({id: id, c: 1}); }};
+    } catch (e) { return null; }
+  })();
+  function setInterval(f, ms) { return WT ? WT.set(f, ms) : window.setInterval(f, ms); }
+  function clearInterval(id) { if (WT) WT.clear(id); else window.clearInterval(id); }
+  var cfg = null, ctx = null, api = null, master = null, on = false, timer = null, pos = null, posAt = 0, gens = {}, talk = {}, ducked = false;
   var enabled = pref("on") !== "0", vol = pref("vol") == null ? 0.7 : Math.max(0, Math.min(1, +pref("vol"))), nowTxt = "", speakingNpc = null;
   function pref(k, v) { try { if (v === undefined) return localStorage.getItem("daviart.sound." + k); localStorage.setItem("daviart.sound." + k, v); } catch (e) { return null; } }
   function hz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
@@ -48,7 +61,8 @@
         var aged = clk.rtt + (t1 - clk.at) / 60;   // проба минутной давности считается хуже на 1 мс-задержки за секунду
         if (clk.off == null || rtt <= aged) { clk.off = j.t - (t0 + t1) / 2; clk.rtt = rtt; clk.at = t1; }
       }
-      club = j && j.club && j.club.world ? j.club : null; applyClub();
+      if (!j || typeof j.t !== "number") return;   // сбойный ответ — клуб не «исчезает» (музыка не обрывается)
+      club = j.club && j.club.world ? j.club : null; applyClub();
     }).catch(function () { });
   }
   function applyClub() {
@@ -73,7 +87,10 @@
     if (!on) return;
     api("/home", {action: "live", since: 9e15}).then(function (j) {
       if (!on) return;
-      pos = j && j.online && j.me && j.me.worldId ? {w: j.me.worldId, x: j.me.x, y: j.me.y, z: j.me.z, yaw: j.me.yaw || 0} : null;
+      // 2026-10-21 (владелец: «музыка время от времени прерывается»): один пустой/сбойный ответ сервера раньше = «ушёл из клуба» → музыка
+      // гасла и начиналась заново. Теперь прежнее место держится 12 с — пропадает, только если игрока правда нет так долго.
+      var np = j && j.online && j.me && j.me.worldId ? {w: j.me.worldId, x: j.me.x, y: j.me.y, z: j.me.z, yaw: j.me.yaw || 0} : null;
+      if (np) { pos = np; posAt = Date.now(); } else if (Date.now() - posAt > 12000) pos = null;
       caveCheck();
       update();
     });
@@ -142,7 +159,10 @@
         g.set(z.vol * k, de === 0 ? 0 : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25));
         if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
         txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id) + (de === 0 && g.preset && g.preset.indexOf("list_") === 0 && nowTrack ? " · " + nowTrack + " (CC BY)" : ""));
+      } else if (g && g.usesZone && enabled && Date.now() - (g.zeroAt || (g.zeroAt = Date.now())) < 8000) {
+        g.set(0, 0, 20000);   // плейлист: вышел на миг (телепорт, сбой позиции) — тишина, но трек не сбрасываем 8 с
       } else if (g) { g.fade(); delete gens["z:" + z.id]; }
+      if (g && k > 0.002) g.zeroAt = 0;
     });
     (cfg.music || []).forEach(function (m) {
       var d = pos && pos.w === m.world ? Math.hypot(pos.x - m.x, pos.z - m.z) : Infinity, g = gens[m.id];
@@ -366,10 +386,28 @@
     fetch("music/" + name + "/playlist.json?v=1", {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { lists[name] = j; }).catch(function () { lists[name] = false; });
     return null;
   }
+  // 2026-10-21 (владелец: «прерывается — сделай прогрузку музыки наперёд»): трек скачивается ЦЕЛИКОМ в память заранее (и следующий — пока
+  // играет текущий), играет из памяти — интернет больше не может «оборвать» его посреди песни; перемотка для подстройки — мгновенная.
+  var blobs = {}, blobOrder = [];
+  function fetchBlob(file) {
+    if (blobs[file]) return blobs[file].p;
+    var b = blobs[file] = {url: null};
+    b.p = fetch("music/" + file, {cache: "force-cache"}).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      .then(function (bl) { b.url = URL.createObjectURL(bl); return b.url; })
+      .catch(function () { delete blobs[file]; return null; });
+    blobOrder.push(file);
+    for (var i = 0; blobOrder.length > 4 && i < blobOrder.length; ) {   // в памяти — не больше 4 треков; играющий и качающийся не трогаем
+      var f = blobOrder[i], o = blobs[f];
+      if (o && (!o.url || (zEl && zEl.src === o.url))) { i++; continue; }
+      blobOrder.splice(i, 1);
+      if (o) { URL.revokeObjectURL(o.url); delete blobs[f]; }
+    }
+    return b.p;
+  }
   function Playlist(name) {
     var self = this, el = zone(); chain(self); zOwner = self;
     el.preload = "auto"; el.preservesPitch = true;
-    var cur = -1, wait = null, born = Date.now();
+    var cur = -1, wait = null, born = Date.now(), waitFrom = 0;
     self.__state = function () { return {track: cur, title: nowTrack, at: el.currentTime, paused: el.paused, off: clk.off, rate: el.playbackRate, seeks: self.__seeks || 0,
       want: lists[name] ? where(lists[name]).at : null}; };   // для теста
     function where(pl) {   // какой трек и с какой секунды играет сейчас у всех
@@ -378,12 +416,18 @@
       return {i: i, at: t};
     }
     function go() {
+      clearTimeout(wait);
       if (!self.alive || zOwner !== self) return;
       var pl = loadList(name);
       if (!pl) { wait = setTimeout(go, pl === false ? 10000 : 500); return; }
       if (clk.off == null && Date.now() - born < 4000) { wait = setTimeout(go, 300); return; }   // сначала — серверные часы
       var w = where(pl), tr = pl.tracks[w.i];
-      if (w.i !== cur) { cur = w.i; el.src = "music/" + tr.file; }
+      if (w.i !== cur) {
+        var bb = blobs[tr.file];
+        if (!(bb && bb.url) && Date.now() - (waitFrom || (waitFrom = Date.now())) < 8000) { fetchBlob(tr.file); wait = setTimeout(go, 250); return; }   // ждём (до 8 с), пока скачается целиком
+        waitFrom = 0; cur = w.i; el.src = bb && bb.url ? bb.url : "music/" + tr.file;   // не успел скачаться — играет потоком, как раньше
+        fetchBlob(pl.tracks[(w.i + 1) % pl.tracks.length].file);   // следующий трек — заранее
+      }
       // при старте трека — один раз на нужное место (+0,3 с на подгрузку); дальше — плавная подстройка
       var seek = function () { try { var ww = where(pl); if (ww.i === cur && Math.abs(el.currentTime - ww.at) > 1) { el.currentTime = ww.at + 0.3; lastSeek = Date.now(); } } catch (e) { } };
       if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, {once: true});
@@ -403,8 +447,16 @@
     // (на слух незаметно); перескок — только если разошлось >3 с или не тот трек, и не чаще раза в 8 с.
     var lastSeek = 0;
     self.__seeks = 0;
+    var lastAt = -1, still = 0, lastKick = 0;
     var sync = setInterval(function () {
-      if (!self.alive || zOwner !== self || el.paused) return;
+      if (!self.alive || zOwner !== self) return;
+      // 2026-10-21 (владелец: «вышел из вкладки, вернулся — музыки нет»): телефон поставил плеер на паузу или поток завис — запустить заново
+      if (cur >= 0 && Date.now() - lastKick > 5000 && !radioBlocked && document.visibilityState === "visible") {
+        if (el.paused && !el.ended) { lastKick = Date.now(); go(); return; }
+        if (!el.seeking && el.currentTime === lastAt) { if (++still >= 6) { still = 0; lastKick = Date.now(); el.playbackRate = 1; try { el.load(); } catch (e) { } cur = -1; go(); return; } } else still = 0;
+      }
+      lastAt = el.currentTime;
+      if (el.paused) return;
       var pl = lists[name]; if (!pl) return;
       var w = where(pl);
       if (w.i !== cur) { el.playbackRate = 1; go(); return; }
@@ -412,8 +464,8 @@
       var d = w.at - el.currentTime;   // > 0 — отстаём
       if (Math.abs(d) > 3 && Date.now() - lastSeek > 8000 && w.at < pl.tracks[w.i].length - 2) {
         lastSeek = Date.now(); self.__seeks++; el.playbackRate = 1; try { el.currentTime = w.at + 0.3; } catch (e) { }
-      } else if (Math.abs(d) > 0.25) el.playbackRate = d > 0 ? 1.06 : 0.94;
-      else if (el.playbackRate !== 1) el.playbackRate = 1;
+      } else if (Math.abs(d) > 0.4) { var r = d > 0 ? 1.04 : 0.96; if (el.playbackRate !== r) el.playbackRate = r; }   // ±4% — на слух не слышно
+      else if (el.playbackRate !== 1 && Math.abs(d) < 0.1) el.playbackRate = 1;   // догнали — обычная скорость (без дёрганья туда-сюда)
     }, 1000);
     this.play = go;
     go();
@@ -434,6 +486,7 @@
     volume: function (v) { if (v != null) { vol = Math.max(0, Math.min(1, v)); pref("vol", String(vol)); update(); } return vol; },
     enabled: function () { return enabled; },
     __setCfg: function (j) { cfg = j; },   // для тестовой страницы
+    __el: function () { return zEl; },   // для теста восстановления после паузы
     __zone: function () { var g = gens["z:club"]; return g && g.__state ? g.__state() : null; },   // для теста синхронизации
     cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
     // У296: в каком помещении-зоне ты сейчас (клуб) — voice.js: в клубе музыка «съедает» голоса, слышно только стоящих рядом
