@@ -145,6 +145,17 @@
    "sig": "5077536:1792654481"
   },
   {
+   "id": "skripka-nochi",
+   "title": "Скрипка ночи",
+   "file": "own/skripka-nochi.mp3",
+   "length": 200.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "C08-skripka-nochi.mp3",
+   "sig": "5571120:1792654640"
+  },
+  {
    "id": "holy-club",
    "title": "Holy Club",
    "file": "own/holy-club.mp3",
@@ -189,5 +200,5 @@
    "sig": "5279040:1792643725"
   }
  ],
- "total": 3426.84
+ "total": 3626.84
 }
