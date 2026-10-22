@@ -354,7 +354,8 @@
         // У254: собеседник рядом говорит и слышен — свой микрофон приглушаем (без наушников его голос не вернётся ему эхом)
         var talking = Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; });
         setDuck(nrMode > 0 && talking);
-        if (window.VPSound) VPSound.duck(talking || (micOn && gateOpen));   // У290: говорят (или говоришь ты) — музыка и фразы тише
+        // 2026-10-22 владелец: музыка тише, только когда говорят ТЕБЕ (собеседник рядом) — когда говоришь сам, музыка не приглушается
+        if (window.VPSound) VPSound.duck(talking);   // У290: говорят — музыка и фразы тише
         caveLevel();   // У292: эхо в пещере
         if (first) draw(); else { status(); drawPeers(); }
       }
