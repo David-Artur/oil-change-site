@@ -70,16 +70,19 @@
     cfg.zones = (cfg.zones || []).filter(function (z) { return z.id !== "club"; });
     // У298 (владелец 2026-10-21: «договорились — только скачанная музыка»): в клубе играют ТОЛЬКО свои треки с нашего сайта (music/…).
     // Радио убрано: если сервер ещё присылает старые жанры радио (record/soma — до VPLand 0.9.22), играем свой хаус / чилл.
-    var genre = club && /^(house|disco|chill|record|soma)$/.test(club.genre || "") ? club.genre : "house";
+    var genre = club && /^(own|house|disco|chill|record|soma)$/.test(club.genre || "") ? club.genre : "house";
     genre = {record: "house", soma: "chill"}[genre] || genre;
-    var GN = {house: "хаус", disco: "диско", chill: "чилл"};
-    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "list_" + genre,
+    var GN = {own: "наши треки", house: "хаус", disco: "диско", chill: "чилл"};
+    // 2026-10-22 (VPLand 0.9.29): own — наши треки; какие именно — выбирают у DJ (club.tracks), играют вперемешку с плавными переходами
+    var list = genre === "own" ? "own:" + (club && club.tracks && club.tracks.length ? club.tracks.join(",") : "") : genre;
+    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "list_" + list,
       // треки сведены громко — 0.32 ≈ громкость остальной музыки
       vol: 0.32, exclusive: true, fade: 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
   }
   function stop() {
     on = false; clearInterval(timer); timer = null; clearInterval(clubT); clubT = null;
     Object.keys(gens).forEach(function (k) { gens[k].kill(); }); gens = {};
+    if (Z) { Z.decks.forEach(function (d) { try { d.el.pause(); } catch (e) { } }); Z = null; }
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
     master = null; ctx = null; pos = null; nowTxt = ""; speakingNpc = null;
   }
@@ -151,14 +154,14 @@
       // дальше — тише и ещё глуше, за z.fade блоков (30) — тишина
       var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
       if (k > 0.002 && enabled) {
-        if (g && g.preset !== z.preset) { if (g.usesZone) g.kill(); else g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
+        if (g && g.preset !== z.preset) { if (g.retire) g.retire(); else g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
         if (!g) {
-          var rid = z.preset.indexOf("radio_") === 0 ? z.preset.slice(6) : null, lid = z.preset.indexOf("list_") === 0 ? z.preset.slice(5) : null;
-          g = gens["z:" + z.id] = rid && RADIO[rid] ? new Radio(RADIO[rid]) : lid ? new Playlist(lid) : new Gen(PRESETS[z.preset] || PRESETS.club); g.preset = z.preset;
+          var lid = z.preset.indexOf("list_") === 0 ? z.preset.slice(5) : null;
+          g = gens["z:" + z.id] = lid ? new Playlist(lid) : new Gen(PRESETS[z.preset] || PRESETS.club); g.preset = z.preset;
         }
         g.set(z.vol * k, de === 0 ? 0 : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25));
         if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
-        txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id) + (de === 0 && g.preset && g.preset.indexOf("list_") === 0 && nowTrack ? " · " + nowTrack + " (CC BY)" : ""));
+        txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id) + (de === 0 && g.preset && g.preset.indexOf("list_") === 0 && nowTrack ? " · " + nowTrack : ""));
       } else if (g && g.usesZone && enabled && Date.now() - (g.zeroAt || (g.zeroAt = Date.now())) < 8000) {
         g.set(0, 0, 20000);   // плейлист: вышел на миг (телепорт, сбой позиции) — тишина, но трек не сбрасываем 8 с
       } else if (g) { g.fade(); delete gens["z:" + z.id]; }
@@ -323,67 +326,40 @@
     this.kill = function () { alive = false; clearInterval(iv); srcs.forEach(function (s) { try { s.stop(); } catch (e) { } }); try { out.disconnect(); } catch (e) { } };
   }
 
-  // ---------------------------------------------------------------- У297: онлайн-радио в клубе — браузер слушателя сам берёт официальный поток станции
-  // (мы ничего не пересылаем); звук — через WebAudio, поэтому громкость по расстоянию и «глухо за стеной» — как у музыки клуба.
-  var RADIO = {
-    record: "https://radiorecord.hostingradio.ru/club96.aacp",
-    soma: "https://ice1.somafm.com/beatblender-128-mp3"
-  };
-  // 2026-10-21 (владелец: «заказали музыку — перестало играть»): радио не заиграло за ~9 с — сами включаем свой плейлист
-  var RADIO_FALLBACK = {record: "house", soma: "chill"};
-  var radioBlocked = false;
-
-  // Общий проигрыватель музыки клуба: один <audio> на радио и плейлисты. На iPhone/Safari звук разрешается нажатием для конкретного
-  // элемента — раз разрешили, после смены жанра у DJ он играет дальше (раньше каждый жанр создавал новый элемент и молчал).
-  var zEl = null, zSrc = null, zCtx = null, zOwner = null;
-  function zone() {
-    if (!zEl || zCtx !== ctx) {
-      zEl = new Audio(); zEl.crossOrigin = "anonymous"; zEl.setAttribute("playsinline", ""); zCtx = ctx; zSrc = null;
-      try { zSrc = ctx.createMediaElementSource(zEl); } catch (e) { }
-    }
-    return zEl;
-  }
-  function chain(self) {   // общий проигрыватель → громкость → «за стеной» → лево/право → master
+  // ---------------------------------------------------------------- общий проигрыватель музыки клуба (радио убрано 2026-10-21 — только свои треки)
+  // 2026-10-22 (владелец: «в клубе музыка не должна останавливаться — один трек понемногу накладывается на другой, чтобы затухание было
+  // незаметно»): две «деки» (<audio>) — пока одна доигрывает конец трека, другая уже начинает следующий (перекрытие XF с, «равная
+  // мощность»: sin/cos — общая громкость на стыке не проседает). Деки общие для всех жанров: на iPhone звук разрешается нажатием
+  // для конкретного элемента — разрешили, дальше играют обе. Смена жанра у DJ — старое плавно уходит за CHANGE_FADE с, новое входит.
+  var XF = 8, CHANGE_FADE = 4;
+  var radioBlocked = false, Z = null;
+  function zplayer() {
+    if (Z && Z.ctx === ctx && Z.master === master) return Z;
+    if (Z) Z.decks.forEach(function (d) { try { d.el.pause(); d.el.removeAttribute("src"); d.el.load(); } catch (e) { } });
     var out = ctx.createGain(), muff = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;
+    out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;   // громкость по расстоянию → «за стеной» → лево/право → master
     out.connect(muff); if (pn) { muff.connect(pn); pn.connect(master); } else muff.connect(master);
-    zone(); if (zSrc) zSrc.connect(out);
-    self.set = function (g, pv, cut) {
-      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
-      muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
-    };
-    self.fade = function () { if (!ctx) return; out.gain.cancelScheduledValues(ctx.currentTime); out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
-    self.detach = function () { try { if (zSrc) zSrc.disconnect(out); } catch (e) { } try { out.disconnect(); } catch (e) { } };
-    self.alive = true; self.usesZone = true;
+    Z = {ctx: ctx, master: master, out: out, muff: muff, pn: pn, owner: null, decks: []};
+    for (var i = 0; i < 2; i++) {
+      var el = new Audio(); el.crossOrigin = "anonymous"; el.setAttribute("playsinline", ""); el.preload = "auto"; el.preservesPitch = true;
+      var g = ctx.createGain(); g.gain.value = 0; g.connect(out);
+      try { ctx.createMediaElementSource(el).connect(g); } catch (e) { }
+      Z.decks.push({el: el, g: g, key: null, gone: 0, lastAt: -1, still: 0, kick: 0, seekAt: 0});
+    }
+    return Z;
   }
+  function deckOff(d) { d.key = null; d.gone = 0; try { d.g.gain.cancelScheduledValues(ctx.currentTime); d.g.gain.setValueAtTime(0, ctx.currentTime); d.el.pause(); d.el.playbackRate = 1; } catch (e) { } }
   function playEl(el) { var pr = el.play(); if (pr && pr.catch) pr.then(function () { radioBlocked = false; }).catch(function (e) { if (e && e.name === "NotAllowedError") radioBlocked = true; }); }
 
-  function Radio(id) {
-    var self = this, el = zone(); chain(self); zOwner = self; self.fallbackList = RADIO_FALLBACK[id] || "house";
-    el.preload = "none"; el.src = RADIO[id];
-    function go() { if (self.alive && zOwner === self) playEl(el); }
-    var onErr = function () { if (self.alive && zOwner === self) setTimeout(function () { if (self.alive && zOwner === self) { el.load(); go(); } }, 5000); };
-    var onStall = function () { if (self.alive && zOwner === self) setTimeout(function () { if (self.alive && zOwner === self && el.paused) go(); }, 3000); };
-    el.addEventListener("error", onErr); el.addEventListener("stalled", onStall);
-    go();
-    // не заиграло (поток не открылся у этого игрока, а не «нужно нажатие») — пусть играет свой плейлист
-    setTimeout(function () { if (self.alive && zOwner === self && !radioBlocked && el.currentTime < 0.5) self.failed = true; }, 9000);
-    this.play = go;
-    this.kill = function () {
-      self.alive = false; el.removeEventListener("error", onErr); el.removeEventListener("stalled", onStall);
-      if (zOwner === self) { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } zOwner = null; }
-      self.detach();
-    };
-  }
-
   // ---------------------------------------------------------------- У298: свои треки клуба — лежат на нашем сайте (music/<плейлист>/), без чужих серверов
-  // Плейлист крутится по кругу «по часам»: позиция = время % длина плейлиста — у всех в клубе один и тот же трек в одном и том же месте.
-  // Музыка — Kevin MacLeod (incompetech.com), CC BY 4.0 — автор и название показываются в панели голоса.
-  var lists = {}, nowTrack = "";
+  // Позиция — по СЕРВЕРНЫМ часам: у всех в клубе один и тот же трек в одном и том же месте. 2026-10-22: порядок — вперемешку, но у всех
+  // одинаковый (перемешивание по номеру круга), на стыке кругов один трек два раза подряд не играет.
+  // Жанры house/disco/chill — Kevin MacLeod (incompetech.com, CC BY 4.0); own — наши треки (выбор у DJ, VPLand 0.9.29: club.tracks).
+  var lists = {}, listAt = {}, nowTrack = "";
   function loadList(name) {
     if (lists[name] !== undefined) return lists[name];
-    lists[name] = null;
-    fetch("music/" + name + "/playlist.json?v=1", {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { lists[name] = j; }).catch(function () { lists[name] = false; });
+    lists[name] = null; listAt[name] = Date.now();
+    fetch("music/" + name + "/playlist.json?t=" + Math.floor(Date.now() / 60000), {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { lists[name] = j; }).catch(function () { lists[name] = false; });
     return null;
   }
   // 2026-10-21 (владелец: «прерывается — сделай прогрузку музыки наперёд»): трек скачивается ЦЕЛИКОМ в память заранее (и следующий — пока
@@ -396,83 +372,155 @@
       .then(function (bl) { b.url = URL.createObjectURL(bl); return b.url; })
       .catch(function () { delete blobs[file]; return null; });
     blobOrder.push(file);
-    for (var i = 0; blobOrder.length > 4 && i < blobOrder.length; ) {   // в памяти — не больше 4 треков; играющий и качающийся не трогаем
+    for (var i = 0; blobOrder.length > 5 && i < blobOrder.length; ) {   // в памяти — не больше 5 треков; играющие и качающийся не трогаем
       var f = blobOrder[i], o = blobs[f];
-      if (o && (!o.url || (zEl && zEl.src === o.url))) { i++; continue; }
+      if (o && (!o.url || (Z && Z.decks.some(function (d) { return d.el.src === o.url; })))) { i++; continue; }
       blobOrder.splice(i, 1);
       if (o) { URL.revokeObjectURL(o.url); delete blobs[f]; }
     }
     return b.p;
   }
-  function Playlist(name) {
-    var self = this, el = zone(); chain(self); zOwner = self;
-    el.preload = "auto"; el.preservesPitch = true;
-    var cur = -1, wait = null, born = Date.now(), waitFrom = 0;
-    self.__state = function () { return {track: cur, title: nowTrack, at: el.currentTime, paused: el.paused, off: clk.off, rate: el.playbackRate, seeks: self.__seeks || 0,
-      want: lists[name] ? where(lists[name]).at : null}; };   // для теста
-    function where(pl) {   // какой трек и с какой секунды играет сейчас у всех
-      var t = (serverNow() / 1000) % pl.total, i = 0;   // серверные часы — у всех одно и то же место
-      while (i < pl.tracks.length - 1 && t >= pl.tracks[i].length) { t -= pl.tracks[i].length; i++; }
-      return {i: i, at: t};
-    }
-    function go() {
-      clearTimeout(wait);
-      if (!self.alive || zOwner !== self) return;
+  function hash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function shuffled(n, seed) {
+    var a = [], i, r = (seed >>> 0) || 1;
+    for (i = 0; i < n; i++) a.push(i);
+    for (i = n - 1; i > 0; i--) { r ^= r << 13; r >>>= 0; r ^= r >>> 17; r ^= r << 5; r >>>= 0; var j = r % (i + 1), t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function Playlist(spec) {   // spec: "house" или "own:holy-club,track2" (наши треки — выбранные у DJ)
+    var self = this, P = zplayer(), k0 = spec.indexOf(":"), name = k0 < 0 ? spec : spec.slice(0, k0);
+    var ids = k0 < 0 ? null : spec.slice(k0 + 1).split(",").filter(Boolean);
+    self.alive = true; self.usesZone = true; self.__seeks = 0; P.owner = self;
+    var born = Date.now(), waitFrom = 0, cache = null, cur = null;
+    // смена жанра / набора треков: то, что играло, плавно уходит, новое входит на свободной деке
+    P.decks.forEach(function (d) {
+      if (!d.key || d.key === "old") return;
+      d.key = "old"; d.gone = Date.now() + CHANGE_FADE * 1000 + 500;
+      d.g.gain.cancelScheduledValues(ctx.currentTime); d.g.gain.setTargetAtTime(0, ctx.currentTime, CHANGE_FADE / 4);
+    });
+    function tracks() {
       var pl = loadList(name);
-      if (!pl) { wait = setTimeout(go, pl === false ? 10000 : 500); return; }
-      if (clk.off == null && Date.now() - born < 4000) { wait = setTimeout(go, 300); return; }   // сначала — серверные часы
-      var w = where(pl), tr = pl.tracks[w.i];
-      if (w.i !== cur) {
-        var bb = blobs[tr.file];
-        if (!(bb && bb.url) && Date.now() - (waitFrom || (waitFrom = Date.now())) < 8000) { fetchBlob(tr.file); wait = setTimeout(go, 250); return; }   // ждём (до 8 с), пока скачается целиком
-        waitFrom = 0; cur = w.i; el.src = bb && bb.url ? bb.url : "music/" + tr.file;   // не успел скачаться — играет потоком, как раньше
-        fetchBlob(pl.tracks[(w.i + 1) % pl.tracks.length].file);   // следующий трек — заранее
+      if (!pl) return null;
+      if (cache && cache.pl === pl) return cache.tr;
+      // у DJ выбрали трек, которого в загруженном списке ещё нет (только что добавили) — перечитать список (не чаще раза в минуту)
+      if (ids && ids.some(function (id) { return !pl.tracks.some(function (t) { return t.id === id; }); }) && Date.now() - listAt[name] > 60000) {
+        delete lists[name]; loadList(name);
       }
-      // при старте трека — один раз на нужное место (+0,3 с на подгрузку); дальше — плавная подстройка
-      var seek = function () { try { var ww = where(pl); if (ww.i === cur && Math.abs(el.currentTime - ww.at) > 1) { el.currentTime = ww.at + 0.3; lastSeek = Date.now(); } } catch (e) { } };
-      if (el.readyState >= 1) seek(); else el.addEventListener("loadedmetadata", seek, {once: true});
-      nowTrack = "♪ " + tr.author + " — " + tr.title;
-      playEl(el);
+      var tr = ids ? pl.tracks.filter(function (t) { return ids.indexOf(t.id) >= 0; }) : pl.tracks;
+      if (!tr.length) tr = pl.tracks;
+      cache = {pl: pl, tr: tr};
+      return tr.length ? tr : null;
     }
-    var onEnd = function () {
-      if (!(self.alive && zOwner === self)) return;
-      var pl = lists[name];   // трек кончился чуть раньше серверных часов — дождаться, а не начать его заново
-      if (pl) { var w = where(pl); if (w.i === cur) { var left = pl.tracks[w.i].length - w.at; wait = setTimeout(go, Math.max(50, left * 1000 + 80)); return; } }
-      setTimeout(go, 50);
-    };
-    var onErr = function () { if (self.alive && zOwner === self) wait = setTimeout(go, 5000); };
-    el.addEventListener("ended", onEnd); el.addEventListener("error", onErr);
-    // подстройка (2026-10-21, владелец: «прерывисто, по кругу»): раньше при расхождении >0,6 с — перескок; на реальном интернете после перескока
-    // плеер подгружается и снова отстаёт → перескок по кругу. Теперь: пока грузится — не трогаем; до 3 с — плавно догоняем скоростью ±6%
-    // (на слух незаметно); перескок — только если разошлось >3 с или не тот трек, и не чаще раза в 8 с.
-    var lastSeek = 0;
-    self.__seeks = 0;
-    var lastAt = -1, still = 0, lastKick = 0;
-    var sync = setInterval(function () {
-      if (!self.alive || zOwner !== self) return;
-      // 2026-10-21 (владелец: «вышел из вкладки, вернулся — музыки нет»): телефон поставил плеер на паузу или поток завис — запустить заново
-      if (cur >= 0 && Date.now() - lastKick > 5000 && !radioBlocked && document.visibilityState === "visible") {
-        if (el.paused && !el.ended) { lastKick = Date.now(); go(); return; }
-        if (!el.seeking && el.currentTime === lastAt) { if (++still >= 6) { still = 0; lastKick = Date.now(); el.playbackRate = 1; try { el.load(); } catch (e) { } cur = -1; go(); return; } } else still = 0;
+    function order(c, n) {
+      if (n < 3) return n === 2 ? [0, 1] : [0];
+      var h = hash(spec), o = shuffled(n, h ^ Math.imul(c, 2654435761)), prev = shuffled(n, h ^ Math.imul(c - 1, 2654435761));
+      if (o[0] === prev[n - 1]) { var t = o[0]; o[0] = o[1]; o[1] = t; }   // стык кругов — не тот же трек ещё раз
+      return o;
+    }
+    function plan(tr) {   // что звучит сейчас у всех: основной трек и (на стыке) хвост предыдущего; + какой следующий
+      var n = tr.length, xf = Math.min(XF, Math.min.apply(null, tr.map(function (t) { return t.length; })) / 3), T = 0;
+      tr.forEach(function (t) { T += t.length - xf; });
+      var now = serverNow() / 1000, c = Math.floor(now / T), t = now - c * T, o = order(c, n), s = 0, k = 0;
+      while (k < n - 1 && t >= s + tr[o[k]].length - xf) { s += tr[o[k]].length - xf; k++; }
+      var at = t - s, x = Math.min(1, at / xf);
+      var res = [{key: spec + "|" + c + ":" + k, tr: tr[o[k]], at: at, gain: at < xf ? Math.sin(x * Math.PI / 2) : 1}];
+      if (at < xf) {
+        var pc = k > 0 ? c : c - 1, po = k > 0 ? o : order(c - 1, n), pk = k > 0 ? k - 1 : n - 1, pt = tr[po[pk]];
+        res.push({key: spec + "|" + pc + ":" + pk, tr: pt, at: pt.length - xf + at, gain: Math.cos(x * Math.PI / 2)});
       }
-      lastAt = el.currentTime;
-      if (el.paused) return;
-      var pl = lists[name]; if (!pl) return;
-      var w = where(pl);
-      if (w.i !== cur) { el.playbackRate = 1; go(); return; }
-      if (el.seeking || el.readyState < 3) return;   // грузится — не мешать
-      var d = w.at - el.currentTime;   // > 0 — отстаём
-      if (Math.abs(d) > 3 && Date.now() - lastSeek > 8000 && w.at < pl.tracks[w.i].length - 2) {
-        lastSeek = Date.now(); self.__seeks++; el.playbackRate = 1; try { el.currentTime = w.at + 0.3; } catch (e) { }
-      } else if (Math.abs(d) > 0.4) { var r = d > 0 ? 1.04 : 0.96; if (el.playbackRate !== r) el.playbackRate = r; }   // ±4% — на слух не слышно
-      else if (el.playbackRate !== 1 && Math.abs(d) < 0.1) el.playbackRate = 1;   // догнали — обычная скорость (без дёрганья туда-сюда)
-    }, 1000);
-    this.play = go;
-    go();
-    this.kill = function () {
-      self.alive = false; clearTimeout(wait); clearInterval(sync); el.removeEventListener("ended", onEnd); el.removeEventListener("error", onErr);
-      if (zOwner === self) { try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) { } zOwner = null; }
-      self.detach();
+      var no = k < n - 1 ? o : order(c + 1, n);
+      res.next = tr[no[k < n - 1 ? k + 1 : 0]];
+      return res;
+    }
+    function find(key) { var tr = tracks(); if (!tr) return null; var p = plan(tr); for (var i = 0; i < p.length; i++) if (p[i].key === key) return p[i]; return null; }
+    function load(d, w) {
+      var bb = blobs[w.tr.file], key = w.key;
+      d.key = key; d.gone = 0; d.still = 0; d.lastAt = -1; d.kick = Date.now();
+      d.g.gain.cancelScheduledValues(ctx.currentTime); d.g.gain.setValueAtTime(0, ctx.currentTime);
+      d.el.playbackRate = 1;
+      d.el.src = bb && bb.url ? bb.url : "music/" + w.tr.file;   // не успел скачаться — играет потоком
+      var seek = function () { if (d.key !== key) return; try { var ww = find(key); if (ww) { d.el.currentTime = Math.max(0, ww.at + 0.3); d.seekAt = Date.now(); } } catch (e) { } };
+      d.el.addEventListener("loadedmetadata", seek, {once: true});
+      playEl(d.el);
+    }
+    // подстройка (2026-10-21, «прерывисто, по кругу»): пока грузится — не трогаем; до 3 с — плавно догоняем скоростью ±4%;
+    // перескок — только если разошлось >3 с, не чаще раза в 8 с. Пауза/завис (телефон усыпил вкладку) — запустить заново.
+    function sync(d, w) {
+      var el = d.el, now = Date.now();
+      if (el.ended) return;
+      if (now - d.kick > 5000 && !radioBlocked && document.visibilityState === "visible") {
+        if (el.paused) { d.kick = now; playEl(el); return; }
+        if (!el.seeking && el.currentTime === d.lastAt) { if (++d.still >= 12) { d.still = 0; try { el.load(); } catch (e) { } load(d, w); return; } } else d.still = 0;
+      }
+      d.lastAt = el.currentTime;
+      if (el.paused || el.seeking || el.readyState < 3) return;
+      var df = w.at - el.currentTime;   // > 0 — отстаём
+      if (Math.abs(df) > 3 && now - d.seekAt > 8000 && w.at < w.tr.length - 2) {
+        d.seekAt = now; self.__seeks++; el.playbackRate = 1; try { el.currentTime = w.at + 0.3; } catch (e) { }
+      } else if (Math.abs(df) > 0.4) { var r = df > 0 ? 1.04 : 0.96; if (el.playbackRate !== r) el.playbackRate = r; }
+      else if (el.playbackRate !== 1 && Math.abs(df) < 0.1) el.playbackRate = 1;
+    }
+    function step() {
+      if (!self.alive || P.owner !== self || !ctx) return;
+      var now = Date.now();
+      P.decks.forEach(function (d) { if (d.key === "old" && now > d.gone) deckOff(d); });
+      var tr = tracks();
+      if (!tr) return;
+      if (clk.off == null && now - born < 4000) return;   // сначала — серверные часы
+      var want = plan(tr), main = want[0];
+      var playing = P.decks.some(function (d) { return d.key && d.key !== "old"; });
+      // ещё ничего не играет — ждём (до 8 с), пока трек скачается целиком: дальше играет из памяти, без обрывов
+      if (!playing && !(blobs[main.tr.file] && blobs[main.tr.file].url) && now - (waitFrom || (waitFrom = now)) < 8000) { fetchBlob(main.tr.file); return; }
+      waitFrom = 0;
+      want.forEach(function (w) {
+        if (P.decks.some(function (x) { return x.key === w.key; })) return;
+        if (w !== main && (w.gain < 0.05 || now - born < 10000)) return;   // хвост: почти не слышно / только что сменили жанр (деки заняты уходящим) — не начинаем
+        var d = P.decks.filter(function (x) { return !x.key; })[0] || P.decks.filter(function (x) { return x.key === "old"; })[0]
+          || P.decks.filter(function (x) { return want.every(function (y) { return y.key !== x.key; }); })[0];
+        if (d) load(d, w);
+      });
+      P.decks.forEach(function (d) {
+        if (!d.key || d.key === "old") return;
+        var w = null;
+        want.forEach(function (y) { if (y.key === d.key) w = y; });
+        if (!w) { deckOff(d); return; }   // переход кончился — трек отыграл своё
+        d.g.gain.setTargetAtTime(w.gain, ctx.currentTime, 0.2);
+        sync(d, w);
+      });
+      if (main.tr !== cur) {
+        cur = main.tr;
+        nowTrack = "♪ " + (cur.author ? cur.author + " — " : "") + cur.title + (/^CC/.test(cur.license || "") ? " (" + cur.license.replace(/ [\d.]+$/, "") + ")" : "");
+      }
+      fetchBlob(want.next.file);   // следующий трек — заранее
+    }
+    var iv = setInterval(step, 500);
+    step();
+    self.__state = function () {   // для теста
+      var tr = tracks(), p = tr ? plan(tr) : [];
+      return {title: nowTrack, off: clk.off, seeks: self.__seeks, owner: P.owner === self,
+        want: p.map(function (w) { return {key: w.key, file: w.tr.file, at: +w.at.toFixed(2), gain: +w.gain.toFixed(3)}; }),
+        decks: P.decks.map(function (d) { return {key: d.key, at: +d.el.currentTime.toFixed(2), gain: +d.g.gain.value.toFixed(3), paused: d.el.paused, rate: d.el.playbackRate, src: d.el.src ? d.el.src.slice(-30) : ""}; })};
+    };
+    self.set = function (g, pv, cut) {
+      if (!ctx || P.owner !== self) return;
+      P.out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (P.pn) P.pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
+      P.muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
+    };
+    // ушёл из клуба / портал — плавно гаснет ~3–4 с (владелец 2026-10-20)
+    self.fade = function () { if (!ctx || P.owner !== self) return; P.out.gain.cancelScheduledValues(ctx.currentTime); P.out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
+    self.retire = function () { self.alive = false; clearInterval(iv); };   // DJ сменил жанр: деки забирает новый плейлист (старое уходит плавно)
+    self.kill = function () { self.retire(); if (P.owner === self) { P.decks.forEach(deckOff); P.owner = null; } };
+    // нажатие (iPhone): разрешить звук обеим декам — свободную коротко запускаем без звука (её громкость 0) и сразу на паузу
+    self.play = function () {
+      P.decks.forEach(function (d) {
+        if (d.key && d.key !== "old") { playEl(d.el); return; }
+        if (d.key) return;
+        var tr = tracks(), f = tr ? tr[0].file : null;
+        if (!f) return;
+        if (!d.el.src) d.el.src = (blobs[f] && blobs[f].url) || "music/" + f;
+        var pr = d.el.play();
+        if (pr && pr.then) pr.then(function () { if (!d.key) d.el.pause(); }).catch(function () { });
+      });
     };
   }
 
@@ -486,7 +534,7 @@
     volume: function (v) { if (v != null) { vol = Math.max(0, Math.min(1, v)); pref("vol", String(vol)); update(); } return vol; },
     enabled: function () { return enabled; },
     __setCfg: function (j) { cfg = j; },   // для тестовой страницы
-    __el: function () { return zEl; },   // для теста восстановления после паузы
+    __el: function () { return Z ? Z.decks[0].el : null; },   // для теста восстановления после паузы
     __zone: function () { var g = gens["z:club"]; return g && g.__state ? g.__state() : null; },   // для теста синхронизации
     cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
     // У296: в каком помещении-зоне ты сейчас (клуб) — voice.js: в клубе музыка «съедает» голоса, слышно только стоящих рядом
