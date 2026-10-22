@@ -112,6 +112,17 @@
    "sig": "5264064:1792653848"
   },
   {
+   "id": "ad",
+   "title": "Ад",
+   "file": "own/ad.mp3",
+   "length": 189.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "C04-ad.mp3",
+   "sig": "5295072:1792654006"
+  },
+  {
    "id": "holy-club",
    "title": "Holy Club",
    "file": "own/holy-club.mp3",
@@ -156,5 +167,5 @@
    "sig": "5279040:1792643725"
   }
  ],
- "total": 2846.86
+ "total": 3036.85
 }
