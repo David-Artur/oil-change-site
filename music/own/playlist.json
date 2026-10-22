@@ -134,6 +134,17 @@
    "sig": "5591304:1792654168"
   },
   {
+   "id": "privat",
+   "title": "Приват",
+   "file": "own/privat.mp3",
+   "length": 189.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "C07-privat.mp3",
+   "sig": "5077536:1792654481"
+  },
+  {
    "id": "holy-club",
    "title": "Holy Club",
    "file": "own/holy-club.mp3",
@@ -178,5 +189,5 @@
    "sig": "5279040:1792643725"
   }
  ],
- "total": 3236.85
+ "total": 3426.84
 }
