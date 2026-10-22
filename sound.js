@@ -79,6 +79,8 @@
     var list = genre === "own" ? "own:" + (club && club.tracks && club.tracks.length ? club.tracks.join(",") : "") : genre;
     if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "list_" + list,
       // треки сведены громко — 0.32 ≈ громкость остальной музыки
+      // 2026-10-22 владелец: «самое громкое — между 4 колонн (танцпол); за колоннами — на 20% тише»: танцпол — центр клуба ±5.5 бл.
+      peak: {x1: (club.x1 + club.x2) / 2 - 5.5, x2: (club.x1 + club.x2) / 2 + 5.5, z1: (club.z1 + club.z2) / 2 - 5.5, z2: (club.z1 + club.z2) / 2 + 5.5}, offPeak: 0.8,
       vol: 0.32, exclusive: true, fade: 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
   }
   function stop() {
@@ -160,6 +162,11 @@
         if (!g) {
           var lid = z.preset.indexOf("list_") === 0 ? z.preset.slice(5) : null;
           g = gens["z:" + z.id] = lid ? new Playlist(lid) : new Gen(PRESETS[z.preset] || PRESETS.club); g.preset = z.preset;
+        }
+        // внутри: на танцполе (z.peak) — 100%, за колоннами — z.offPeak (переход за 2 блока)
+        if (de === 0 && z.peak && pos) {
+          var pe = Math.hypot(Math.max(z.peak.x1 - pos.x, 0, pos.x - z.peak.x2), Math.max(z.peak.z1 - pos.z, 0, pos.z - z.peak.z2));
+          k *= 1 - (1 - (z.offPeak || 0.8)) * Math.min(1, pe / 2);
         }
         g.set(z.vol * k, de === 0 ? 0 : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25));
         if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
