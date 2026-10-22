@@ -81,6 +81,7 @@
       // треки сведены громко — 0.32 ≈ громкость остальной музыки
       // 2026-10-22 владелец: «самое громкое — между 4 колонн (танцпол); за колоннами — 65% громкости (владелец: «давай до 65 процентов»)»: танцпол — центр клуба ±5.5 бл.
       peak: {x1: (club.x1 + club.x2) / 2 - 5.5, x2: (club.x1 + club.x2) / 2 + 5.5, z1: (club.z1 + club.z2) / 2 - 5.5, z2: (club.z1 + club.z2) / 2 + 5.5}, offPeak: 0.65,
+      stage: {x: (club.x1 + club.x2) / 2, z: club.z2 - 1.5}, wet: 0.35,   // сцена DJ — у южной стены (дверь — север); отзвук зала
       vol: 0.32, exclusive: true, fade: 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
   }
   function stop() {
@@ -168,7 +169,10 @@
           var pe = Math.hypot(Math.max(z.peak.x1 - pos.x, 0, pos.x - z.peak.x2), Math.max(z.peak.z1 - pos.z, 0, pos.z - z.peak.z2));
           k *= 1 - (1 - (z.offPeak || 0.8)) * Math.min(1, pe / 2);
         }
-        g.set(z.vol * k, de === 0 ? 0 : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25));
+        // 2026-10-22 владелец: «3D-стерео в клубе» — внутри звук идёт со сцены (z.stage): повернул голову — сцена слева/справа
+        // (не больше ±0.55, чтобы не уходило в одно ухо), + отзвук зала; снаружи — как было (со стороны клуба, глухо)
+        var inPan = de === 0 && z.stage && pos ? pan(z.stage.x, z.stage.z) * 0.65 : 0;
+        g.set(z.vol * k, de === 0 ? inPan : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25), de === 0 ? (z.wet || 0) : 0);
         if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
         txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id) + (de === 0 && g.preset && g.preset.indexOf("list_") === 0 && nowTrack ? " · " + nowTrack : ""));
       } else if (g && g.usesZone && enabled && Date.now() - (g.zeroAt || (g.zeroAt = Date.now())) < 8000) {
@@ -348,7 +352,14 @@
     var out = ctx.createGain(), muff = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
     out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;   // громкость по расстоянию → «за стеной» → лево/право → master
     out.connect(muff); if (pn) { muff.connect(pn); pn.connect(master); } else muff.connect(master);
-    Z = {ctx: ctx, master: master, out: out, muff: muff, pn: pn, owner: null, decks: []};
+    // 2026-10-22 владелец («в клубе иное звучание… 3D-стерео»): внутри — отзвук зала (свёртка со сгенерированным хвостом ~1.8 с), доля — wet
+    var wet = ctx.createGain(); wet.gain.value = 0;
+    try {
+      var conv = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 1.8), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (var c = 0; c < 2; c++) { var ch = ir.getChannelData(c); for (var s = 0; s < len; s++) ch[s] = (Math.random() * 2 - 1) * Math.pow(1 - s / len, 3); }
+      conv.buffer = ir; (pn || muff).connect(conv); conv.connect(wet); wet.connect(master);
+    } catch (e) { }
+    Z = {ctx: ctx, master: master, out: out, muff: muff, pn: pn, wet: wet, owner: null, decks: []};
     for (var i = 0; i < 2; i++) {
       var el = new Audio(); el.crossOrigin = "anonymous"; el.setAttribute("playsinline", ""); el.preload = "auto"; el.preservesPitch = true;
       var g = ctx.createGain(); g.gain.value = 0; g.connect(out);
@@ -510,10 +521,11 @@
         want: p.map(function (w) { return {key: w.key, file: w.tr.file, at: +w.at.toFixed(2), gain: +w.gain.toFixed(3)}; }),
         decks: P.decks.map(function (d) { return {key: d.key, at: +d.el.currentTime.toFixed(2), gain: +d.g.gain.value.toFixed(3), paused: d.el.paused, rate: d.el.playbackRate, src: d.el.src ? d.el.src.slice(-30) : ""}; })};
     };
-    self.set = function (g, pv, cut) {
+    self.set = function (g, pv, cut, wv) {
       if (!ctx || P.owner !== self) return;
-      P.out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (P.pn) P.pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
+      P.out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (P.pn) P.pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.6);
       P.muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
+      if (P.wet) P.wet.gain.setTargetAtTime(wv || 0, ctx.currentTime, 0.8);   // вход свёртки уже после громкости out
     };
     // ушёл из клуба / портал — плавно гаснет ~3–4 с (владелец 2026-10-20)
     self.fade = function () { if (!ctx || P.owner !== self) return; P.out.gain.cancelScheduledValues(ctx.currentTime); P.out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
