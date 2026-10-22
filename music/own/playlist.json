@@ -2,15 +2,23 @@
  "name": "own",
  "tracks": [
   {
-   "id": "holy-club",
-   "title": "Holy Club",
-   "file": "own/holy-club.mp3",
-   "length": 239.6,
+   "id": "minus-sto",
+   "title": "Минус сто",
+   "file": "own/minus-sto.mp3",
+   "length": 194.98,
    "author": "DaviArt Holy Club",
-   "source": "https://suno.com/song/517104d3-e7d4-413a-b9b0-56f9a6071f52",
-   "suno": "517104d3-e7d4-413a-b9b0-56f9a6071f52",
-   "kbps": 112
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
+  },
+  {
+   "id": "vynesi",
+   "title": "Вынеси",
+   "file": "own/vynesi.mp3",
+   "length": 194.98,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
   }
  ],
- "total": 239.6
+ "total": 389.96
 }

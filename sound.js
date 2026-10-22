@@ -71,7 +71,9 @@
     // У298 (владелец 2026-10-21: «договорились — только скачанная музыка»): в клубе играют ТОЛЬКО свои треки с нашего сайта (music/…).
     // Радио убрано: если сервер ещё присылает старые жанры радио (record/soma — до VPLand 0.9.22), играем свой хаус / чилл.
     var genre = club && /^(own|house|disco|chill|record|soma)$/.test(club.genre || "") ? club.genre : "house";
-    genre = {record: "house", soma: "chill"}[genre] || genre;
+    // 2026-10-22 (владелец: «в клубе — только наши сгенерированные треки, всё остальное удалить»): хаус/диско/чилл (Kevin MacLeod)
+    // с сайта удалены — любой жанр от DJ играет наши треки (own), пока кнопки жанров не убраны из VPLand
+    genre = "own";
     var GN = {own: "наши треки", house: "хаус", disco: "диско", chill: "чилл"};
     // 2026-10-22 (VPLand 0.9.29): own — наши треки; какие именно — выбирают у DJ (club.tracks), играют вперемешку с плавными переходами
     var list = genre === "own" ? "own:" + (club && club.tracks && club.tracks.length ? club.tracks.join(",") : "") : genre;

@@ -1,40 +1,7 @@
-Музыка клуба DaviArt Holy Club — Kevin MacLeod (incompetech.com)
-Лицензия: Creative Commons: By Attribution 4.0 — http://creativecommons.org/licenses/by/4.0/
+Музыка DaviArt Holy Club (с 2026-10-22)
 
-house — «Ethernight Club» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Cut and Run» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Brain Dance» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Raving Energy» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «EDM Detection Mode» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Dance Monster» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Voltaic» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Laserpack» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Cut Trance» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Misuse» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Latin Industries» (Kevin MacLeod, incompetech.com), CC BY 4.0
-house — «Cut and Dry» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Disco con Tutti» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Disco Medusae» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Aurea Carmina» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Who Likes to Party» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Stringed Disco» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Ether Disco» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Overcast» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Realizer» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Disco Lounge» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Funky Chunk» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Enter the Party» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «Your Call» (Kevin MacLeod, incompetech.com), CC BY 4.0
-disco — «C-Funk» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Hypnothis» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Eternity» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Limit 70» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Beauty Flow» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Chill Wave» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Pamgaea» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Unwritten Return» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Babylon» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Severe Tire Damage» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Dream Catcher» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Backbay Lounge» (Kevin MacLeod, incompetech.com), CC BY 4.0
-chill — «Airport Lounge» (Kevin MacLeod, incompetech.com), CC BY 4.0
+В клубе играют только наши треки (music/own/, список — own/playlist.json).
+Сгенерированы локально нейросетью ACE-Step 1.5 (github.com/ace-step/ACE-Step-1.5, лицензия MIT;
+по условиям модели сгенерированную музыку можно использовать, в том числе коммерчески).
+
+Прежние треки Kevin MacLeod (CC BY 4.0) и запись с Suno из клуба убраны.
