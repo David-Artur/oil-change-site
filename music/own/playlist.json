@@ -18,7 +18,70 @@
    "author": "DaviArt Holy Club",
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160
+  },
+  {
+   "id": "krovavaya-luna",
+   "title": "Кровавая луна",
+   "file": "own/krovavaya-luna.mp3",
+   "length": 246.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
+  },
+  {
+   "id": "holy-club",
+   "title": "Holy Club",
+   "file": "own/holy-club.mp3",
+   "length": 239.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
+  },
+  {
+   "id": "titul",
+   "title": "Титул",
+   "file": "own/titul.mp3",
+   "length": 194.98,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
+  },
+  {
+   "id": "shest-mirov",
+   "title": "Шесть миров",
+   "file": "own/shest-mirov.mp3",
+   "length": 200.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
+  },
+  {
+   "id": "adrenalin",
+   "title": "Адреналин",
+   "file": "own/adrenalin.mp3",
+   "length": 185.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
+  },
+  {
+   "id": "shakhta-do-utra",
+   "title": "Шахта до утра",
+   "file": "own/shakhta-do-utra.mp3",
+   "length": 200.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
+  },
+  {
+   "id": "portal-v-pustoshi",
+   "title": "Портал в Пустоши",
+   "file": "own/portal-v-pustoshi.mp3",
+   "length": 210.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160
   }
  ],
- "total": 389.96
+ "total": 1866.92
 }
