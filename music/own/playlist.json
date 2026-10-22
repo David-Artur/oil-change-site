@@ -10,7 +10,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "02-shakhta-do-utra.mp3",
-   "sig": "5517384:1792649036"
+   "sig": "5517384:1792649036",
+   "style": "Бас-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "portal-v-pustoshi",
@@ -21,7 +23,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "05-portal-v-pustoshi.mp3",
-   "sig": "6053760:1792649523"
+   "sig": "6053760:1792649523",
+   "style": "Тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "titul",
@@ -32,7 +36,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "B01-titul-sto.mp3",
-   "sig": "5397120:1792649961"
+   "sig": "5397120:1792649961",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "shest-mirov",
@@ -43,7 +49,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "B03-shest-mirov.mp3",
-   "sig": "5475984:1792650281"
+   "sig": "5475984:1792650281",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "adrenalin",
@@ -54,7 +62,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "B06-adrenalin.mp3",
-   "sig": "5079648:1792650745"
+   "sig": "5079648:1792650745",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "zhar-i-kholod",
@@ -65,7 +75,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "B07-zhar-i-kholod.mp3",
-   "sig": "5195040:1792650902"
+   "sig": "5195040:1792650902",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "rassvet",
@@ -76,7 +88,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "B10-rassvet.mp3",
-   "sig": "5879424:1792651382"
+   "sig": "5879424:1792651382",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "skupshchik",
@@ -87,7 +101,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C01-skupshchik.mp3",
-   "sig": "5145072:1792653531"
+   "sig": "5145072:1792653531",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "baba-yaga",
@@ -98,7 +114,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C02-baba-yaga.mp3",
-   "sig": "5323776:1792653689"
+   "sig": "5323776:1792653689",
+   "style": "Тек-хаус со скрипкой",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "karta",
@@ -109,7 +127,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C03-karta.mp3",
-   "sig": "5264064:1792653848"
+   "sig": "5264064:1792653848",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "ad",
@@ -120,7 +140,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C04-ad.mp3",
-   "sig": "5295072:1792654006"
+   "sig": "5295072:1792654006",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "end",
@@ -131,7 +153,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C05-end.mp3",
-   "sig": "5591304:1792654168"
+   "sig": "5591304:1792654168",
+   "style": "Тек-хаус со скрипкой",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "privat",
@@ -142,7 +166,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C07-privat.mp3",
-   "sig": "5077536:1792654481"
+   "sig": "5077536:1792654481",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "skripka-nochi",
@@ -153,7 +179,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C08-skripka-nochi.mp3",
-   "sig": "5571120:1792654640"
+   "sig": "5571120:1792654640",
+   "style": "Тек-хаус со скрипкой",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "sto-iz-sta",
@@ -164,7 +192,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "C10-sto-iz-sta.mp3",
-   "sig": "5771808:1792654966"
+   "sig": "5771808:1792654966",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "holy-club",
@@ -175,7 +205,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "holy-club-v4.mp3",
-   "sig": "6261024:1792647744"
+   "sig": "6261024:1792647744",
+   "style": "Дэнс-поп / хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "krovavaya-luna",
@@ -186,7 +218,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "krovavaya-luna-pos-v1.mp3",
-   "sig": "6645648:1792648507"
+   "sig": "6645648:1792648507",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "minus-sto",
@@ -197,7 +231,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "minus-sto_xl-sft_60steps.mp3",
-   "sig": "5396928:1792643725"
+   "sig": "5396928:1792643725",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   },
   {
    "id": "vynesi",
@@ -208,7 +244,9 @@
    "source": "ACE-Step 1.5 (MIT)",
    "kbps": 160,
    "src": "vynesi_xl-sft_60steps_1021-2228.mp3",
-   "sig": "5279040:1792643725"
+   "sig": "5279040:1792643725",
+   "style": "Тёмный тек-хаус",
+   "place": "DaviArt Holy Club"
   }
  ],
  "total": 3836.84
