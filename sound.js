@@ -51,10 +51,10 @@
   // У291: клуб — где он построен, сервер сам говорит в публичном /api/players (VPLand 0.9.20, поле club); нет поля — клуба нет, музыки тоже
   // 2026-10-21 (владелец: «рассинхрон — каждый слышит свой трек»): часы для плейлиста — СЕРВЕРНЫЕ (поле t в /api/players), а не часы устройства:
   // сдвиг = t − середина запроса; из проб берём ту, где запрос был быстрее всего (точнее), старые пробы «стареют».
-  var clubT = null, club = null, clk = {off: null, rtt: 1e9, at: 0};
+  var clubT = null, club = null, clk = {off: null, rtt: 1e9, at: 0}, zoneAt = 0;
   function serverNow() { return Date.now() + (clk.off || 0); }
   function clubZone() {
-    var t0 = Date.now();
+    var t0 = Date.now(); zoneAt = t0;
     fetch("https://mc.daviart.com/api/players", {cache: "no-store"}).then(function (r) { return r.json(); }).then(function (j) {
       var t1 = Date.now(), rtt = t1 - t0;
       if (j && typeof j.t === "number" && rtt < 5000) {
@@ -76,7 +76,9 @@
     genre = "own";
     var GN = {own: "наши треки", house: "хаус", disco: "диско", chill: "чилл"};
     // 2026-10-22 (VPLand 0.9.29): own — наши треки; какие именно — выбирают у DJ (club.tracks), играют вперемешку с плавными переходами
-    var list = genre === "own" ? "own:" + (club && club.tracks && club.tracks.length ? club.tracks.join(",") : "") : genre;
+    // У313 (VPLand 0.9.33): сервер сам ведёт расписание (club.now/next/queue — заказы у DJ) → плейлист «own» читает его на каждом шаге;
+    // нет расписания (старый сервер) — как раньше: выбранные треки вперемешку по серверным часам
+    var list = genre === "own" ? (club && club.now ? "own" : "own:" + (club && club.tracks && club.tracks.length ? club.tracks.join(",") : "")) : genre;
     if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "list_" + list,
       // треки сведены громко — 0.32 ≈ громкость остальной музыки
       // 2026-10-22 владелец: «самое громкое — между 4 колонн (танцпол); за колоннами — 65% громкости (владелец: «давай до 65 процентов»)»: танцпол — центр клуба ±5.5 бл.
@@ -411,7 +413,7 @@
     var self = this, P = zplayer(), k0 = spec.indexOf(":"), name = k0 < 0 ? spec : spec.slice(0, k0);
     var ids = k0 < 0 ? null : spec.slice(k0 + 1).split(",").filter(Boolean);
     self.alive = true; self.usesZone = true; self.__seeks = 0; P.owner = self;
-    var born = Date.now(), waitFrom = 0, cache = null, cur = null;
+    var born = Date.now(), waitFrom = 0, cache = null, cur = null, curKey = null;
     // смена жанра / набора треков: то, что играло, плавно уходит, новое входит на свободной деке
     P.decks.forEach(function (d) {
       if (!d.key || d.key === "old") return;
@@ -437,7 +439,36 @@
       if (o[0] === prev[n - 1]) { var t = o[0]; o[0] = o[1]; o[1] = t; }   // стык кругов — не тот же трек ещё раз
       return o;
     }
+    // У313 (владелец 2026-10-22: «нажал пластинку — заказал эту песню как следующую»): расписание СЕРВЕРА — now {id, start, len, by}
+    // (start — серверные мс), prev (его хвост звучит на стыке), next {id, start}, xf. Заказ играет после текущего с тем же плавным
+    // переходом. Не сходится (нет трека в списке, время явно не то) — null: тогда старое «вперемешку».
+    function sched() {
+      var S = club, pl = lists[name];
+      if (ids || !S || !S.now || !S.now.id || !pl || !pl.tracks) return null;
+      var byId = {};
+      pl.tracks.forEach(function (t) { byId[t.id] = t; });
+      var T = function (e) { return e && e.id && byId[e.id] ? byId[e.id] : null; };
+      var sn = serverNow(), cur = S.now, prv = S.prev, nxt = S.next;
+      if (nxt && nxt.start && sn >= nxt.start) { prv = cur; cur = nxt; nxt = null; }   // ответ сервера устарел — переход уже был
+      var ct = T(cur);
+      if (!ct) { if (Date.now() - listAt[name] > 60000) { delete lists[name]; loadList(name); } return null; }   // новый трек — перечитать список
+      var clen = cur.len || ct.length, at = (sn - cur.start) / 1000;
+      if (!(at > -5 && at < clen + 30)) return null;
+      var pt = T(prv), xf = S.xf || XF;
+      if (pt) xf = Math.max(1, Math.min(xf, (prv.start + (prv.len || pt.length) * 1000 - cur.start) / 1000));   // хвост предыдущего
+      xf = Math.min(xf, clen / 3);
+      var a0 = Math.max(0, at), x = Math.min(1, a0 / xf);
+      var res = [{key: "s|" + cur.id + "|" + cur.start, tr: ct, at: a0, gain: a0 < xf ? Math.sin(x * Math.PI / 2) : 1, by: cur.by || ""}];
+      if (a0 < xf && pt) {
+        var pat = (sn - prv.start) / 1000;
+        if (pat < (prv.len || pt.length) - 0.2) res.push({key: "s|" + prv.id + "|" + prv.start, tr: pt, at: pat, gain: Math.cos(x * Math.PI / 2)});
+      }
+      res.next = T(nxt) || ct; res.sched = true; res.nextStart = nxt && nxt.start ? nxt.start : 0;
+      return res;
+    }
     function plan(tr) {   // что звучит сейчас у всех: основной трек и (на стыке) хвост предыдущего; + какой следующий
+      var sp = sched();
+      if (sp) return sp;
       var n = tr.length, xf = Math.min(XF, Math.min.apply(null, tr.map(function (t) { return t.length; })) / 3), T = 0;
       tr.forEach(function (t) { T += t.length - xf; });
       var now = serverNow() / 1000, c = Math.floor(now / T), t = now - c * T, o = order(c, n), s = 0, k = 0;
@@ -503,21 +534,28 @@
         if (!d.key || d.key === "old") return;
         var w = null;
         want.forEach(function (y) { if (y.key === d.key) w = y; });
-        if (!w) { deckOff(d); return; }   // переход кончился — трек отыграл своё
+        if (!w) {   // переход кончился — трек отыграл своё (громкость уже ~0); расписание поменялось на ходу — плавно уводим
+          if (d.g.gain.value > 0.05) { d.key = "old"; d.gone = now + CHANGE_FADE * 1000 + 500; d.g.gain.cancelScheduledValues(ctx.currentTime); d.g.gain.setTargetAtTime(0, ctx.currentTime, CHANGE_FADE / 4); }
+          else deckOff(d);
+          return;
+        }
         d.g.gain.setTargetAtTime(w.gain, ctx.currentTime, 0.2);
         sync(d, w);
       });
-      if (main.tr !== cur) {
-        cur = main.tr;
-        nowTrack = "♪ " + (cur.author ? cur.author + " — " : "") + cur.title + (/^CC/.test(cur.license || "") ? " (" + cur.license.replace(/ [\d.]+$/, "") + ")" : "");
+      if (main.key !== curKey) {
+        var was = curKey; curKey = main.key; cur = main.tr;
+        nowTrack = "♪ " + (cur.author ? cur.author + " — " : "") + cur.title + (main.by ? " (заказ " + main.by + ")" : "") + (/^CC/.test(cur.license || "") ? " (" + cur.license.replace(/ [\d.]+$/, "") + ")" : "");
+        if (want.sched && was) setTimeout(clubZone, 1500);   // У313: переход был — сразу узнать новый «следующий»
       }
+      // У313: за 25 с до перехода — спрашивать сервер чаще (раз в 3 с): заказ «следующим» фиксируется за 10 с до стыка
+      if (want.sched && want.nextStart && want.nextStart - serverNow() < 25000 && Date.now() - zoneAt > 3000) clubZone();
       fetchBlob(want.next.file);   // следующий трек — заранее
     }
     var iv = setInterval(step, 500);
     step();
     self.__state = function () {   // для теста
       var tr = tracks(), p = tr ? plan(tr) : [];
-      return {title: nowTrack, off: clk.off, seeks: self.__seeks, owner: P.owner === self,
+      return {title: nowTrack, off: clk.off, seeks: self.__seeks, owner: P.owner === self, sched: !!(p && p.sched),
         want: p.map(function (w) { return {key: w.key, file: w.tr.file, at: +w.at.toFixed(2), gain: +w.gain.toFixed(3)}; }),
         decks: P.decks.map(function (d) { return {key: d.key, at: +d.el.currentTime.toFixed(2), gain: +d.g.gain.value.toFixed(3), paused: d.el.paused, rate: d.el.playbackRate, src: d.el.src ? d.el.src.slice(-30) : ""}; })};
     };

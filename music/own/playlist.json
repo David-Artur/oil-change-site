@@ -79,6 +79,17 @@
    "sig": "5879424:1792651382"
   },
   {
+   "id": "skupshchik",
+   "title": "Скупщик",
+   "file": "own/skupshchik.mp3",
+   "length": 189.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "C01-skupshchik.mp3",
+   "sig": "5145072:1792653531"
+  },
+  {
    "id": "holy-club",
    "title": "Holy Club",
    "file": "own/holy-club.mp3",
@@ -123,5 +134,5 @@
    "sig": "5279040:1792643725"
   }
  ],
- "total": 2266.91
+ "total": 2456.9
 }
