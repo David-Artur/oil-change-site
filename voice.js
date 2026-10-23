@@ -236,6 +236,71 @@
     cave.wet.gain.setTargetAtTime(c * 0.35, ctx.currentTime, 1.2);   // владелец: «небольшое эхо»
   }
 
+  // ---------------------------------------------------------------- У323 (владелец 2026-10-23): под водой — глухо и с бульканьем
+  // «Полностью погружаемся под воду — чтобы практически не было слышно собеседника, бульканье, глухо». Сервер (VPLand /api/voice)
+  // присылает water: голова под водой у тебя (j.water) и у каждого собеседника (pe.water). Под водой ты ИЛИ он — его голос идёт
+  // через фильтр ~400 Гц (глухо), ×0.2, звук медленно «плавает» (общий LFO по частоте фильтра); пока он говорит — пузырьки.
+  // Свой голос под водой — тоже пузырьки (только у себя). Вход/выход плавные (~0,3 с).
+  var water = null, meWater = false, bubbleAt = 0;
+  function OPEN() { return Math.min(20000, ctx.sampleRate / 2 - 200); }   // «фильтр открыт» — не выше половины частоты дискретизации
+  function waterShared() {
+    if (water && water.ctx === ctx) return water;
+    var lfo = ctx.createOscillator(), depth = ctx.createGain();
+    lfo.type = "sine"; lfo.frequency.value = 0.6; depth.gain.value = 0;
+    lfo.connect(depth); lfo.start();
+    water = {ctx: ctx, depth: depth};
+    return water;
+  }
+  function waterNode() {
+    var w = waterShared(), lp = ctx.createBiquadFilter(), out = ctx.createGain();
+    lp.type = "lowpass"; lp.frequency.value = OPEN(); lp.Q.value = 2.5;
+    w.depth.connect(lp.frequency);
+    lp.connect(out);
+    return {lp: lp, out: out, on: false};
+  }
+  function waterApply(p) {
+    if (!p.water || !ctx) return;
+    var u = !!(meWater || p.wet);
+    if (u === p.water.on) return;
+    p.water.on = u;
+    var t = ctx.currentTime;
+    p.water.lp.frequency.cancelScheduledValues(t);
+    p.water.lp.frequency.setTargetAtTime(u ? 420 : OPEN(), t, u ? 0.08 : 0.12);
+    p.water.out.gain.setTargetAtTime(u ? 0.2 : 1, t, 0.1);
+  }
+  function waterTick() {
+    if (!ctx) return;
+    var any = meWater;
+    Object.keys(peers).forEach(function (n) { var p = peers[n]; waterApply(p); if (p.wet) any = true; });
+    var w = waterShared();
+    w.depth.gain.setTargetAtTime(any ? 140 : 0, ctx.currentTime, 0.2);   // «плавание» только когда кто-то под водой
+    // пузырьки (штук в секунду): говорит собеседник под водой — 3, ты под водой и слышишь говорящего сверху — 1, говоришь сам под водой — 3.
+    // Опросы идут неровно (0,4 с … пачками) — считаем по прошедшему времени и раскладываем на этот же отрезок вперёд
+    var now = Date.now(), dt = Math.min(1, Math.max(0, (now - (bubbleAt || now)) / 1000)), rate = 0;
+    bubbleAt = now;
+    Object.keys(peers).forEach(function (k) {
+      var p = peers[k];
+      if (p.speaking && p.d != null && !p.muted && (meWater || p.wet) && p.pc && p.pc.connectionState === "connected") rate += meWater && !p.wet ? 1 : 3;
+    });
+    if (meWater && gateOpen && micOn) rate += 3;
+    var n = Math.floor(rate * dt + Math.random());
+    if (!rate) n = 0;
+    for (var i = 0; i < n; i++) bubble(ctx.currentTime + 0.02 + Math.random() * Math.max(0.2, dt), meWater ? 0.05 : 0.035);
+  }
+  function bubble(at, vol) {   // один «бульк»: синус с быстрым подъёмом частоты, короткая огибающая
+    try {
+      var o = ctx.createOscillator(), g = ctx.createGain(), f0 = 180 + Math.random() * 260, dur = 0.05 + Math.random() * 0.07;
+      o.type = "sine";
+      o.frequency.setValueAtTime(f0, at);
+      o.frequency.exponentialRampToValueAtTime(f0 * (2.2 + Math.random() * 1.6), at + dur);
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(vol * (0.5 + Math.random()), at + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(at); o.stop(at + dur + 0.02);
+    } catch (e) { }
+  }
+
   function setDuck(v) { if (gate && v !== ducked) { ducked = v; gate.port.postMessage({duck: v}); } }
 
   function leave(tell) {
@@ -334,7 +399,7 @@
         var now = Date.now();
         (j.peers || []).forEach(function (pe) {
           var p = peers[pe.name] || (peers[pe.name] = {pending: [], muted: false});
-          p.d = pe.d; p.seen = now; p.speaking = pe.speaking;
+          p.d = pe.d; p.seen = now; p.speaking = pe.speaking; p.wet = !!pe.water;   // У323: собеседник под водой
           if (pe.sid && p.sid && pe.sid !== p.sid && p.pc) closePc(p);   // собеседник переподключился — старое соединение мёртвое
           if (pe.sid) p.sid = pe.sid;
           if (p.pc && p.pc.connectionState !== "connected" && p.made && now - p.made > STUCK_MS) closePc(p);   // «соединяюсь» дольше 90 с — заново
@@ -357,6 +422,7 @@
         // 2026-10-22 владелец: музыка тише, только когда говорят ТЕБЕ (собеседник рядом) — когда говоришь сам, музыка не приглушается
         if (window.VPSound) VPSound.duck(talking);   // У290: говорят — музыка и фразы тише
         caveLevel();   // У292: эхо в пещере
+        meWater = !!j.water; waterTick();   // У323: под водой — глухо и пузырьки
         if (first) draw(); else { status(); drawPeers(); }
       }
       polling = false;
@@ -499,8 +565,10 @@
         try {
           var src = ctx.createMediaStreamSource(s);
           p.gain = ctx.createGain();
-          src.connect(p.gain); p.gain.connect(ctx.destination);
-          var cb = caveBus(); if (cb) p.gain.connect(cb);   // У292: в пещере — эхо
+          var wn = waterNode();   // У323: под водой — глухо (фильтр + тише); над водой фильтр открыт и не слышен
+          src.connect(p.gain); p.gain.connect(wn.lp); wn.out.connect(ctx.destination);
+          p.water = wn;
+          var cb = caveBus(); if (cb) wn.out.connect(cb);   // У292: в пещере — эхо
         } catch (er) { p.el.muted = false; p.gain = null; }
       }
       var pl = p.el.play(); if (pl && pl.catch) pl.catch(function () { });
@@ -586,8 +654,9 @@
   function closePc(p) {
     if (p.pc) { try { p.pc.close(); } catch (e) { } }
     if (p.gain) { try { p.gain.disconnect(); } catch (e) { } }
+    if (p.water) { try { p.water.out.disconnect(); p.water.lp.disconnect(); } catch (e) { } }
     if (p.el) { p.el.srcObject = null; }
-    p.pc = null; p.gain = null; p.el = null; p.pending = [];
+    p.pc = null; p.gain = null; p.water = null; p.el = null; p.pending = [];
   }
 
   function drop(name) { var p = peers[name]; if (p) closePc(p); delete peers[name]; }
