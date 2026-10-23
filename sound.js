@@ -46,19 +46,23 @@
     master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
     if (!cfg) fetch("sounds.json?v=1", {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { cfg = j; clubZone(); }).catch(function () { });
     timer = setInterval(tick, 1000); tick();
-    clubT = setInterval(clubZone, 15000); clubZone(); setTimeout(clubZone, 1500); setTimeout(clubZone, 3500);   // 3 пробы часов на старте
+    clubT = setInterval(clubZone, 15000); clubZone(); [1200, 2500, 4000, 6000, 9000].forEach(function (ms) { setTimeout(clubZone, ms); });   // У321: 6 проб часов на старте (берётся самая быстрая)
   }
   // У291: клуб — где он построен, сервер сам говорит в публичном /api/players (VPLand 0.9.20, поле club); нет поля — клуба нет, музыки тоже
   // 2026-10-21 (владелец: «рассинхрон — каждый слышит свой трек»): часы для плейлиста — СЕРВЕРНЫЕ (поле t в /api/players), а не часы устройства:
   // сдвиг = t − середина запроса; из проб берём ту, где запрос был быстрее всего (точнее), старые пробы «стареют».
   var clubT = null, club = null, clk = {off: null, rtt: 1e9, at: 0}, zoneAt = 0;
   function serverNow() { return Date.now() + (clk.off || 0); }
+  // У321: задержка вывода звука (буфер браузера + звуковая карта/Bluetooth): то, что слышно сейчас, — позиция трека «минус lat»
+  function outLat() { var l = ctx ? (ctx.outputLatency || 0) + (ctx.baseLatency || 0) : 0; return isFinite(l) ? Math.max(0, Math.min(0.5, l)) : 0; }
   function clubZone() {
     var t0 = Date.now(); zoneAt = t0;
     fetch("https://mc.daviart.com/api/players", {cache: "no-store"}).then(function (r) { return r.json(); }).then(function (j) {
       var t1 = Date.now(), rtt = t1 - t0;
       if (j && typeof j.t === "number" && rtt < 5000) {
-        var aged = clk.rtt + (t1 - clk.at) / 60;   // проба минутной давности считается хуже на 1 мс-задержки за секунду
+        // У321: проба «стареет» на 1 мс за 10 с (часы устройства уходят не быстрее ~0.1 мс/с); было 1 мс за 60 мс — любая новая проба
+        // вытесняла точную, и сдвиг часов прыгал на десятки мс
+        var aged = clk.rtt + (t1 - clk.at) / 10000;
         if (clk.off == null || rtt <= aged) { clk.off = j.t - (t0 + t1) / 2; clk.rtt = rtt; clk.at = t1; }
       }
       if (!j || typeof j.t !== "number") return;   // сбойный ответ — клуб не «исчезает» (музыка не обрывается)
@@ -365,8 +369,9 @@
     for (var i = 0; i < 2; i++) {
       var el = new Audio(); el.crossOrigin = "anonymous"; el.setAttribute("playsinline", ""); el.preload = "auto"; el.preservesPitch = true;
       var g = ctx.createGain(); g.gain.value = 0; g.connect(out);
-      try { ctx.createMediaElementSource(el).connect(g); } catch (e) { }
-      Z.decks.push({el: el, g: g, key: null, gone: 0, lastAt: -1, still: 0, kick: 0, seekAt: 0});
+      var sk = ctx.createGain(); sk.connect(g);   // У321: «мягкая перемотка» — короткое затухание вокруг перескока, без щелчка
+      try { ctx.createMediaElementSource(el).connect(sk); } catch (e) { }
+      Z.decks.push({el: el, g: g, sk: sk, key: null, gone: 0, lastAt: -1, still: 0, kick: 0, seekAt: 0, err: null});
     }
     return Z;
   }
@@ -486,16 +491,29 @@
     function find(key) { var tr = tracks(); if (!tr) return null; var p = plan(tr); for (var i = 0; i < p.length; i++) if (p[i].key === key) return p[i]; return null; }
     function load(d, w) {
       var bb = blobs[w.tr.file], key = w.key;
-      d.key = key; d.gone = 0; d.still = 0; d.lastAt = -1; d.kick = Date.now();
+      d.key = key; d.gone = 0; d.still = 0; d.lastAt = -1; d.kick = Date.now(); d.err = null;
       d.g.gain.cancelScheduledValues(ctx.currentTime); d.g.gain.setValueAtTime(0, ctx.currentTime);
       d.el.playbackRate = 1;
       d.el.src = bb && bb.url ? bb.url : "music/" + w.tr.file;   // не успел скачаться — играет потоком
-      var seek = function () { if (d.key !== key) return; try { var ww = find(key); if (ww) { d.el.currentTime = Math.max(0, ww.at + 0.3); d.seekAt = Date.now(); } } catch (e) { } };
+      var seek = function () { if (d.key !== key) return; try { var ww = find(key); if (ww) { d.el.currentTime = Math.max(0, ww.at + outLat() + 0.05); d.seekAt = Date.now(); } } catch (e) { } };
       d.el.addEventListener("loadedmetadata", seek, {once: true});
       playEl(d.el);
     }
-    // подстройка (2026-10-21, «прерывисто, по кругу»): пока грузится — не трогаем; до 3 с — плавно догоняем скоростью ±4%;
-    // перескок — только если разошлось >3 с, не чаще раза в 8 с. Пауза/завис (телефон усыпил вкладку) — запустить заново.
+    // подстройка (2026-10-21, «прерывисто, по кругу»): пока грузится — не трогаем. Пауза/завис (телефон усыпил вкладку) — запустить заново.
+    // У321 (владелец 2026-10-23: «светомузыка в такт» — свет в игре идёт по серверным часам): держим ~0.05 с вместо ~0.3 с.
+    // Цель — то, что СЛЫШНО (позиция − задержка вывода), = серверное время трека. Ошибка сглаживается; плавно: скорость 1 + ошибка/1.5 с
+    // (не больше ±3%, голос не «плывёт» — preservesPitch); до 8 мс — ровно 1 (без постоянного растяжения звука); перескок — только если
+    // разошлось > 0.6 с (не чаще раза в 4 с), мягко: деку на 60 мс приглушить → перемотать → вернуть.
+    var SYNC_DEAD = 0.008, SYNC_TAU = 1.5, SYNC_MAX = 0.03, SYNC_JUMP = 0.6;
+    function softSeek(d, to) {
+      var g = d.sk.gain, t = ctx.currentTime, el = d.el;
+      g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 0.06);
+      setTimeout(function () {
+        try { el.currentTime = to; } catch (e) { }
+        var done = false, up = function () { if (done || !ctx) return; done = true; var t2 = ctx.currentTime; g.cancelScheduledValues(t2); g.setValueAtTime(0, t2); g.linearRampToValueAtTime(1, t2 + 0.08); };
+        el.addEventListener("seeked", up, {once: true}); window.setTimeout(up, 400);
+      }, 70);
+    }
     function sync(d, w) {
       var el = d.el, now = Date.now();
       if (el.ended) return;
@@ -505,11 +523,17 @@
       }
       d.lastAt = el.currentTime;
       if (el.paused || el.seeking || el.readyState < 3) return;
-      var df = w.at - el.currentTime;   // > 0 — отстаём
-      if (Math.abs(df) > 3 && now - d.seekAt > 8000 && w.at < w.tr.length - 2) {
-        d.seekAt = now; self.__seeks++; el.playbackRate = 1; try { el.currentTime = w.at + 0.3; } catch (e) { }
-      } else if (Math.abs(df) > 0.4) { var r = df > 0 ? 1.04 : 0.96; if (el.playbackRate !== r) el.playbackRate = r; }
-      else if (el.playbackRate !== 1 && Math.abs(df) < 0.1) el.playbackRate = 1;
+      if (now - d.seekAt < 600) return;   // перемотка ещё «садится»
+      var lat = outLat(), raw = w.at + lat - el.currentTime;   // > 0 — отстаём
+      d.err = d.err == null || Math.abs(raw - d.err) > 0.3 ? raw : d.err * 0.5 + raw * 0.5;
+      var df = d.err;
+      if (Math.abs(raw) > SYNC_JUMP && now - d.seekAt > 4000 && w.at < w.tr.length - 2) {
+        d.seekAt = now; d.err = null; self.__seeks++; el.playbackRate = 1; softSeek(d, w.at + lat + 0.07);   // +70 мс — пока идёт приглушение
+      } else {
+        var r = Math.abs(df) < SYNC_DEAD ? 1 : 1 + Math.max(-SYNC_MAX, Math.min(SYNC_MAX, df / SYNC_TAU));
+        r = Math.round(r * 1000) / 1000;
+        if (el.playbackRate !== r) el.playbackRate = r;
+      }
     }
     function step() {
       if (!self.alive || P.owner !== self || !ctx) return;
@@ -557,7 +581,13 @@
       var tr = tracks(), p = tr ? plan(tr) : [];
       return {title: nowTrack, off: clk.off, seeks: self.__seeks, owner: P.owner === self, sched: !!(p && p.sched),
         want: p.map(function (w) { return {key: w.key, file: w.tr.file, at: +w.at.toFixed(2), gain: +w.gain.toFixed(3)}; }),
-        decks: P.decks.map(function (d) { return {key: d.key, at: +d.el.currentTime.toFixed(2), gain: +d.g.gain.value.toFixed(3), paused: d.el.paused, rate: d.el.playbackRate, src: d.el.src ? d.el.src.slice(-30) : ""}; })};
+        lat: outLat(), rtt: clk.rtt,
+        decks: P.decks.map(function (d) {
+          var w = null; p.forEach(function (y) { if (y.key === d.key) w = y; });
+          // err — слышимая позиция минус серверная (с), в тот же миг
+          return {key: d.key, at: +d.el.currentTime.toFixed(3), err: w && !d.el.paused ? +(d.el.currentTime - outLat() - w.at).toFixed(4) : null,
+            gain: +d.g.gain.value.toFixed(3), paused: d.el.paused, rate: d.el.playbackRate, src: d.el.src ? d.el.src.slice(-30) : ""};
+        })};
     };
     self.set = function (g, pv, cut, wv) {
       if (!ctx || P.owner !== self) return;
