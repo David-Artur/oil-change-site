@@ -171,6 +171,110 @@
    "place": "DaviArt Holy Club"
   },
   {
+   "id": "kashchey",
+   "title": "Кощей Бессмертный",
+   "file": "own/kashchey.mp3",
+   "length": 200.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E01-kashchey.mp3",
+   "sig": "5385792:1792791980",
+   "style": "Тек-хаус со скрипкой",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "osobaya-polka",
+   "title": "Особая полка",
+   "file": "own/osobaya-polka.mp3",
+   "length": 189.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E02-osobaya-polka.mp3",
+   "sig": "5157744:1792793203",
+   "style": "Фолк-хаус",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "ilya-muromets",
+   "title": "Илья Муромец",
+   "file": "own/ilya-muromets.mp3",
+   "length": 200.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E03-ilya-muromets.mp3",
+   "sig": "5403696:1792793612",
+   "style": "Фолк-хаус",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "skripuchiy-les",
+   "title": "Скрипучий лес",
+   "file": "own/skripuchiy-les.mp3",
+   "length": 194.98,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E04-skripuchiy-les.mp3",
+   "sig": "5448384:1792792385",
+   "style": "Тек-хаус со скрипкой",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "zmey-gorynych",
+   "title": "Змей Горыныч",
+   "file": "own/zmey-gorynych.mp3",
+   "length": 189.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E05-zmey-gorynych.mp3",
+   "sig": "5350848:1792793970",
+   "style": "Фолк-хаус",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "snegurochka",
+   "title": "Снегурочка",
+   "file": "own/snegurochka.mp3",
+   "length": 204.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E06-snegurochka.mp3",
+   "sig": "5616288:1792794360",
+   "style": "Фолк-хаус",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "natalya",
+   "title": "Наталья Морская Пехота",
+   "file": "own/natalya.mp3",
+   "length": 189.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E07-natalya.mp3",
+   "sig": "5293200:1792794720",
+   "style": "Фолк-хаус",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "do-rassveta",
+   "title": "До рассвета",
+   "file": "own/do-rassveta.mp3",
+   "length": 200.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E08-do-rassveta.mp3",
+   "sig": "5415216:1792792794",
+   "style": "Тек-хаус со скрипкой",
+   "place": "DaviArt Holy Club"
+  },
+  {
    "id": "holy-club",
    "title": "Holy Club",
    "file": "own/holy-club.mp3",
@@ -223,5 +327,5 @@
    "place": "DaviArt Holy Club"
   }
  ],
- "total": 3426.84
+ "total": 4996.78
 }
