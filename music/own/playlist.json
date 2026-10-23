@@ -2,19 +2,6 @@
  "name": "own",
  "tracks": [
   {
-   "id": "shakhta-do-utra",
-   "title": "Шахта до утра",
-   "file": "own/shakhta-do-utra.mp3",
-   "length": 200.0,
-   "author": "DaviArt Holy Club",
-   "source": "ACE-Step 1.5 (MIT)",
-   "kbps": 160,
-   "src": "02-shakhta-do-utra.mp3",
-   "sig": "5517384:1792649036",
-   "style": "Бас-хаус",
-   "place": "DaviArt Holy Club"
-  },
-  {
    "id": "portal-v-pustoshi",
    "title": "Портал в Пустоши",
    "file": "own/portal-v-pustoshi.mp3",
@@ -236,5 +223,5 @@
    "place": "DaviArt Holy Club"
   }
  ],
- "total": 3626.84
+ "total": 3426.84
 }
