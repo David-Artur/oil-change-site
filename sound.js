@@ -34,6 +34,7 @@
   })();
   function setInterval(f, ms) { return WT ? WT.set(f, ms) : window.setInterval(f, ms); }
   function clearInterval(id) { if (WT) WT.clear(id); else window.clearInterval(id); }
+  var uw = null, uwG = null, underW = false;   // У323: фильтр «под водой» после master
   var cfg = null, ctx = null, api = null, master = null, on = false, timer = null, pos = null, posAt = 0, gens = {}, talk = {}, ducked = false;
   var enabled = pref("on") !== "0", vol = pref("vol") == null ? 0.7 : Math.max(0, Math.min(1, +pref("vol"))), nowTxt = "", speakingNpc = null;
   function pref(k, v) { try { if (v === undefined) return localStorage.getItem("daviart.sound." + k); localStorage.setItem("daviart.sound." + k, v); } catch (e) { return null; } }
@@ -43,7 +44,10 @@
   function start(o) {
     if (on || !o || !o.ctx) return;
     ctx = o.ctx; api = o.api; on = true;
-    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    master = ctx.createGain(); master.gain.value = 0;
+    // У323 (владелец 2026-10-23): под водой всё глухо — звук мира через фильтр, над водой он открыт и не слышен
+    uw = ctx.createBiquadFilter(); uw.type = "lowpass"; uw.Q.value = 1.5; uw.frequency.value = Math.min(20000, ctx.sampleRate / 2 - 200);
+    uwG = ctx.createGain(); master.connect(uw); uw.connect(uwG); uwG.connect(ctx.destination); underW = false;
     if (!cfg) fetch("sounds.json?v=1", {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { cfg = j; clubZone(); }).catch(function () { });
     timer = setInterval(tick, 1000); tick();
     clubT = setInterval(clubZone, 15000); clubZone(); [1200, 2500, 4000, 6000, 9000].forEach(function (ms) { setTimeout(clubZone, ms); });   // У321: 6 проб часов на старте (берётся самая быстрая)
@@ -105,6 +109,7 @@
       // гасла и начиналась заново. Теперь прежнее место держится 12 с — пропадает, только если игрока правда нет так долго.
       var np = j && j.online && j.me && j.me.worldId ? {w: j.me.worldId, x: j.me.x, y: j.me.y, z: j.me.z, yaw: j.me.yaw || 0} : null;
       if (np) { pos = np; posAt = Date.now(); } else if (Date.now() - posAt > 12000) pos = null;
+      waterCheck(!!(j && j.me && (j.me.water || j.water)));   // У323: поле water — VPLand 0.9.37+; нет поля — над водой
       caveCheck();
       update();
     });
@@ -134,6 +139,15 @@
     if (!t) return null;
     var i = ((Math.floor(z) - tz * 512) * t.w + (Math.floor(x) - tx * 512)) * 4, d = t.d;
     return ((d[i] * 256 + d[i + 1] + d[i + 2] / 256) - 32768) / MPB;
+  }
+  // У323: голова под водой — музыка и звуки мира глухие (фильтр ~350 Гц) и тише; вынырнул — плавно открываются
+  function waterCheck(w) {
+    if (!uw || !ctx || w === underW) return;
+    underW = w;
+    var t = ctx.currentTime;
+    uw.frequency.cancelScheduledValues(t);
+    uw.frequency.setTargetAtTime(w ? 350 : Math.min(20000, ctx.sampleRate / 2 - 200), t, w ? 0.08 : 0.15);
+    uwG.gain.setTargetAtTime(w ? 0.45 : 1, t, 0.12);
   }
   function caveCheck() {
     var c = 0;
@@ -209,6 +223,7 @@
       if (Date.now() > t.next && !speechSynthesis.speaking) say(best, bd, t);
     }
     if (cave > 0.15) txt.push("🕳 пещера — эхо");
+    if (underW) txt.push("🌊 под водой");
     if (radioBlocked && Object.keys(gens).some(function (k) { return gens[k].play; })) txt.push("▶ нажми сюда — включить радио");   // У297: iPhone
     nowTxt = txt.join(" · ");
     var el = document.getElementById("vc-sndnow"); if (el) el.textContent = nowTxt || (pos ? "здесь тихо" : "звуки — когда ты в игре");
