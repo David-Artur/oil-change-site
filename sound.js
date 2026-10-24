@@ -162,7 +162,7 @@
     }
     cave = c;
   }
-  function level() { return enabled ? vol * (ducked ? 0.35 : 1) : 0; }
+  function level() { return enabled ? vol * (ducked ? 0.15 : 1) : 0; }   // Б37: под разговор ≈ −16 дБ (было ×0.35 ≈ −9 дБ — голос тонул)
   function update() {
     if (!master || !ctx) return;
     master.gain.setTargetAtTime(level(), ctx.currentTime, 0.4);
@@ -633,7 +633,8 @@
     unlock: function () { Object.keys(gens).forEach(function (k) { if (gens[k].play) gens[k].play(); }); },
     radioBlocked: function () { return radioBlocked; },
     start: start, stop: stop,
-    duck: function (v) { if (v !== ducked) { ducked = v; if (master && ctx) master.gain.setTargetAtTime(level(), ctx.currentTime, 0.3); } },
+    // Б37: стихает быстро (τ 0,03 с ≈ 80 мс), возвращается плавно (τ 0,25 с ≈ 0,8 с); удержание между словами — в voice.js
+    duck: function (v) { if (v !== ducked) { ducked = v; if (master && ctx) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(level(), ctx.currentTime, v ? 0.03 : 0.25); } } },
     toggle: function () { enabled = !enabled; pref("on", enabled ? "1" : "0"); if (!enabled) { try { speechSynthesis.cancel(); } catch (e) { } } update(); return enabled; },
     volume: function (v) { if (v != null) { vol = Math.max(0, Math.min(1, v)); pref("vol", String(vol)); update(); } return vol; },
     enabled: function () { return enabled; },

@@ -306,6 +306,7 @@
   function leave(tell) {
     on = false;
     gate = null; gateOpen = false; sendStream = null; ducked = false;
+    peerTalkSrv = false; lastTalk = 0; if (musicDucked) { musicDucked = false; if (window.VPSound) VPSound.duck(false); }   // Б37
     stopTicker(); polling = false; checking = false; micPeak = -1;
     Object.keys(peers).forEach(drop);
     if (local) local.getTracks().forEach(function (t) { t.stop(); });
@@ -346,7 +347,30 @@
     var q = live ? Math.round(Math.min(1, lvl * 4) * 20) / 20 : 0;
     if (bar && bar.__q !== q) { bar.__q = q; bar.style.transform = "scaleX(" + q + ")"; }
     if (mt && mt.classList.contains("talk") !== speaking) mt.classList.toggle("talk", speaking);
+    duckTick();
     setTimeout(meter, 50);
+  }
+
+  // Б37 (владелец 2026-10-24: «музыка перебивает, когда мне говорят или я говорю»): музыка клуба тише, пока кто-то рядом говорит
+  // (по живому звуку входящего голоса — мгновенно) или говоришь сам; держим тихо ещё DUCK_HOLD после последнего слова — без «прыжков».
+  var DUCK_HOLD = 1200, lastTalk = 0, musicDucked = false, peerTalkSrv = false, peerBuf = null;
+  function peerTalking() {
+    var hit = false;
+    Object.keys(peers).forEach(function (n) {
+      var p = peers[n];
+      if (hit || !p.an || p.muted || p.d == null || !p.gain || p.gain.gain.value < 0.03) return;
+      var a = peerBuf && peerBuf.length === p.an.fftSize ? peerBuf : (peerBuf = new Uint8Array(p.an.fftSize));
+      p.an.getByteTimeDomainData(a);
+      var s = 0; for (var i = 0; i < a.length; i++) { var v = (a[i] - 128) / 128; s += v * v; }
+      if (Math.sqrt(s / a.length) > 0.02) hit = true;
+    });
+    return hit;
+  }
+  function duckTick() {
+    var now = Date.now();
+    if (speaking || peerTalkSrv || peerTalking()) lastTalk = now;
+    var d = now - lastTalk < DUCK_HOLD;
+    if (d !== musicDucked) { musicDucked = d; if (window.VPSound) VPSound.duck(d); }
   }
 
   // ---------------------------------------------------------------- опрос сервера
@@ -419,8 +443,8 @@
         // У254: собеседник рядом говорит и слышен — свой микрофон приглушаем (без наушников его голос не вернётся ему эхом)
         var talking = Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; });
         setDuck(nrMode > 0 && talking);
-        // 2026-10-22 владелец: музыка тише, только когда говорят ТЕБЕ (собеседник рядом) — когда говоришь сам, музыка не приглушается
-        if (window.VPSound) VPSound.duck(talking);   // У290: говорят — музыка и фразы тише
+        // У290 → Б37 (2026-10-24): музыка тише, когда говорят тебе ИЛИ говоришь сам; решение — в duckTick() (живой звук + этот флаг сервера как запасной)
+        peerTalkSrv = talking;
         caveLevel();   // У292: эхо в пещере
         meWater = !!j.water; waterTick();   // У323: под водой — глухо и пузырьки
         if (first) draw(); else { status(); drawPeers(); }
@@ -567,6 +591,7 @@
           p.gain = ctx.createGain();
           var wn = waterNode();   // У323: под водой — глухо (фильтр + тише); над водой фильтр открыт и не слышен
           src.connect(p.gain); p.gain.connect(wn.lp); wn.out.connect(ctx.destination);
+          p.an = ctx.createAnalyser(); p.an.fftSize = 256; src.connect(p.an);   // Б37: речь собеседника — по живому звуку, без опроса сервера
           p.water = wn;
           var cb = caveBus(); if (cb) wn.out.connect(cb);   // У292: в пещере — эхо
         } catch (er) { p.el.muted = false; p.gain = null; }
