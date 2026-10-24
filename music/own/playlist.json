@@ -301,6 +301,19 @@
    "place": "DaviArt Holy Club"
   },
   {
+   "id": "holy-club-promo",
+   "title": "Holy Club (промо)",
+   "file": "own/holy-club-promo.mp3",
+   "length": 179.99,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "P01-holy-club-promo.mp3",
+   "sig": "4912320:1792824671",
+   "style": "Дэнс-поп / хаус",
+   "place": "DaviArt Holy Club"
+  },
+  {
    "id": "krovavaya-luna",
    "title": "Кровавая луна",
    "file": "own/krovavaya-luna.mp3",
@@ -340,5 +353,5 @@
    "place": "DaviArt Holy Club"
   }
  ],
- "total": 5151.79
+ "total": 5331.78
 }
