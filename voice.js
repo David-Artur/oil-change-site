@@ -352,7 +352,8 @@
   }
 
   // Б37 (владелец 2026-10-24: «музыка перебивает, когда мне говорят или я говорю»): музыка клуба тише, пока кто-то рядом говорит
-  // (по живому звуку входящего голоса — мгновенно) или говоришь сам; держим тихо ещё DUCK_HOLD после последнего слова — без «прыжков».
+  // (по живому звуку входящего голоса — мгновенно); свой голос НЕ приглушает (уточнение владельца 2026-10-24); держим тихо ещё DUCK_HOLD
+  // после последнего слова собеседника — без «прыжков».
   var DUCK_HOLD = 1200, lastTalk = 0, musicDucked = false, peerTalkSrv = false, peerBuf = null;
   function peerTalking() {
     var hit = false;
@@ -368,7 +369,7 @@
   }
   function duckTick() {
     var now = Date.now();
-    if (speaking || peerTalkSrv || peerTalking()) lastTalk = now;
+    if (peerTalkSrv || peerTalking()) lastTalk = now;   // 2026-10-24 владелец: только когда говорит СОБЕСЕДНИК — свой голос музыку не приглушает
     var d = now - lastTalk < DUCK_HOLD;
     if (d !== musicDucked) { musicDucked = d; if (window.VPSound) VPSound.duck(d); }
   }
