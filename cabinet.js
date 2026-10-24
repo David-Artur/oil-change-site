@@ -411,7 +411,7 @@
   function renderClaims() {
     var list = me.claims || [], deals = Array.isArray(me.deals) ? me.deals : [], h = "";
     if (deals.length) h += dealsHtml(deals);   // У276: входящие предложения — сверху
-    if (!list.length) h += '<div class="card cab-card"><h2>Приватов нет</h2><p class="cab-meta">Приват ставится в игре: возьми компас (вторая рука пустая) и держи ЛКМ по блоку 10 секунд — получится 11×11×11. Подробнее — на <a href="index.html#claims">странице приватов</a>.</p></div>';
+    if (!list.length) h += '<div class="card cab-card"><h2>Приватов нет</h2><p class="cab-meta">Поставить приват — три способа: кнопка «📍 Создать приват здесь» выше (ты в игре — стой 10 секунд), в игре <code>/claim</code> (постой 10 секунд) или компас (держи ЛКМ по блоку 10 секунд). Приват 11×11, бесплатно. Подробнее — на <a href="index.html#claims">странице приватов</a>.</p></div>';
     // У276: сервер 0.9.13+ присылает claim.can — тогда список карточек со ссылкой на страницу привата; старый сервер — как раньше
     else h += '<div class="cab-cards">' + list.map(function (c) { return c && c.can && typeof c.can === "object" ? claimItem(c) : claimCard(c); }).join("") + "</div>";
     $("tab-claims").innerHTML = h;
