@@ -275,6 +275,32 @@
    "place": "DaviArt Holy Club"
   },
   {
+   "id": "khorovod",
+   "title": "Хоровод",
+   "file": "own/khorovod.mp3",
+   "length": 210.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E09-khorovod.mp3",
+   "sig": "5897760:1792806942",
+   "style": "Тек-хаус со скрипкой",
+   "place": "DaviArt Holy Club"
+  },
+  {
+   "id": "ostap-bender",
+   "title": "Остап Бендер",
+   "file": "own/ostap-bender.mp3",
+   "length": 185.0,
+   "author": "DaviArt Holy Club",
+   "source": "ACE-Step 1.5 (MIT)",
+   "kbps": 160,
+   "src": "E10-ostap-bender.mp3",
+   "sig": "5163936:1792807235",
+   "style": "Фонк",
+   "place": "DaviArt Holy Club"
+  },
+  {
    "id": "krovavaya-luna",
    "title": "Кровавая луна",
    "file": "own/krovavaya-luna.mp3",
@@ -314,5 +340,5 @@
    "place": "DaviArt Holy Club"
   }
  ],
- "total": 4756.79
+ "total": 5151.79
 }
