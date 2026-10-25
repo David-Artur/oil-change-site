@@ -195,7 +195,9 @@
     }
     cave = c;
   }
-  function level() { return enabled ? vol * (ducked ? 0.15 : 1) : 0; }   // Б37: под разговор ≈ −16 дБ (было ×0.35 ≈ −9 дБ — голос тонул)
+  // 2026-10-25 владелец: «если я начинаю говорить — голос бродяг не должен утихать; приглушение — только в клубе»
+  function inClubZone() { return !!(pos && cfg && (cfg.zones || []).some(function (z) { return zoneDist(z, pos) === 0; })); }
+  function level() { return enabled ? vol * (ducked && inClubZone() ? 0.15 : 1) : 0; }   // Б37: под разговор ≈ −16 дБ (было ×0.35 ≈ −9 дБ — голос тонул)
   function update() {
     if (!master || !ctx) return;
     master.gain.setTargetAtTime(level(), ctx.currentTime, 0.4);
