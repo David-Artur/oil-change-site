@@ -103,6 +103,7 @@
     if (Z) { Z.decks.forEach(function (d) { try { d.el.pause(); } catch (e) { } }); Z = null; }
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
     cfStop();   // У375
+    ckStop();   // треск костра (запись-петля)
     master = null; ctx = null; pos = null; nowTxt = ""; speakingNpc = null;
   }
   function tick() {
@@ -358,7 +359,7 @@
     }
     var F = CF && CF.fire, MR = Math.max(F ? F.radius : 0, (CF && CF.musicRadius) || 0);   // У378: музыка слышна дальше голосов (~40 бл.)
     var df = F && pos && pos.w === F.world ? Math.hypot(pos.x - F.x, pos.z - F.z) : Infinity;
-    crackle(enabled && zoneK <= 0.3 ? df : Infinity);   // У378: треск костра — всегда, громче вблизи
+    crackle(enabled && zoneK <= 0.3 ? df : Infinity, F);   // У378: треск костра — всегда, громче вблизи
     var far = !F || !pos || pos.w !== F.world || !enabled || zoneK > 0.3 || df > MR + 2;
     if (far) { if (cf && !cf.el.paused) { cf.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3); setTimeout(function () { if (cf && cfNow === null) cf.el.pause(); }, 1200); } cfKey = null; cfNow = null; return; }
     var now = serverNow(), w = talkAt(CF, now);
@@ -386,24 +387,40 @@
     }
     txt.push("🔥 Костёр бродяг" + (cfMusic && (cfNow || playing) && k > 0 ? " · 🎸 музыка" : who && k > 0 ? " · 🗣 " + who.name : ""));
   }
-  // У378: треск костра — шум с щелчками и «хлопками» углей (буфер 6 с по кругу, генерируется в браузере), громкость — по расстоянию до огня
-  var ck = null, cfMusic = false;
-  function crackle(d) {
+  // У378: треск костра, громкость — по расстоянию до огня (R = 22 бл., та же кривая k, плавно ~1.5 с).
+  // 2026-10-25 (владелец: «звуки костра кривые… сделай реалистичнее, может скачать»): вместо синтеза в браузере — настоящая запись
+  // камина sfx/campfire-loop.mp3 (PagDev, OpenGameArt, CC0 — docs/sounds-licenses.md), бесшовная петля 27 с.
+  // Играет как AudioBuffer с loop (а не <audio loop>: у mp3 в <audio> на стыке петли пауза-щелчок) → панорама к костру → громкость → master.
+  // Не загрузилась / не декодировалась — треска просто нет (повтор попытки раз в минуту), без ошибок. Треск заметно тише голосов бродяг.
+  var ck = null, cfMusic = false, ckBuf = null, ckTry = 0, CK_VOL = 0.6;   // петля −24.5 LUFS × 0.6 ≈ −29 у огня; голоса −18 LUFS × 0.9 — треск ~10 дБ тише
+  function ckLoad() {
+    if (ckTry > Date.now()) return;
+    ckTry = Date.now() + 60000;
+    var c = ctx;
+    fetch("sfx/campfire-loop.mp3?v=1").then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.arrayBuffer(); }).then(function (a) {
+      return new Promise(function (ok, no) { var p = c.decodeAudioData(a, ok, no); if (p && p.catch) p.catch(no); });
+    }).then(function (b) { if (c === ctx && b) ckBuf = {ctx: c, b: b}; }).catch(function () { });
+  }
+  function ckStop() {
+    if (ck) { try { ck.src.stop(); } catch (e) { } try { ck.g.disconnect(); } catch (e) { } }
+    ck = null;
+  }
+  function crackle(d, F) {
     var R = 22, k = d < R ? Math.pow(1 - Math.max(0, d - 2) / (R - 2), 2) : 0;
     if (k <= 0) { if (ck && ck.ctx === ctx) ck.g.gain.setTargetAtTime(0, ctx.currentTime, 0.5); return; }
+    if (!ckBuf || ckBuf.ctx !== ctx) { ckLoad(); return; }
     if (!ck || ck.ctx !== ctx) {
-      var sr = ctx.sampleRate, n = sr * 6, b = ctx.createBuffer(1, n, sr), x = b.getChannelData(0), br = 0;
-      for (var i = 0; i < n; i++) { br = br * 0.985 + (Math.random() * 2 - 1) * 0.015; x[i] = br * 0.9; }   // низкий гул пламени
-      for (var p = 0; p < 160; p++) {   // щелчки и хлопки
-        var at = Math.floor(Math.random() * (n - sr * 0.05)), big = Math.random() < 0.12, len = Math.floor(sr * (big ? 0.03 : 0.006)), a = big ? 0.55 : 0.25 + Math.random() * 0.2;
-        for (var j = 0; j < len; j++) x[at + j] += (Math.random() * 2 - 1) * a * Math.exp(-j / (len / 4));
-      }
-      var src = ctx.createBufferSource(); src.buffer = b; src.loop = true;
-      var f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 120;
-      ck = {ctx: ctx, g: ctx.createGain()}; ck.g.gain.value = 0;
-      src.connect(f); f.connect(ck.g); ck.g.connect(master); src.start();
+      ckStop();
+      var src = ctx.createBufferSource(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      src.buffer = ckBuf.b; src.loop = true;
+      ck = {ctx: ctx, src: src, pn: pn, g: ctx.createGain()}; ck.g.gain.value = 0;
+      if (pn) { src.connect(pn); pn.connect(ck.g); } else src.connect(ck.g);
+      ck.g.connect(master);
+      src.start(0, Math.random() * ckBuf.b.duration);   // у каждого игрока — своё место петли
     }
-    ck.g.gain.setTargetAtTime(0.22 * k, ctx.currentTime, 1.5);
+    var t = ctx.currentTime;
+    ck.g.gain.setTargetAtTime(CK_VOL * k, t, 1.5);
+    if (ck.pn && F && pos) ck.pn.pan.setTargetAtTime(d < 1.5 ? 0 : pan(F.x, F.z) * 0.6, t, 0.2);
   }
 
   // ---------------------------------------------------------------- генератор: пэд-аккорды, бас, перебор/колокольчики, «флейта», ударные, ветер
