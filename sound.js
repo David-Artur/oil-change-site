@@ -242,8 +242,11 @@
       if (d < m.radius * 1.1 && enabled) {
         if (!g) g = gens[m.id] = new Gen(PRESETS[m.preset] || PRESETS.lobby);
         var k = d < m.radius * 0.3 ? 1 : Math.max(0, 1 - (d - m.radius * 0.3) / (m.radius * 0.7));
+        // 2026-10-25 владелец: «вышел из туннеля на спавн — звук резко-резко растёт; пусть громче всего у самого портала, дальше тише,
+        // переходы плавные»: falloff "smooth" — без «полки» полной громкости, громкость плавно падает от центра (портал) до края
+        if (m.falloff === "smooth") k = Math.sqrt(Math.pow(Math.max(0, 1 - d / m.radius), 2.4));
         k *= 1 - Math.min(1, zoneK);   // в клубе музыка спавна не слышна
-        g.set(m.vol * k * k, d < 6 ? 0 : pan(m.x, m.z));
+        g.set(m.vol * k * k, d < 6 ? 0 : pan(m.x, m.z), null, m.falloff === "smooth" ? 2.0 : null);
         if (k > 0.05) txt.push("🎵 " + (m.title || m.id));
       } else if (g) { g.fade(); delete gens[m.id]; }
     });
@@ -504,8 +507,8 @@
     }, 250);
     var muff = ctx.createBiquadFilter(); muff.type = "lowpass"; muff.frequency.value = 20000;   // «за стеной» — глуше
     if (pn) { out.disconnect(); out.connect(muff); muff.connect(pn); } else { out.disconnect(); out.connect(muff); muff.connect(master); }
-    this.set = function (g, pv, cut) {
-      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
+    this.set = function (g, pv, cut, tc) {   // tc — плавность громкости, с (по умолчанию 0.8; музыка спавна «smooth» — 2)
+      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, tc || 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
       muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
     };
     // ушёл из зоны / в портал — плавно гаснет ~3–4 с (владелец 2026-10-20: «не резко, а плавно потухает»)
