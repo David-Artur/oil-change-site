@@ -219,7 +219,7 @@
     if (cave && cave.ctx === ctx) return cave.in;
     var inp = ctx.createGain(), wet = ctx.createGain(), lp = ctx.createBiquadFilter(), conv = ctx.createConvolver();
     var d1 = ctx.createDelay(1), d2 = ctx.createDelay(1), fb = ctx.createGain();
-    wet.gain.value = 0; lp.type = "lowpass"; lp.frequency.value = 2600;
+    wet.gain.value = 0; lp.type = "lowpass"; lp.frequency.value = 1200;   // владелец 2026-10-25: «более глухим» — эхо 2600 → 1200 Гц
     var len = Math.floor(ctx.sampleRate * 1.0), ir = ctx.createBuffer(2, len, ctx.sampleRate);   // 2026-10-25 владелец: «эхо в шахтах слишком сильно — слегонца, но чтобы понятно, что шахта»: хвост 2.2 → 1 с
     for (var ch = 0; ch < 2; ch++) { var a = ir.getChannelData(ch); for (var i = 0; i < len; i++) a[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2) * (i < ctx.sampleRate * 0.012 ? 0 : 1); }
     conv.buffer = ir;
