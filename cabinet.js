@@ -25,7 +25,9 @@
   var OLD_TABS = {profile: "home", voice: "home", claims: "land", clan: "land", ach: "rewards", bonus: "rewards", account: "acct", help: "acct"};
   var homeMounted = false;   // У237: «Главная» — второй экран (home.js; голос — voice.js внутри неё)
   // У399: cabinet.html#voice — мастер «Голос и звук» (voicewiz.js) вместо обычного входа и вкладок, пока не нажмут «Открыть весь кабинет»
-  var wiz = /^#voice$/.test(location.hash || "") && !!window.VPVoiceWiz && !!document.getElementById("voice-view");
+  // У404: вход через #voice (vwArm) — наверху «Главной» карточка голоса (voicewiz.js); шаги мастера (wiz) — только если нет входа
+  var vwArm = /^#voice$/.test(location.hash || "") && !!window.VPVoiceWiz && !!document.getElementById("voice-view");
+  var wiz = false;
   var donTiers = null, donLoading = false;
 
   function $(id) { return document.getElementById(id); }
@@ -142,7 +144,9 @@
   }
 
   function show(v) {
-    if (wiz && (v === "login" || v === "load" || v === "cab")) { window.VPVoiceWiz.view(v); v = "voice"; }   // У399: мастер голоса
+    if (vwArm && v === "login" && !homeMounted) wiz = true;   // У404: нет входа (или сессия истекла) — шаги мастера вместо обычной формы
+    if (wiz && v === "login") { window.VPVoiceWiz.view(v); v = "voice"; }   // У399: мастер голоса
+    else if (wiz && v === "cab") wiz = false;
     var vv = $("voice-view"); if (vv) vv.hidden = v !== "voice";
     $("login-view").hidden = v !== "login";
     $("cab-view").hidden = v !== "cab";
@@ -218,6 +222,7 @@
     if (t === "rewards" && me) { loadBonus(); loadRefFriends(); }
     if (t === "home" && !homeMounted && me && !wiz) {   // У399: в мастере голос живёт в мастере — «Главную» монтируем после выхода из него
       homeMounted = true;
+      var vp = $("vw-panel"); if (vp) vp.innerHTML = "";   // У404: голос, подключённый до «Главной», переезжает в #hm-voice (без дублей id)
       if (window.VPHome) window.VPHome.mount($("home-live"), {api: api, toast: toast, me: function () { return me; }, money: money, mapLink: mapLink, skills: SKILLS,
         setTab: function (x) { setTab(x); var v = $("cab-view"); if (v) window.scrollTo(0, v.getBoundingClientRect().top + window.scrollY); }});
       else $("home-live").innerHTML = '<div class="card cab-card"><p class="cab-meta">Не загрузилась «Главная» — обнови страницу.</p></div>';
@@ -1350,7 +1355,7 @@
   var h0 = (location.hash || "").replace("#", "");
   h0 = OLD_TABS[h0] || h0;   // старые адреса (#profile, #clan, #bonus, #voice …) → объединённые вкладки
   if (TABS.indexOf(h0) >= 0) tab = h0;
-  if (wiz) window.VPVoiceWiz.start({   // У399: мастер «Голос и звук» — вход тем же /login, что и у кабинета
+  if (vwArm) window.VPVoiceWiz.start({   // У399/У404: мастер «Голос и звук» — вход тем же /login, что и у кабинета
     api: api, toast: toast, me: function () { return me; },
     login: function (nick, pass) {
       return api("/login", {nick: nick, password: pass}).then(function (j) {
@@ -1358,10 +1363,11 @@
         return j;
       });
     },
-    openCabinet: function () {
-      wiz = false;
+    openCabinet: function () {   // У404: та же страница — без перезагрузки (AudioContext, разрешённый нажатием «Войти», остаётся «running»)
+      wiz = false; tab = "home";
       try { history.replaceState(null, "", "#home"); } catch (e) { }
-      if (me) { show("cab"); setTab("home"); window.scrollTo(0, 0); } else if (tok()) { show("load"); load(true); } else show("login");
+      if (me) { show("cab"); setTab("home"); } else show("load");   // /me уже запрошен в login() — load() сам покажет кабинет
+      window.scrollTo(0, 0);
     }
   });
   if (tok()) { show("load"); load(true); } else show("login");

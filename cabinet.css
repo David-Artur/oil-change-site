@@ -608,6 +608,16 @@ body.hm-noscroll { overflow: hidden; }
 .vw-more summary { cursor: pointer; font-weight: 600; color: var(--muted); padding: 6px 0; }
 .vw-more .vc-card { margin-top: 8px; }
 .vw-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-top: 16px; }
+/* У404: карточка голоса наверху «Главной» (вход через cabinet.html#voice) — крупный статус + большая кнопка микрофона */
+.vw-top { margin: 0 0 14px; padding: 14px; border: 2px solid var(--grass); }
+.vw-top[hidden], .vw-top [hidden] { display: none; }
+.vw-top .btn.vw-btn { margin-top: 12px; }
+.vw-top #vw-start .btn.vw-btn { margin-top: 0; }
+.vw-top .vw-stat { display: flex; flex-wrap: wrap; gap: 6px; }
+.vw-top .vw-stat li { flex: 1 1 auto; padding: 9px 12px; font-size: 1.02rem; text-align: center; min-width: 0; }
+.vw-top .vw-game { margin-top: 6px; }
+/* в «Голосовом чате» на «Главной» — без второй кнопки «Включить звук и голос» / «Включить микрофон»: она одна, в карточке наверху */
+.vw-armed #hm-voice #vc-join, .vw-armed #hm-voice .vc-micoff { display: none; }
 .vc-micoff[hidden] { display: none; }
 .vc-micoff .cab-meta { margin: 6px 0 4px; }
 .vc-micoff .vc-bad { color: var(--text); background: var(--red-bg); border-radius: 8px; padding: 8px 10px; }
