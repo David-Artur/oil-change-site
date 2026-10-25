@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <script>/* тема до отрисовки — без вспышки белого */ try { var th = localStorage.getItem("daviart.theme"); if (th === "light" || th === "dark") document.documentElement.setAttribute("data-theme", th); } catch (e) { }</script>
-<link rel="stylesheet" href="style.css?v=21">
-<link rel="stylesheet" href="cabinet.css?v=45">
+<link rel="stylesheet" href="style.css?v=22">
+<link rel="stylesheet" href="cabinet.css?v=46">
 </head>
 <body>
 <header class="cab-top">
@@ -70,6 +70,52 @@
           <li><b>Ачивки:</b> прогресс по каждой — забрать награду можно у Гида в лобби.</li>
         </ul>
         <p class="cab-note">Безопасно: пароль проверяет сам сервер (AuthMe), сайт его не хранит, связь — по https. 5 неверных паролей — вход для ника закрывается на 15 минут. Выйти на всех устройствах — <code>/account logout</code> в игре или кнопка во вкладке «Аккаунт».</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- У399: мастер «Голос и звук» (cabinet.html#voice): ник → пароль → слышишь игру; микрофон — отдельной кнопкой -->
+  <section id="voice-view" class="vw" hidden>
+    <div class="card vw-box">
+      <div class="vw-head"><span class="vw-ico" aria-hidden="true">🎧</span><div><h1>Голос и звук</h1><p class="cab-meta">Слышь игроков рядом, музыку клуба, костёр и жителей — прямо в браузере, пока играешь.</p></div></div>
+      <ol class="vw-dots" id="vw-dots" aria-hidden="true"><li data-d="1"><b>1</b>Ник</li><li data-d="2"><b>2</b>Пароль</li><li data-d="3"><b>3</b>Слушаешь</li></ol>
+      <form id="vw-s1" class="vw-step" hidden novalidate>
+        <label for="vw-nick">Твой ник в игре</label>
+        <input id="vw-nick" class="vw-in" maxlength="16" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username" placeholder="Steve" enterkeyhint="next">
+        <button class="btn green vw-btn" type="submit">Далее →</button>
+        <p class="cab-msg" id="vw-m1" role="alert"></p>
+        <p class="cab-note">Ещё не играл? Зайди на сервер <b>daviart.com</b> и зарегистрируйся в игре (<code>/register</code>).</p>
+      </form>
+      <form id="vw-s2" class="vw-step" hidden novalidate>
+        <p class="vw-who">Ник: <b id="vw-nickshow"></b> · <a href="#" id="vw-back">изменить</a></p>
+        <input id="vw-user" type="text" autocomplete="username" tabindex="-1" aria-hidden="true" class="vw-hide">
+        <label for="vw-pass">Пароль от игры</label>
+        <input id="vw-pass" class="vw-in" type="password" maxlength="30" autocomplete="current-password" placeholder="тот же, что в /login" enterkeyhint="go">
+        <p class="cab-meta">Тот же пароль, что ты пишешь в игре: <code>/login пароль</code>. Сайт его не хранит.</p>
+        <button class="btn green vw-btn" type="submit" id="vw-login">🎧 Войти и включить звук</button>
+        <p class="cab-msg" id="vw-m2" role="alert"></p>
+        <p class="cab-note"><a href="recover.html">Забыл пароль?</a></p>
+      </form>
+      <div id="vw-s3" class="vw-step" hidden>
+        <p class="vw-who" id="vw-me"></p>
+        <div id="vw-start" hidden>
+          <button class="btn green vw-btn vw-pulse" type="button" id="vw-go">🎧 Включить звук и голос</button>
+          <p class="cab-meta">Сразу услышишь игроков рядом и музыку мест. Микрофон — потом, отдельной кнопкой.</p>
+        </div>
+        <div id="vw-live" hidden>
+          <ul class="vw-stat" aria-live="polite">
+            <li id="vw-st-snd"></li>
+            <li id="vw-st-hear"></li>
+            <li id="vw-st-mic"></li>
+          </ul>
+          <button class="btn green vw-btn" type="button" id="vw-fix" hidden>🔊 Вернуть звук</button>
+          <p class="vw-game" id="vw-game"></p>
+          <button class="btn green vw-btn vw-pulse" type="button" id="vw-mic">🎤 Включить микрофон</button>
+          <p class="vw-michelp" id="vw-michelp"></p>
+          <p class="vw-keep">📌 Не закрывай эту вкладку, пока играешь (свернуть можно). Лучше в наушниках.</p>
+          <details class="vw-more"><summary>Кто рядом, громкость, шумодав, проверка связи</summary><div id="vw-panel"></div></details>
+        </div>
+        <div class="vw-foot"><button class="btn small" type="button" id="vw-cab">Открыть весь кабинет →</button><button class="btn small" type="button" id="vw-out">Выйти из голоса</button></div>
       </div>
     </div>
   </section>
@@ -163,10 +209,11 @@
 <div class="toast" id="toast" role="status"></div>
 <script src="mc-icons.js?v=1"></script>
 <script src="shop.js?v=3"></script>
-<script src="sound.js?v=38"></script><script src="voice.js?v=27"></script>
+<script src="sound.js?v=38"></script><script src="voice.js?v=28"></script>
 <script src="holo.js?v=10"></script>
 <script src="home.js?v=28"></script>
-<script src="cabinet.js?v=43"></script>
+<script src="voicewiz.js?v=1"></script>
+<script src="cabinet.js?v=44"></script>
 <script src="ui.js?v=2"></script>
 <script src="consent.js?v=1"></script>
 </body>

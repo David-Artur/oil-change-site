@@ -560,3 +560,46 @@ body.hm-noscroll { overflow: hidden; }
 .holo-tiltbar b { position: absolute; right: 34px; top: 50%; transform: translateY(-50%); font: 700 11px Rubik, system-ui, sans-serif; color: #fff;
   background: rgba(0, 0, 0, .55); padding: 1px 5px; border-radius: 4px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
 .holo-tiltbar.on b { opacity: 1; }
+
+/* У399: мастер «Голос и звук» (cabinet.html#voice, voicewiz.js) — крупно и по шагам, сначала телефон */
+.vw { display: flex; justify-content: center; }
+.vw[hidden] { display: none; }
+.vw-box { width: 100%; max-width: 520px; padding: 20px 18px 18px; }
+.vw-head { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.vw-head h1 { margin: 0; font-size: 1.6rem; }
+.vw-head .cab-meta { margin: 2px 0 0; }
+.vw-ico { font-size: 2.6rem; line-height: 1; }
+.vw-dots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; list-style: none; margin: 0 0 16px; padding: 0; }
+.vw-dots li { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--soft); padding: 6px 8px; border-radius: 8px; background: var(--card2); border: 1px solid var(--line); }
+.vw-dots li b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--line2); color: #fff; font-size: .8rem; flex: none; }
+.vw-dots li.cur { color: var(--text); border-color: var(--grass); font-weight: 700; }
+.vw-dots li.cur b, .vw-dots li.done b { background: var(--grass); }
+.vw-dots li.done { color: var(--grass); }
+.vw-step[hidden] { display: none; }
+.vw-step label { display: block; font-weight: 700; font-size: 1.15rem; margin: 4px 0 8px; }
+.vw-in { display: block; width: 100%; font: 600 1.25rem var(--font); padding: 12px 14px; min-height: 54px; border: 2px solid var(--line2); border-radius: 8px; background: var(--card2); color: var(--text); }
+.vw-in:focus { outline: none; border-color: var(--grass); }
+.vw-hide { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.btn.vw-btn { display: block; width: 100%; margin-top: 14px; min-height: 58px; padding: 14px 12px; font-size: 1.15rem; font-weight: 800; white-space: normal; }
+.btn.vw-btn:disabled { opacity: .7; cursor: default; }
+.vw-pulse { animation: vwPulse 2s ease-in-out infinite; }
+@keyframes vwPulse { 50% { filter: brightness(1.12); } }
+@media (prefers-reduced-motion: reduce) { .vw-pulse { animation: none; } }
+.vw-who { margin: 0 0 12px; color: var(--muted); }
+.vw-stat { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.vw-stat li { font-size: 1.08rem; font-weight: 700; line-height: 1.3; padding: 12px 14px; border-radius: 10px; background: var(--card2); border: 1px solid var(--line); }
+.vw-stat li.ok { background: var(--grass-bg); border-color: var(--grass); }
+.vw-stat li.warn { background: var(--warn-bg); border-color: var(--warn); }
+.vw-stat li.wait { background: var(--card2); }
+.vw-stat li.off { color: var(--muted); }
+.vw-game { margin: 10px 0 0; font-size: .92rem; color: var(--muted); min-height: 1.3em; }
+.vw-michelp { margin: 8px 0 0; font-size: .9rem; color: var(--muted); line-height: 1.4; }
+.vw-michelp.bad { color: var(--text); background: var(--red-bg); border: 1px solid var(--red); border-radius: 8px; padding: 10px 12px; }
+.vw-keep { margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--gold-bg); font-weight: 600; font-size: .92rem; }
+.vw-more { margin-top: 14px; }
+.vw-more summary { cursor: pointer; font-weight: 600; color: var(--muted); padding: 6px 0; }
+.vw-more .vc-card { margin-top: 8px; }
+.vw-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-top: 16px; }
+.vc-micoff[hidden] { display: none; }
+.vc-micoff .cab-meta { margin: 6px 0 4px; }
+.vc-micoff .vc-bad { color: var(--text); background: var(--red-bg); border-radius: 8px; padding: 8px 10px; }

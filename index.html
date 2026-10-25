@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=21">
+<link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
 
@@ -37,6 +37,8 @@
     <p class="tagline"><b>Хардкорное выживание с прокачкой</b> · ванильное выживание с элементами хардкора · Minecraft Java <b>1.21.10</b> · без модов, можно с пиратки / TLauncher</p>
     <!-- У249 (2026-10-18): большая кнопка личного кабинета — первый экран телефона -->
     <a class="btn cab-big" href="cabinet.html" data-cab><span class="cb-t">🔑 Личный кабинет</span><span class="cb-s">карта, голос, телепорты — вход по нику и паролю из игры</span></a>
+    <!-- У399 (2026-10-25): голос и звук за 3 нажатия — мастер cabinet.html#voice (ник → пароль → слышишь игру; микрофон — отдельно) -->
+    <a class="btn voice-big" href="cabinet.html#voice" data-cab id="voice-big"><span class="cb-t">🎧 Подключиться к голосу и звуку</span><span class="cb-s">слышь игроков рядом, музыку клуба и костра — ник и пароль из игры, 3 нажатия</span></a>
     <ul class="facts">
       <li class="ok">✔ без модов</li><li class="ok">✔ TLauncher</li><li>39 навыков</li><li>4 мира + Незер и Энд</li><li>приваты компасом</li>
     </ul>
@@ -244,7 +246,7 @@
 
 <a class="dot-admin" href="admin.html" aria-label="Служебная страница" title=""></a>
 
-<script src="data.js?v=38"></script>
+<script src="data.js?v=39"></script>
 <script src="viz.js?v=8"></script>
 <script src="app.js?v=14"></script><script src="music.js?v=1" defer></script>
 <script src="shop.js?v=3"></script>

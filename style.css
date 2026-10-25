@@ -434,7 +434,16 @@ main > section.pg-on { animation: pgIn .25s ease; }
 @media (min-width: 960px) {
   .hero .cab-big { grid-column: 1; grid-row: 3; margin-top: 18px; }
   .hero .facts { grid-row: 4; }
+  .hero .voice-big { grid-column: 2; grid-row: 3; margin-top: 18px; }
+  .hero .actions { grid-row: 4; }
 }
+/* У399 (2026-10-25): «🎧 Подключиться к голосу и звуку» — вторая большая кнопка первого экрана (мастер cabinet.html#voice) */
+.btn.voice-big { --b: #7a3fc4; --bh: #b98cff; --bl: #46207a; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; margin-top: 10px;
+  min-height: 68px; padding: 12px 18px; border-width: 3px; white-space: normal; text-align: center;
+  box-shadow: inset 3px 3px 0 var(--bh), inset -3px -4px 0 var(--bl), 0 0 0 3px rgba(185, 140, 255, .35), 0 8px 22px -6px rgba(122, 63, 196, .75); }
+.btn.voice-big:active { box-shadow: inset -3px -3px 0 var(--bh), inset 3px 4px 0 var(--bl); }
+.voice-big .cb-t { font-size: clamp(1.2rem, 5.4vw, 1.5rem); font-weight: 800; line-height: 1.15; }
+.voice-big .cb-s { font-size: .84rem; font-weight: 500; line-height: 1.25; color: #f3eaff; opacity: .95; }
 .nav a.nav-cab { background: #3fae1c; border-color: #22680c; color: #fff; font-weight: 700; text-shadow: 1px 1px 0 rgba(0, 0, 0, .45); }
 .nav a.nav-cab:hover { background: #4cc226; color: #fff; }
 

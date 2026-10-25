@@ -1,7 +1,11 @@
 /* Голосовой чат «рядом» (У236) — вкладка «Голос» личного кабинета DaviArt Craft.
  * Сервер (VPLand /api/voice) говорит, кто из подключённых рядом в игре и на каком расстоянии, и передаёт «рукопожатия» WebRTC.
  * Звук идёт напрямую между браузерами (Opus), громкость каждого собеседника — по расстоянию в игре. Ничего не записывается.
- * Подключение: window.VPVoice.mount(элемент, {api: fn(path, body) → Promise<json>, toast: fn(msg, bad)}). */
+ * Подключение: window.VPVoice.mount(элемент, {api: fn(path, body) → Promise<json>, toast: fn(msg, bad)}).
+ * У399 (владелец 2026-10-25: «включаются музыка и звук, и отдельная кнопка „Включить микрофон“»): подключение — сразу «только слушать»
+ * (без запроса микрофона): собеседникам уходит тихая дорожка, а по кнопке микрофона она подменяется настоящей (replaceTrack — без
+ * переподключения). Сервер получает mic: true/false — значок 🎤 над головой только с микрофоном; «в голосе» (дверь клуба) — и слушатель.
+ * Для мастера кабинета: VPVoice.prime() — в обработчике нажатия (разрешить звук), listen(), enableMic(), disableMic(), state(), onChange(fn). */
 (function () {
   "use strict";
   var POLL_MS = 400, GONE_MS = 60000, NEAR = 4, STUCK_MS = 90000;   // 2026-10-18: телефон/VPN шлёт опросы пачками раз в 25–30 с — терпеливее
@@ -14,6 +18,20 @@
   var FAIL_MS = 60000, GAP_MS = 8000;
   var joinedAt = 0, lastOk = 0, rtts = [], badAt = 0, badLen = 0, checking = false, micPeak = -1, reportHtml = "";
   var HINT = 'Не подключается или долго «соединяюсь»? У некоторых операторов и в некоторых странах такая связь блокируется — <b>попробуй включить VPN</b>.';
+  // У399: микрофон отдельно от подключения. micState: off | asking | on | denied | nodev | busy | unsupported
+  var micState = "off", primed = null, subs = [];
+  function emit() { subs.forEach(function (f) { try { f(); } catch (e) { } }); }
+  function silentStream() {   // тихая дорожка «слушателя»: ничего не подключено к выходу — уходит тишина
+    if (!ctx || !ctx.createMediaStreamDestination) return null;
+    try { return ctx.createMediaStreamDestination().stream; } catch (e) { return null; }
+  }
+  var MIC_HELP = {
+    denied: "Браузер запретил микрофон. <b>Chrome / Android:</b> нажми 🔒 слева от адреса daviart.com → «Микрофон» → «Разрешить», потом снова «Включить микрофон». " +
+      "<b>iPhone (Safari):</b> «аА» слева от адреса → «Настройки веб-сайта» → «Микрофон» → «Разрешить» (или Настройки → Safari → Микрофон).",
+    nodev: "Микрофон не найден — подключи наушники с микрофоном или проверь, что он включён в системе.",
+    busy: "Микрофон занят другой программой (Discord, Zoom…) — закрой её или выбери другой микрофон и нажми ещё раз.",
+    unsupported: "Этот браузер не даёт микрофон. Открой daviart.com в Chrome, Safari или Firefox (не во встроенном браузере Telegram/Discord)."
+  };
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]; }); }
   function $(id) { return document.getElementById(id); }
@@ -34,14 +52,16 @@
       h += (compact ? '<p class="cab-meta">Говори с теми, кто рядом в игре (до ' + range + ' бл.). У подключённых — 🎤 над головой.</p>'
           : '<p class="cab-meta">Говори с игроками, которые <b>рядом с тобой в игре</b> и тоже подключились (у них <b>🎤 над головой</b>). ' +
             'Чем дальше — тем тише, дальше ' + range + ' блоков и в другом мире — не слышно. Ничего не записывается.</p>') +
-        '<div class="cab-row"><button class="btn green' + (compact ? " vc-big" : "") + '" type="button" id="vc-join">🎤 Подключиться к голосу</button></div>' +
-        '<p class="cab-meta" id="vc-msg">Браузер спросит разрешение на микрофон — нажми «Разрешить». Лучше в наушниках.</p>' +
+        '<div class="cab-row"><button class="btn green' + (compact ? " vc-big" : "") + '" type="button" id="vc-join">🎧 Включить звук и голос</button></div>' +
+        '<p class="cab-meta" id="vc-msg">Сразу услышишь игроков рядом и музыку мест. Микрофон — отдельной кнопкой, когда захочешь говорить. Лучше в наушниках.</p>' +
         '<p class="vc-hint">' + HINT + '</p>';
     } else {
       // 2026-10-18 (владелец): компактно и без «дрыганья» — подписи не меняются при разговоре, всё фиксированной ширины/высоты
       h += '<div class="vc-bar"><span class="vc-dot"></span><span class="vc-where" id="vc-where"></span></div>' +
         '<div class="vc-health wait" id="vc-health">⏳ Подключаюсь к серверу…</div>' +
-        '<div class="vc-row">' +
+        (opt && opt.noMicBtn ? "" : '<div class="vc-micoff" id="vc-micoff"><button class="btn green vc-big" type="button" id="vc-micon">🎤 Включить микрофон</button>' +
+          '<p class="cab-meta" id="vc-micmsg">Ты слышишь игроков рядом и звуки мира. Чтобы слышали тебя — включи микрофон.</p></div>') +
+        '<div class="vc-row" id="vc-microw">' +
         '<button class="vc-ib" type="button" id="vc-mic"></button>' +
         '<div class="vc-meter" id="vc-meter"><i id="vc-level"></i></div>' +
         '<button class="vc-chip" type="button" id="vc-mode"></button>' +
@@ -57,10 +77,12 @@
         '<p class="vc-hint">' + HINT + '</p>';
     }
     box.innerHTML = h + "</div>";
-    if (!on) { $("vc-join").onclick = join; return; }
+    if (!on) { $("vc-join").onclick = function () { prime(); join(); }; return; }
     $("vc-check").onclick = check;
     $("vc-fix").onclick = fixTap;
-    $("vc-mic").onclick = function () { micOn = !micOn; applyMic(); ctl(); };
+    // У399: микрофона ещё нет — кнопка включает его (браузер спросит разрешение); есть — выключает совсем (значок 🎤 над головой пропадает)
+    $("vc-mic").onclick = function () { if (local) disableMic(); else enableMic(); };
+    if ($("vc-micon")) $("vc-micon").onclick = function () { enableMic(); };
     $("vc-mode").onclick = function () { ptt = !ptt; store("ptt", ptt ? "1" : "0"); applyMic(); ctl(); };
     $("vc-leave").onclick = function () { leave(true); };
     $("vc-nr").onclick = function () {   // У254: выкл → тихо → обычно → шумно; новый режим — заново послушать тишину 2 с
@@ -89,9 +111,21 @@
   function ctl() {
     var m = $("vc-mic"), md = $("vc-mode"), pb = $("vc-ptt");
     if (!m) return;
-    m.textContent = micOn ? "🎤" : "🔇"; m.classList.toggle("off", !micOn); m.title = micOn ? "Микрофон включён — нажми, чтобы выключить" : "Микрофон выключен — нажми, чтобы включить";
+    var live = !!local && micOn;
+    m.textContent = live ? "🎤" : "🔇"; m.classList.toggle("off", !live);
+    m.title = live ? "Микрофон включён — нажми, чтобы выключить" : "Микрофон выключен — нажми, чтобы включить";
     md.textContent = ptt ? "Рация" : "Всегда"; md.title = ptt ? "Говоришь, пока держишь кнопку (нажми — говорить всегда)" : "Микрофон слушает всегда (нажми — режим рации)";
-    pb.hidden = !ptt;
+    md.style.visibility = local ? "" : "hidden";   // без микрофона «Рация/Всегда» не нужна (место держим — ряд не прыгает)
+    pb.hidden = !ptt || !local;
+    var mo = $("vc-micoff"), mm = $("vc-micmsg"), mb = $("vc-micon");   // У399: большая кнопка «Включить микрофон», пока его нет
+    if (mo) mo.hidden = !!local;
+    if (mb) { mb.disabled = micState === "asking"; mb.textContent = micState === "asking" ? "⏳ Разреши доступ к микрофону…" : "🎤 Включить микрофон"; }
+    if (mm) {
+      var mt = micState === "asking" ? "Браузер спрашивает разрешение — нажми «Разрешить»."
+        : MIC_HELP[micState] || "Ты слышишь игроков рядом и звуки мира. Чтобы слышали тебя — включи микрофон.";
+      if (mm.__t !== mt) { mm.__t = mt; mm.innerHTML = mt; }
+      mm.classList.toggle("vc-bad", !!MIC_HELP[micState]);
+    }
     var nr = $("vc-nr");
     if (nr) {
       nr.textContent = gate ? "🔇 Шумодав: " + NR_NAMES[nrMode] : "Шумодав недоступен";
@@ -128,7 +162,7 @@
       var p = peers[n], st = p.pc ? p.pc.connectionState : "new";
       var wait = p.waitFrom ? Math.floor((Date.now() - p.waitFrom) / 5000) * 5 : 0;   // шагом 5 с — строка не мигает каждую секунду
       var link = st === "connected" ? "🟢 связь есть" : wait * 1000 >= FAIL_MS ? "❌ нет связи — VPN?" : "⏳ соединяюсь" + (wait >= 5 ? " " + wait + " с" : "");
-      return '<div class="vc-peer' + (p.speaking ? " talk" : "") + '"><span class="vc-ico">🎤</span><b>' + esc(n) + '</b>' +
+      return '<div class="vc-peer' + (p.speaking ? " talk" : "") + '"><span class="vc-ico" title="' + (p.mic === false ? "слушает, без микрофона" : "с микрофоном") + '">' + (p.mic === false ? "🎧" : "🎤") + '</span><b>' + esc(n) + '</b>' +
         '<span class="vc-pm">' + Math.round(p.d) + " бл. · " + link + "</span>" +
         '<button class="vc-chip vc-mute" type="button" data-mute="' + esc(n) + '" title="' + (p.muted ? "Не слышишь его — нажми, чтобы слышать" : "Нажми, чтобы не слышать") + '">' + (p.muted ? "🔇" : "🔊") + "</button></div>";
     }).join("") + others.slice().sort(function (a, b) { return a.d - b.d; }).map(function (o) {
@@ -143,37 +177,95 @@
   }
 
   // ---------------------------------------------------------------- подключение
+  // У399: вызывать ПРЯМО в обработчике нажатия (до любых запросов к серверу) — браузер разрешает звук только «по нажатию»
+  function prime() {
+    try { if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance(" ")); } catch (e) { }   // У290: iPhone — голос жителей разрешается только по нажатию
+    if (on && ctx) { try { ctx.resume(); } catch (e) { } return; }
+    if (!primed) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      try { primed = AC ? new AC() : null; } catch (e) { primed = null; }
+    }
+    if (primed) { try { primed.resume(); } catch (e) { } }
+  }
+
+  // У399: подключиться «только слушать» — без запроса микрофона. Микрофон — enableMic() (кнопка). Возвращает true, если подключились.
   function join() {
     var m = $("vc-msg");
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) {
-      m.textContent = "Этот браузер не умеет голосовой чат. Открой кабинет в Chrome, Safari или Firefox."; return;
+    if (on) return true;
+    if (!window.RTCPeerConnection) {
+      micState = "unsupported";
+      if (m) m.textContent = "Этот браузер не умеет голосовой чат. Открой daviart.com в Chrome, Safari или Firefox.";
+      emit(); return false;
     }
-    m.textContent = "Жду разрешение на микрофон…";
-    try { if (window.speechSynthesis) speechSynthesis.speak(new SpeechSynthesisUtterance(" ")); } catch (e) { }   // У290: iPhone — голос жителей разрешается только по нажатию
-    var AC = window.AudioContext || window.webkitAudioContext;
-    ctx = AC ? new AC() : null;   // создаём по нажатию — иначе телефон не даст играть звук
-    navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
-      local = s;
-      sendStream = local;
-      if (ctx) {
-        try { ctx.resume(); } catch (e) { }
-        analyser = ctx.createAnalyser(); analyser.fftSize = 512;
-        ctx.createMediaStreamSource(local).connect(analyser);
-      }
-      return buildGate().catch(function () { sendStream = local; gate = null; });   // не вышло — голос как раньше, без шумодава
-    }).then(function () {
-      if (!local) return;
-      on = true; lastState = null;
-      joinedAt = Date.now(); lastOk = 0; rtts = []; badAt = 0; reportHtml = "";
-      applyMic();
-      try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () { }); } catch (e) { }
-      draw();
-      startTicker();
-      meter();
-      if (window.VPSound && ctx) VPSound.start({ctx: ctx, api: opt.api});   // У290: звучащие точки — тем же звуком, что и голоса
-      mediaSession(true);
-    }).catch(function () {
-      m.textContent = "Нет доступа к микрофону. Разреши его в настройках браузера для daviart.com и нажми ещё раз.";
+    if (!opt) return false;   // не смонтирован (mount не вызывали)
+    if (!primed) prime();
+    ctx = primed; primed = null;   // создан по нажатию — иначе телефон не даст играть звук
+    if (ctx) { try { ctx.resume(); } catch (e) { } }
+    local = null; analyser = null; gate = null; gateOpen = false;
+    sendStream = silentStream();   // собеседникам — тишина, пока нет микрофона
+    micState = "off";
+    on = true; lastState = null;
+    joinedAt = Date.now(); lastOk = 0; rtts = []; badAt = 0; reportHtml = "";
+    try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () { }); } catch (e) { }
+    draw();
+    startTicker();
+    meter();
+    if (window.VPSound && ctx) VPSound.start({ctx: ctx, api: opt.api});   // У290: звучащие точки — тем же звуком, что и голоса
+    mediaSession(true);
+    emit();
+    // в прошлый раз говорил с микрофоном и браузер его уже разрешил — включить сразу (без вопроса); иначе — ждём кнопку
+    if (store("mic") === "1" && navigator.permissions && navigator.permissions.query) {
+      try {
+        navigator.permissions.query({name: "microphone"}).then(function (st) { if (on && !local && st && st.state === "granted") enableMic(); }).catch(function () { });
+      } catch (e) { }
+    }
+    return true;
+  }
+
+  // У399: включить микрофон (кнопка «🎤 Включить микрофон»): браузер спросит разрешение; дорожка подменяется у всех собеседников без переподключения
+  function enableMic() {
+    if (!on) return Promise.resolve({ok: false, reason: "off"});
+    if (local) { micOn = true; applyMic(); ctl(); emit(); return Promise.resolve({ok: true}); }
+    if (micState === "asking") return Promise.resolve({ok: false, reason: "asking"});
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micState = "unsupported"; ctl(); emit(); return Promise.resolve({ok: false, reason: micState}); }
+    micState = "asking"; ctl(); emit();
+    if (ctx) { try { ctx.resume(); } catch (e) { } }
+    return navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
+      if (!on) { s.getTracks().forEach(function (t) { t.stop(); }); micState = "off"; return {ok: false, reason: "off"}; }
+      local = s; sendStream = local;
+      if (ctx) { analyser = ctx.createAnalyser(); analyser.fftSize = 512; ctx.createMediaStreamSource(local).connect(analyser); }
+      return buildGate().catch(function () { sendStream = local; gate = null; }).then(function () {   // не вышло — голос без шумодава
+        if (!on || !local) return {ok: false, reason: "off"};
+        micOn = true; micState = "on"; store("mic", "1");
+        applyMic();
+        swapTrack((sendStream || local).getAudioTracks()[0]);
+        ctl(); emit();
+        polling = false; tickPoll();   // сразу сказать серверу «с микрофоном» — значок 🎤 над головой
+        return {ok: true};
+      });
+    }, function (e) {
+      var n = e && e.name;
+      micState = n === "NotFoundError" || n === "OverconstrainedError" ? "nodev" : n === "NotReadableError" || n === "AbortError" ? "busy" : "denied";
+      ctl(); emit();
+      return {ok: false, reason: micState};
+    });
+  }
+
+  // У399: выключить микрофон совсем — остаёшься слушателем (значок 🎤 над головой пропадает)
+  function disableMic() {
+    if (local) local.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } });
+    local = null; analyser = null; gate = null; gateOpen = false; ducked = false;
+    sendStream = silentStream();
+    micState = "off"; store("mic", "0");
+    swapTrack(sendStream ? sendStream.getAudioTracks()[0] : null);
+    ctl(); emit();
+    if (on) { polling = false; tickPoll(); }
+  }
+
+  function swapTrack(tr) {   // подменить исходящую дорожку у всех соединений (без нового «рукопожатия»)
+    Object.keys(peers).forEach(function (n) {
+      var p = peers[n]; if (!p.pc) return;
+      p.pc.getSenders().forEach(function (sd) { if (!sd.track || sd.track.kind === "audio") sd.replaceTrack(tr).catch(function () { }); });
     });
   }
 
@@ -310,13 +402,14 @@
     stopTicker(); polling = false; checking = false; micPeak = -1;
     Object.keys(peers).forEach(drop);
     if (local) local.getTracks().forEach(function (t) { t.stop(); });
-    local = null;
+    local = null; analyser = null; micState = "off";
     if (window.VPSound) VPSound.stop();
     mediaSession(false);
     if (ctx) { try { ctx.close(); } catch (e) { } ctx = null; }
     if (wakeLock) { try { wakeLock.release(); } catch (e) { } wakeLock = null; }
     if (tell) opt.api("/voice", {action: "leave"});
     draw();
+    emit();
   }
 
   function applyMic() {
@@ -404,7 +497,7 @@
     var t0 = Date.now();
     // У244: с кем связь установлена — сервер ставит ✔ в панели игры, только если связь есть у обоих
     var linked = Object.keys(peers).filter(function (n) { var p = peers[n]; return p.pc && p.pc.connectionState === "connected"; });
-    opt.api("/voice", {action: "poll", speaking: speaking, linked: linked}).then(function (j) {
+    opt.api("/voice", {action: "poll", speaking: speaking, linked: linked, mic: !!local}).then(function (j) {   // У399: mic — значок 🎤 над головой
       if (!on) return;
       if (j && !j.offline) {   // сервер ответил (даже ошибкой) — связь до него есть
         var tn = Date.now(), prev = lastOk || joinedAt;
@@ -425,6 +518,7 @@
         (j.peers || []).forEach(function (pe) {
           var p = peers[pe.name] || (peers[pe.name] = {pending: [], muted: false});
           p.d = pe.d; p.seen = now; p.speaking = pe.speaking; p.wet = !!pe.water;   // У323: собеседник под водой
+          p.mic = pe.mic;   // У399: false — слушает без микрофона (нет поля — старый сервер, считаем с микрофоном)
           if (pe.sid && p.sid && pe.sid !== p.sid && p.pc) closePc(p);   // собеседник переподключился — старое соединение мёртвое
           if (pe.sid) p.sid = pe.sid;
           if (p.pc && p.pc.connectionState !== "connected" && p.made && now - p.made > STUCK_MS) closePc(p);   // «соединяюсь» дольше 90 с — заново
@@ -449,6 +543,7 @@
         caveLevel();   // У292: эхо в пещере
         meWater = !!j.water; waterTick();   // У323: под водой — глухо и пузырьки
         if (first) draw(); else { status(); drawPeers(); }
+        emit();
       }
       polling = false;
     });
@@ -538,6 +633,7 @@
   }
 
   function checkMic() {   // 5 с слушаем свой микрофон: двигалась ли полоска
+    if (!local) return Promise.resolve({state: "skip", txt: "— Микрофон не включён — ты только слушаешь (говорить — «🎤 Включить микрофон»)"});
     if (!micOn) return Promise.resolve({state: "bad", txt: "⚠ Микрофон выключен — нажми 🎤"});
     micPeak = 0;
     return new Promise(function (r) { setTimeout(r, 5000); }).then(function () {
@@ -578,11 +674,12 @@
     if (p.pc) return p;
     var pc = new RTCPeerConnection({iceServers: iceServers});
     p.pc = pc; p.made = Date.now();
-    var out = sendStream || local;   // У254: собеседникам — звук после шумодава
-    out.getAudioTracks().forEach(function (t) { pc.addTrack(t, out); });
+    var out = sendStream || local;   // У254: собеседникам — звук после шумодава; У399: у слушателя — тихая дорожка (потом подменится микрофоном)
+    if (out && out.getAudioTracks().length) out.getAudioTracks().forEach(function (t) { pc.addTrack(t, out); });
+    else { try { pc.addTransceiver("audio", {direction: "sendrecv"}); } catch (e) { } }   // нет WebAudio — пустой канал, всё равно слышим
     pc.onicecandidate = function (e) { if (e.candidate) send(name, {t: "ice", c: e.candidate}); };
     pc.ontrack = function (e) {
-      var s = e.streams[0];
+      var s = e.streams[0] || new MediaStream([e.track]);
       if (!p.el) { p.el = new Audio(); p.el.autoplay = true; p.el.setAttribute("playsinline", ""); }
       p.el.srcObject = s;
       if (ctx) {
@@ -617,7 +714,7 @@
   }
 
   function onSignal(s) {
-    if (!local) return;
+    if (!on) return;
     var name = s.from, d = s.data || {};
     if (d.t === "offer") {
       var p = peers[name];
@@ -693,7 +790,7 @@
   function micTrack() { return local && local.getAudioTracks()[0]; }
   function needTap(show) { var b = $("vc-fix"); if (b) b.hidden = !show; }
   function reacquireMic() {   // iPhone/Safari в фоне останавливает микрофон (track «ended») — взять заново и подменить у всех без разрыва связи
-    if (reMic || !on) return; reMic = true;
+    if (reMic || !on || !local) return; reMic = true;   // У399: слушатель без микрофона — брать нечего
     navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
       if (!on) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
       if (local) local.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } });
@@ -737,8 +834,8 @@
   setInterval(audioWatch, 5000);
   function recover() {
     if (!on) return;
-    if (ctx && ctx.state !== "running") ctx.resume().then(function () { needTap(ctx.state !== "running"); }).catch(function () { needTap(true); });
-    var t = micTrack(); if (!t || t.readyState === "ended") reacquireMic();
+    if (ctx && ctx.state !== "running") ctx.resume().then(function () { needTap(ctx && ctx.state !== "running"); }).catch(function () { needTap(true); });
+    var t = micTrack(); if (t && t.readyState === "ended") reacquireMic();
     Object.keys(peers).forEach(function (n) {
       var p = peers[n];
       if (p.el && p.el.paused) { var pl = p.el.play(); if (pl && pl.catch) pl.catch(function () { }); }
@@ -757,7 +854,7 @@
   function fixTap() {   // нажатие — браузер разрешает вернуть звук и микрофон
     needTap(false);
     if (ctx) ctx.resume().catch(function () { });
-    var t = micTrack(); if (!t || t.readyState === "ended") reacquireMic();
+    var t = micTrack(); if (t && t.readyState === "ended") reacquireMic();
     Object.keys(peers).forEach(function (n) { var p = peers[n]; if (p.el) { var pl = p.el.play(); if (pl && pl.catch) pl.catch(function () { }); } });
     if (window.VPSound && VPSound.unlock) VPSound.unlock();
   }
@@ -786,7 +883,17 @@
       });
     })).then(function (l) { var o = {}; l.forEach(function (x) { o[x[0]] = x[1]; }); return {on: on, me: myName, inGame: lastState && lastState.inGame, peers: o, nr: NR_NAMES[nrMode], gate: !!gate, open: gateOpen, duck: ducked}; });
   }
+  // У399: короткое состояние для мастера «Подключиться к голосу и звуку»
+  function state() {
+    var near = 0, talkers = 0;
+    Object.keys(peers).forEach(function (n) { var p = peers[n]; if (p.d != null) { near++; if (p.mic !== false) talkers++; } });
+    return {on: on, mic: micState, micLive: !!local && micOn, inGame: !!(lastState && lastState.inGame), world: lastState ? lastState.world || "" : "",
+      connected: lastState ? lastState.connected || 0 : 0, near: near, talkers: talkers, others: lastState && lastState.others ? lastState.others.length : 0,
+      server: !!lastOk && Date.now() - lastOk < GAP_MS * 2, me: myName, sound: !!(window.VPSound && VPSound.enabled()), audio: ctx ? ctx.state : "none", range: range};
+  }
   window.VPVoice = {mount: mount, active: function () { return on; }, stats: stats, range: function () { return range; },
+    prime: prime, listen: join, enableMic: enableMic, disableMic: disableMic, state: state, micHelp: function (k) { return MIC_HELP[k] || ""; },
+    onChange: function (f) { if (typeof f === "function") subs.push(f); }, leave: function () { if (on) leave(true); }, fix: fixTap,
     __dbg: function () { var t = micTrack(); return {ctx: ctx && ctx.state, mic: t ? t.readyState : null, micId: t ? t.id : null, gate: !!gate, on: on}; },   // для теста
     __stopMic: function () { var t = micTrack(); if (t) { t.stop(); t.dispatchEvent(new Event("ended")); } },
     __suspend: function () { return ctx ? ctx.suspend() : null; }};

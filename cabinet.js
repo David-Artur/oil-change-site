@@ -24,6 +24,8 @@
   var TABS = ["home", "land", "market", "rewards", "acct", "donate"];   // 2026-10-18: вкладки объединены (старые адреса — OLD_TABS)
   var OLD_TABS = {profile: "home", voice: "home", claims: "land", clan: "land", ach: "rewards", bonus: "rewards", account: "acct", help: "acct"};
   var homeMounted = false;   // У237: «Главная» — второй экран (home.js; голос — voice.js внутри неё)
+  // У399: cabinet.html#voice — мастер «Голос и звук» (voicewiz.js) вместо обычного входа и вкладок, пока не нажмут «Открыть весь кабинет»
+  var wiz = /^#voice$/.test(location.hash || "") && !!window.VPVoiceWiz && !!document.getElementById("voice-view");
   var donTiers = null, donLoading = false;
 
   function $(id) { return document.getElementById(id); }
@@ -140,6 +142,8 @@
   }
 
   function show(v) {
+    if (wiz && (v === "login" || v === "load" || v === "cab")) { window.VPVoiceWiz.view(v); v = "voice"; }   // У399: мастер голоса
+    var vv = $("voice-view"); if (vv) vv.hidden = v !== "voice";
     $("login-view").hidden = v !== "login";
     $("cab-view").hidden = v !== "cab";
     $("load-view").hidden = v !== "load";
@@ -204,7 +208,7 @@
     Array.prototype.forEach.call(document.querySelectorAll("#tabs .chip[data-tab]"), function (b) { b.setAttribute("aria-selected", b.getAttribute("data-tab") === t); });
     TABS.forEach(function (x) { $("tab-" + x).hidden = x !== t; });
     $("cab-view").classList.toggle("on-donate", t === "donate");   // на «Донате» полоса бонуса не дублирует карточку
-    try { history.replaceState(null, "", "#" + t); } catch (e) { }
+    if (!wiz) try { history.replaceState(null, "", "#" + t); } catch (e) { }   // У399: в мастере адрес остаётся #voice
     var ch = document.querySelector('#tabs .chip[data-tab="' + t + '"]');   // выбранная вкладка — в видимую часть полосы (телефон)
     if (ch && ch.scrollIntoView) try { ch.scrollIntoView({block: "nearest", inline: "nearest"}); } catch (e) { }
     if (t === "market" && !market) loadMarket();
@@ -212,7 +216,7 @@
     if (t === "land" && !clansAll) loadClans();
     if (t === "donate" && me) renderDonate();
     if (t === "rewards" && me) { loadBonus(); loadRefFriends(); }
-    if (t === "home" && !homeMounted && me) {
+    if (t === "home" && !homeMounted && me && !wiz) {   // У399: в мастере голос живёт в мастере — «Главную» монтируем после выхода из него
       homeMounted = true;
       if (window.VPHome) window.VPHome.mount($("home-live"), {api: api, toast: toast, me: function () { return me; }, money: money, mapLink: mapLink, skills: SKILLS,
         setTab: function (x) { setTab(x); var v = $("cab-view"); if (v) window.scrollTo(0, v.getBoundingClientRect().top + window.scrollY); }});
@@ -1346,5 +1350,19 @@
   var h0 = (location.hash || "").replace("#", "");
   h0 = OLD_TABS[h0] || h0;   // старые адреса (#profile, #clan, #bonus, #voice …) → объединённые вкладки
   if (TABS.indexOf(h0) >= 0) tab = h0;
+  if (wiz) window.VPVoiceWiz.start({   // У399: мастер «Голос и звук» — вход тем же /login, что и у кабинета
+    api: api, toast: toast, me: function () { return me; },
+    login: function (nick, pass) {
+      return api("/login", {nick: nick, password: pass}).then(function (j) {
+        if (j && j.ok && j.token) { memTok = j.token; setTok(j.token); load(true); }
+        return j;
+      });
+    },
+    openCabinet: function () {
+      wiz = false;
+      try { history.replaceState(null, "", "#home"); } catch (e) { }
+      if (me) { show("cab"); setTab("home"); window.scrollTo(0, 0); } else if (tok()) { show("load"); load(true); } else show("login");
+    }
+  });
   if (tok()) { show("load"); load(true); } else show("login");
 })();
