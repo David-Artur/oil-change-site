@@ -220,10 +220,10 @@
     var inp = ctx.createGain(), wet = ctx.createGain(), lp = ctx.createBiquadFilter(), conv = ctx.createConvolver();
     var d1 = ctx.createDelay(1), d2 = ctx.createDelay(1), fb = ctx.createGain();
     wet.gain.value = 0; lp.type = "lowpass"; lp.frequency.value = 2600;
-    var len = Math.floor(ctx.sampleRate * 2.2), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    var len = Math.floor(ctx.sampleRate * 1.0), ir = ctx.createBuffer(2, len, ctx.sampleRate);   // 2026-10-25 владелец: «эхо в шахтах слишком сильно — слегонца, но чтобы понятно, что шахта»: хвост 2.2 → 1 с
     for (var ch = 0; ch < 2; ch++) { var a = ir.getChannelData(ch); for (var i = 0; i < len; i++) a[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2) * (i < ctx.sampleRate * 0.012 ? 0 : 1); }
     conv.buffer = ir;
-    d1.delayTime.value = 0.23; d2.delayTime.value = 0.41; fb.gain.value = 0.32;
+    d1.delayTime.value = 0.07; d2.delayTime.value = 0.12; fb.gain.value = 0.15;   // ближние отражения стен штольни, без долгого «эхо-эхо»
     inp.connect(lp); lp.connect(conv); conv.connect(wet);
     lp.connect(d1); d1.connect(fb); fb.connect(d2); d2.connect(wet); d2.connect(fb); d1.connect(wet);
     wet.connect(ctx.destination);
@@ -233,7 +233,7 @@
   function caveLevel() {
     if (!ctx || !cave || cave.ctx !== ctx) return;
     var c = window.VPSound && VPSound.cave ? VPSound.cave() : 0;
-    cave.wet.gain.setTargetAtTime(c * 0.35, ctx.currentTime, 1.2);   // владелец: «небольшое эхо»
+    cave.wet.gain.setTargetAtTime(c * 0.15, ctx.currentTime, 1.2);   // владелец: «небольшое эхо»; 2026-10-25: «слегонца» — 0.35 → 0.15
   }
 
   // ---------------------------------------------------------------- У323 (владелец 2026-10-23): под водой — глухо и с бульканьем

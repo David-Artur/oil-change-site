@@ -450,13 +450,13 @@
   function mnFx() {   // пещерное эхо штольни: тёмный хвост 1.6 с + отражения от стен 0.07/0.13 с → master
     if (mnFxG && mnFxG.ctx === ctx) return mnFxG;
     var cin = ctx.createBiquadFilter(), out = ctx.createGain();
-    cin.type = "lowpass"; cin.frequency.value = 1600; out.gain.value = 0.6; out.connect(master);
+    cin.type = "lowpass"; cin.frequency.value = 1600; out.gain.value = 0.35; out.connect(master);   // 2026-10-25 владелец: «эхо в шахте слишком сильное — слегонца» (0.6 → 0.35, хвост 1.6 → 0.9 с)
     try {
-      var cv = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 1.6), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      var cv = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 0.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
       for (var c = 0; c < 2; c++) { var ch = ir.getChannelData(c); for (var s = 0; s < len; s++) ch[s] = (Math.random() * 2 - 1) * Math.pow(1 - s / len, 2.6) * (s < ctx.sampleRate * 0.015 ? 0 : 1); }
       cv.buffer = ir; cin.connect(cv); cv.connect(out);
       var e1 = ctx.createDelay(1), e2 = ctx.createDelay(1), efb = ctx.createGain(), eg = ctx.createGain();
-      e1.delayTime.value = 0.07; e2.delayTime.value = 0.13; efb.gain.value = 0.3; eg.gain.value = 0.35;
+      e1.delayTime.value = 0.07; e2.delayTime.value = 0.13; efb.gain.value = 0.15; eg.gain.value = 0.2;
       cin.connect(e1); e1.connect(eg); e1.connect(efb); efb.connect(e2); e2.connect(eg); e2.connect(efb); eg.connect(out);
     } catch (e) { }
     return (mnFxG = {ctx: ctx, send: cin});
@@ -502,7 +502,7 @@
     if (g < 0.008) return;
     var t = ctx.currentTime, rate = rnd(0.9, 1.1), dur = b.duration / rate;
     var src = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), gn = ctx.createGain(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    var dry = ctx.createGain(), snd = ctx.createGain(), w = Math.min(0.7, 0.3 + d / 25);
+    var dry = ctx.createGain(), snd = ctx.createGain(), w = Math.min(0.4, 0.15 + d / 40);
     src.buffer = b; src.playbackRate.value = rate;
     lp.type = "lowpass";
     var cut = Math.max(1800, 16000 / (1 + d / 10));
