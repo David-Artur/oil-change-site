@@ -93,7 +93,9 @@
       // 2026-10-22 владелец: «самое громкое — между 4 колонн (танцпол); за колоннами — 65% громкости (владелец: «давай до 65 процентов»)»: танцпол — центр клуба ±5.5 бл.
       peak: {x1: (club.x1 + club.x2) / 2 - 5.5, x2: (club.x1 + club.x2) / 2 + 5.5, z1: (club.z1 + club.z2) / 2 - 5.5, z2: (club.z1 + club.z2) / 2 + 5.5}, offPeak: 0.65,
       stage: {x: (club.x1 + club.x2) / 2, z: club.z2 - 1.5}, wet: 0.35,   // сцена DJ — у южной стены (дверь — север); отзвук зала
-      vol: 0.32, exclusive: true, fade: 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
+      // 2026-10-25 владелец: «по холму над клубом иногда слышно — не нравится»: клуб в горе (есть туннель в sounds.json) — снаружи слышно
+      // только через туннель, сквозь толщу горы — почти сразу тишина (fade 3 вместо 30)
+      vol: 0.32, exclusive: true, fade: (cfg.tunnels || []).some(function (t) { return t.zone === "club" && t.world === club.world; }) ? 3 : 30, title: "DaviArt Holy Club · " + GN[genre] + (club.party ? " · вечеринка!" : "")});
   }
   function stop() {
     on = false; clearInterval(timer); timer = null; clearInterval(clubT); clubT = null;
