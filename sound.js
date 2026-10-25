@@ -104,6 +104,7 @@
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
     cfStop();   // У375
     ckStop();   // треск костра (запись-петля)
+    mnStop();   // У390: штольня
     master = null; ctx = null; pos = null; nowTxt = ""; speakingNpc = null;
   }
   function tick() {
@@ -264,6 +265,7 @@
       if (Date.now() > t.next && !speechSynthesis.speaking) say(best, bd, t);
     }
     campfire(zoneK, txt);   // У375: голоса у «Костра бродяг»
+    mines(zoneK, txt);      // У390: звуки штольни Деда Окака
     if (cave > 0.15) txt.push("🕳 пещера — эхо");
     if (underW) txt.push("🌊 под водой");
     if (radioBlocked && Object.keys(gens).some(function (k) { return gens[k].play; })) txt.push("▶ нажми сюда — включить радио");   // У297: iPhone
@@ -421,6 +423,130 @@
     var t = ctx.currentTime;
     ck.g.gain.setTargetAtTime(CK_VOL * k, t, 1.5);
     if (ck.pn && F && pos) ck.pn.pan.setTargetAtTime(d < 1.5 ? 0 : pan(F.x, F.z) * 0.6, t, 0.2);
+  }
+
+  // ---------------------------------------------------------------- У390 (владелец 2026-10-25): звуки штольни Деда Окака
+  // «В шахте — прикольные звуки шахты». sounds.json → mines (scripts/sounds/build_sounds.py): коробка туннеля, ось from (вход) → to (глубина),
+  // точка входа mouth. Фон — запись-петля sfx/mine-bg.mp3 (низкий ветер штольни, 30 с, AudioBuffer loop — как треск костра): в туннеле
+  // громко (к глубине громче), снаружи — только через вход (до radius бл., высота считается вдвое — с горы над штольней не слышно), у стен
+  // вплотную — чуть-чуть (rock бл.); плавно, setTargetAtTime 2 с. Одиночные (капли, далёкая кирка, скрип балок, вагонетка, камешки) — раз в
+  // every[0..1] с из случайной точки туннеля: сторона — по повороту головы, громкость и «глухость» — по расстоянию, своя высота
+  // (playbackRate 0.9–1.1) и громкость, пещерное эхо (свёртка + отражения, как у туннеля клуба, только короче — туннель маленький).
+  // Записи — CC0 (docs/sounds-licenses.md). Не загрузились — тишина, повтор раз в минуту. Всё тише голосов (фон ≈ −31 LUFS, одиночные ≤ −26).
+  var MN = {}, mnBuf = {}, mnTry = 0, mnFxG = null, mnNext = 0, mnLast = null;
+  function mnLoad(m) {
+    if (mnTry > Date.now()) return;
+    mnTry = Date.now() + 60000;
+    var c = ctx;
+    [m.bg].concat((m.sfx || []).map(function (s) { return s.f; })).forEach(function (f) {
+      if (!f || (mnBuf[f] && mnBuf[f].ctx === c)) return;
+      mnBuf[f] = {ctx: c, b: null};
+      fetch("sfx/" + f + "?v=1").then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.arrayBuffer(); }).then(function (a) {
+        return new Promise(function (ok, no) { var p = c.decodeAudioData(a, ok, no); if (p && p.catch) p.catch(no); });
+      }).then(function (b) { if (c === ctx && b && mnBuf[f]) mnBuf[f].b = b; }).catch(function () { delete mnBuf[f]; });
+    });
+  }
+  function mnGot(f) { var b = f && mnBuf[f]; return b && b.ctx === ctx && b.b ? b.b : null; }
+  function mnFx() {   // пещерное эхо штольни: тёмный хвост 1.6 с + отражения от стен 0.07/0.13 с → master
+    if (mnFxG && mnFxG.ctx === ctx) return mnFxG;
+    var cin = ctx.createBiquadFilter(), out = ctx.createGain();
+    cin.type = "lowpass"; cin.frequency.value = 1600; out.gain.value = 0.6; out.connect(master);
+    try {
+      var cv = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 1.6), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (var c = 0; c < 2; c++) { var ch = ir.getChannelData(c); for (var s = 0; s < len; s++) ch[s] = (Math.random() * 2 - 1) * Math.pow(1 - s / len, 2.6) * (s < ctx.sampleRate * 0.015 ? 0 : 1); }
+      cv.buffer = ir; cin.connect(cv); cv.connect(out);
+      var e1 = ctx.createDelay(1), e2 = ctx.createDelay(1), efb = ctx.createGain(), eg = ctx.createGain();
+      e1.delayTime.value = 0.07; e2.delayTime.value = 0.13; efb.gain.value = 0.3; eg.gain.value = 0.35;
+      cin.connect(e1); e1.connect(eg); e1.connect(efb); efb.connect(e2); e2.connect(eg); e2.connect(efb); eg.connect(out);
+    } catch (e) { }
+    return (mnFxG = {ctx: ctx, send: cin});
+  }
+  function mnStop() {
+    Object.keys(MN).forEach(function (id) { var b = MN[id]; try { b.src.stop(); } catch (e) { } try { b.g.disconnect(); } catch (e) { } });
+    MN = {}; mnFxG = null; mnNext = 0;
+  }
+  // где игрок относительно штольни m: k — громкость фона 0..1, inT — в туннеле, cut — фильтр «из-за угла» для звуков снаружи
+  function mineAt(m) {
+    if (!pos || pos.w !== m.world || pos.y == null) return {k: 0};
+    var X = m.axis === "z" ? "z" : "x", M = m.mouth || [m.x1, m.y1, m.z1], R = m.radius || 20, rk = m.rock || 3;
+    var inT = pos.x >= m.x1 - 0.3 && pos.x <= m.x2 + 1.3 && pos.z >= m.z1 - 0.3 && pos.z <= m.z2 + 1.3 && pos.y >= m.y1 - 1 && pos.y <= m.y2 + 1;
+    var p = Math.max(0, Math.min(1, (pos[X] - m.from) / ((m.to - m.from) || 1)));
+    if (inT) return {k: 0.75 + 0.25 * p, inT: true, p: p, cut: 20000};
+    var dm = Math.hypot(pos.x - M[0], (pos.y - M[1]) * 2, pos.z - M[2]);   // высота — вдвое: над входом, на горе — быстро тишина
+    var km = dm < R ? 0.6 * Math.pow(1 - dm / R, 2) : 0;
+    var db = Math.hypot(Math.max(m.x1 - pos.x, 0, pos.x - m.x2 - 1), Math.max(m.y1 - 1 - pos.y, 0, pos.y - m.y2 - 1), Math.max(m.z1 - pos.z, 0, pos.z - m.z2 - 1));
+    var kr = db < rk ? 0.25 * (1 - db / rk) : 0;   // сквозь толщу горы — только вплотную к стенам
+    var k = Math.max(km, kr);
+    return {k: k, inT: false, dm: dm, cut: 600 + 9000 * Math.min(1, k / 0.6)};
+  }
+  function minePoint(m, t) {   // точка на оси туннеля (t: 0 — вход, 1 — глубина), поперёк — случайно
+    var X = m.axis === "z" ? "z" : "x", a = m.from + (m.to - m.from) * t, pt = {y: m.y1 + 1};
+    pt[X] = a;
+    if (X === "x") pt.z = rnd(m.z1 + 0.3, m.z2 + 0.7); else pt.x = rnd(m.x1 + 0.3, m.x2 + 0.7);
+    return pt;
+  }
+  function mineShot(m, st, zoneK) {
+    var list = (m.sfx || []).filter(function (s) { return mnGot(s.f); });
+    if (!list.length) return;
+    var pick = function () { var tot = 0, r, i; list.forEach(function (s) { tot += s.w || 1; }); r = Math.random() * tot;
+      for (i = 0; i < list.length; i++) { r -= list[i].w || 1; if (r <= 0) return list[i]; } return list[list.length - 1]; };
+    var s = pick(); if (s.f === mnLast && list.length > 1) s = pick();   // тот же звук два раза подряд — реже
+    mnLast = s.f;
+    var b = mnGot(s.f), M = m.mouth || [m.x1, m.y1, m.z1];
+    var p0 = minePoint(m, s.k === "pick" ? rnd(0.8, 1) : s.k === "cart" ? (Math.random() < 0.5 ? 1 : 0.15) : rnd(0.1, 1));
+    var p1 = s.k === "cart" ? minePoint(m, p0[m.axis === "z" ? "z" : "x"] === m.to ? 0.15 : 1) : p0;   // вагонетка едет вдоль туннеля
+    if (s.k === "cart") p1[m.axis === "z" ? "x" : "z"] = p0[m.axis === "z" ? "x" : "z"];
+    var dist = function (q) { return st.inT ? Math.hypot(pos.x - q.x, pos.y - q.y, pos.z - q.z) : Math.hypot(q.x - M[0], q.y - M[1], q.z - M[2]); };
+    var d = dist(p0), att = 1 / (1 + d / 6) * (st.inT ? 1 : Math.min(1, st.k / 0.6));
+    var g = (m.sfxVol || 0.5) * (s.v || 1) * att * rnd(0.7, 1) * (1 - Math.min(1, zoneK));
+    if (g < 0.008) return;
+    var t = ctx.currentTime, rate = rnd(0.9, 1.1), dur = b.duration / rate;
+    var src = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), gn = ctx.createGain(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    var dry = ctx.createGain(), snd = ctx.createGain(), w = Math.min(0.7, 0.3 + d / 25);
+    src.buffer = b; src.playbackRate.value = rate;
+    lp.type = "lowpass";
+    var cut = Math.max(1800, 16000 / (1 + d / 10));
+    if (s.k === "pick") cut = Math.min(cut, 2600);   // кирка — далеко, в глубине: глухо
+    lp.frequency.value = Math.min(cut, st.cut || 20000);
+    gn.gain.value = g; dry.gain.value = 1 - w; snd.gain.value = w;
+    src.connect(lp); lp.connect(gn);
+    var head = gn;
+    if (pn) { gn.connect(pn); head = pn;
+      var pa = function (q) { return st.inT ? (Math.hypot(pos.x - q.x, pos.z - q.z) < 1.5 ? 0 : pan(q.x, q.z) * 0.75) : pan(M[0], M[2]) * 0.6; };
+      pn.pan.setValueAtTime(pa(p0), t);
+      if (p1 !== p0) pn.pan.linearRampToValueAtTime(pa(p1), t + dur);
+    }
+    head.connect(dry); dry.connect(master); head.connect(snd); snd.connect(mnFx().send);
+    src.onended = function () { try { gn.disconnect(); dry.disconnect(); snd.disconnect(); if (pn) pn.disconnect(); } catch (e) { } };
+    src.start(t);
+  }
+  function mines(zoneK, txt) {
+    (cfg.mines || []).forEach(function (m) {
+      var st = mineAt(m), on2 = enabled && st.k > 0 && zoneK < 1, bg = MN[m.id], t = ctx.currentTime;
+      if (on2) mnLoad(m);
+      if (on2 && !bg && mnGot(m.bg)) {
+        var src = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), g = ctx.createGain(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+        src.buffer = mnGot(m.bg); src.loop = true; lp.type = "lowpass"; lp.frequency.value = 20000; g.gain.value = 0;
+        src.connect(lp); if (pn) { lp.connect(pn); pn.connect(g); } else lp.connect(g); g.connect(master);
+        src.start(0, Math.random() * src.buffer.duration);   // у каждого игрока — своё место петли
+        bg = MN[m.id] = {src: src, lp: lp, g: g, pn: pn, zeroAt: 0};
+      }
+      if (bg) {
+        var k = on2 ? st.k * (1 - Math.min(1, zoneK)) : 0;
+        bg.g.gain.setTargetAtTime((m.vol || 0.5) * k, t, 2.0);
+        bg.lp.frequency.setTargetAtTime(st.cut || 20000, t, 1.0);
+        if (bg.pn) bg.pn.pan.setTargetAtTime(st.inT || !pos || !m.mouth ? 0 : pan(m.mouth[0], m.mouth[2]) * 0.5, t, 0.5);
+        if (k > 0) bg.zeroAt = 0;
+        else if (!bg.zeroAt) bg.zeroAt = Date.now();
+        else if (Date.now() - bg.zeroAt > 15000) { try { bg.src.stop(); bg.g.disconnect(); } catch (e) { } delete MN[m.id]; }   // ушёл давно — петлю остановить
+      }
+      // одиночные — только в туннеле и у входа
+      if (on2 && st.k > 0.08 && zoneK < 0.3) {
+        if (!mnNext) mnNext = Date.now() + rnd(1.5, 5) * 1000;
+        else if (Date.now() >= mnNext) { var ev = m.every || [4, 15]; mnNext = Date.now() + rnd(ev[0], ev[1]) * 1000; mineShot(m, st, zoneK); }
+      } else mnNext = 0;
+      if (on2 && st.k > 0.05) txt.push("⛏ " + (m.title || m.id));
+    });
   }
 
   // ---------------------------------------------------------------- генератор: пэд-аккорды, бас, перебор/колокольчики, «флейта», ударные, ветер
@@ -846,6 +972,10 @@
     __cf: function () { return {key: cfKey, file: cfNow ? cfNow.l.file : null, playing: !!(cf && !cf.el.paused), at: cf ? +cf.el.currentTime.toFixed(2) : null,
       gain: cf ? +cf.g.gain.value.toFixed(3) : null, srvNow: serverNow(), off: clk.off}; },
     __setPos: function (p) { pos = p; posAt = Date.now(); update(); },
+    // У390, для теста: штольни — где игрок (k фона), громкость петли сейчас, сколько записей загружено
+    __mine: function () { if (!cfg || !ctx) return null; return (cfg.mines || []).map(function (m) { var st = mineAt(m), b = MN[m.id];
+      return {id: m.id, k: +st.k.toFixed(3), inT: !!st.inT, bg: b ? +b.g.gain.value.toFixed(3) : null,
+        loaded: [m.bg].concat((m.sfx || []).map(function (s) { return s.f; })).filter(mnGot).length, next: mnNext ? mnNext - Date.now() : 0}; }); },
     cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
     // У296: в каком помещении-зоне ты сейчас (клуб) — voice.js: в клубе музыка «съедает» голоса, слышно только стоящих рядом
     room: function () {
