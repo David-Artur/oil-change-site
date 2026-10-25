@@ -100,6 +100,7 @@
     Object.keys(gens).forEach(function (k) { gens[k].kill(); }); gens = {};
     if (Z) { Z.decks.forEach(function (d) { try { d.el.pause(); } catch (e) { } }); Z = null; }
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
+    cfStop();   // У375
     master = null; ctx = null; pos = null; nowTxt = ""; speakingNpc = null;
   }
   function tick() {
@@ -253,6 +254,7 @@
       var t = talk[best.id] || (talk[best.id] = {next: Date.now() + 2500, last: -1});
       if (Date.now() > t.next && !speechSynthesis.speaking) say(best, bd, t);
     }
+    campfire(zoneK, txt);   // У375: голоса у «Костра бродяг»
     if (cave > 0.15) txt.push("🕳 пещера — эхо");
     if (underW) txt.push("🌊 под водой");
     if (radioBlocked && Object.keys(gens).some(function (k) { return gens[k].play; })) txt.push("▶ нажми сюда — включить радио");   // У297: iPhone
@@ -279,6 +281,80 @@
     u.volume = Math.max(0.05, Math.min(1, level() * 1.3 * (1 - d / n.radius * 0.7)));
     speakingNpc = n.name; u.onend = function () { speakingNpc = null; };
     try { speechSynthesis.speak(u); } catch (e) { }
+  }
+
+  // ---------------------------------------------------------------- У375 (владелец 2026-10-25): голоса у «Костра бродяг»
+  // Бродяги у костра (Святые земли, −36 −25) говорят по очереди по ОБЩЕМУ расписанию: campfire-talk.json (scripts/campfire/gen_campfire_talk.py) —
+  // сцены (анекдот, байка, песня, перепалка) по кругу, реплика = mp3 нейросетевого голоса (voice/campfire/), длина в мс. Что звучит сейчас —
+  // только от часов: (часы сервера − epoch) mod круг. Сервер (VPNpc 0.4.19 CampfireTalk.at) тем же расчётом показывает пузырь над говорящим,
+  // сайт — играет его mp3 со стороны говорящего (часы сервера — t из /api/players, как у плейлиста клуба). Слышно в радиусе fire.radius (16 бл.):
+  // громкость и «глухость» — по расстоянию до говорящего, сторона — по повороту головы. Пришёл посреди реплики — с того же места.
+  var CF = null, cfAt = 0, cf = null, cfKey = null, cfTo = null, cfNow = null;
+  function talkAt(T, ms) {   // ТО ЖЕ, что CampfireTalk.at (Java): целые мс, реплика → тишина gapMs, сцена → пауза pauseMs
+    if (!T || !T.scenes) return null;
+    if (T.cyc == null) { T.cyc = 0; T.scenes.forEach(function (s) { s.lines.forEach(function (l) { T.cyc += l.ms + T.gapMs; }); T.cyc += s.pauseMs; }); }
+    if (!(T.cyc > 0)) return null;
+    var d = ms - T.epoch, c = Math.floor(d / T.cyc), t = d - c * T.cyc, base = ms - t;
+    for (var si = 0; si < T.scenes.length; si++) {
+      var s = T.scenes[si];
+      for (var li = 0; li < s.lines.length; li++) {
+        var l = s.lines[li];
+        if (t < l.ms) return {s: si, i: li, l: l, start: base, end: base + l.ms, key: c + ":" + si + ":" + li};
+        if (t < l.ms + T.gapMs) return null;
+        t -= l.ms + T.gapMs; base += l.ms + T.gapMs;
+      }
+      if (t < s.pauseMs) return null;
+      t -= s.pauseMs; base += s.pauseMs;
+    }
+    return null;
+  }
+  function cfGraph() {   // свой <audio> → фильтр (даль) → панорама → громкость → master (вода, общая громкость, приглушение под голос)
+    if (cf && cf.ctx === ctx) return cf;
+    cfStop();
+    var el = new Audio(); el.preload = "auto";
+    var g = {ctx: ctx, el: el, src: ctx.createMediaElementSource(el), lp: ctx.createBiquadFilter(), g: ctx.createGain(), pn: ctx.createStereoPanner ? ctx.createStereoPanner() : null};
+    g.lp.type = "lowpass"; g.lp.frequency.value = 16000; g.g.gain.value = 0;
+    g.src.connect(g.lp); if (g.pn) { g.lp.connect(g.pn); g.pn.connect(g.g); } else g.lp.connect(g.g); g.g.connect(master);
+    return (cf = g);
+  }
+  function cfStop() {
+    if (cfTo) { clearTimeout(cfTo); cfTo = null; }
+    if (cf) { try { cf.el.pause(); cf.g.disconnect(); } catch (e) { } }
+    cf = null; cfKey = null; cfNow = null;
+  }
+  function cfPlay(w) {   // реплика w — с того места, где она сейчас у всех (по часам сервера; + задержка вывода звука)
+    if (!w || !w.l.file || !ctx) return;
+    var g = cfGraph(), at = (serverNow() - w.start) / 1000 + outLat();
+    if (at > w.l.ms / 1000 - 0.6) return;
+    cfKey = w.key; cfNow = w;
+    g.el.src = (CF.dir || "voice/campfire/") + w.l.file;
+    var seek = function () { try { if (at > 0.15) g.el.currentTime = (serverNow() - w.start) / 1000 + outLat(); } catch (e) { } };
+    g.el.onloadedmetadata = seek; playEl(g.el);
+  }
+  function campfire(zoneK, txt) {
+    if (!CF && Date.now() - cfAt > 60000) {
+      cfAt = Date.now();
+      fetch("campfire-talk.json?t=" + Math.floor(Date.now() / 600000), {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { CF = j; }).catch(function () { });
+    }
+    var F = CF && CF.fire;
+    var far = !F || !pos || pos.w !== F.world || !enabled || zoneK > 0.3 || Math.hypot(pos.x - F.x, pos.z - F.z) > F.radius + 2;
+    if (far) { if (cf && !cf.el.paused) { cf.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3); setTimeout(function () { if (cf && cfNow === null) cf.el.pause(); }, 1200); } cfKey = null; cfNow = null; return; }
+    var now = serverNow(), w = talkAt(CF, now);
+    if (w && w.key !== cfKey) cfPlay(w);
+    if (!w) cfNow = null;
+    // следующая реплика — ровно в её начало (обновление позиции — раз в секунду, ждать его — опоздать до секунды)
+    var nx = talkAt(CF, now + 1000);
+    if (!cfTo && nx && nx.key !== cfKey && nx.start > now) cfTo = setTimeout(function () { cfTo = null; if (on && CF) cfPlay(talkAt(CF, serverNow() + 30)); }, nx.start - now);
+    var who = cfNow && CF.speakers[cfNow.l.who], sx = who ? who.x : F.x, sz = who ? who.z : F.z;
+    var d = Math.hypot(pos.x - sx, pos.z - sz, pos.y != null && F.y != null ? (pos.y - F.y) * 0.7 : 0);
+    var k = d < 3 ? 1 : Math.max(0, 1 - (d - 3) / (F.radius - 3));
+    if (cf) {
+      var t = ctx.currentTime;
+      cf.g.gain.setTargetAtTime(cfNow ? 0.9 * Math.pow(k, 1.6) * (1 - Math.min(1, zoneK)) : 0, t, 0.15);
+      cf.lp.frequency.setTargetAtTime(16000 - 13000 * (1 - k), t, 0.2);
+      if (cf.pn) cf.pn.pan.setTargetAtTime(d < 1.5 ? 0 : pan(sx, sz) * 0.7, t, 0.2);
+    }
+    txt.push("🔥 Костёр бродяг" + (who && k > 0 ? " · 🗣 " + who.name : ""));
   }
 
   // ---------------------------------------------------------------- генератор: пэд-аккорды, бас, перебор/колокольчики, «флейта», ударные, ветер
@@ -699,6 +775,11 @@
         hall: r(Z.wet.gain.value), pan: Z.pn ? r(Z.pn.pan.value) : 0, room: window.VPSound.room(), now: nowTxt};
     },
     __zone: function () { var g = gens["z:club"]; return g && g.__state ? g.__state() : null; },   // для теста синхронизации
+    // У375, для тестов: расписание костра (talkAt — то же, что VPNpc CampfireTalk.at) и что играет сейчас
+    __talkAt: function (T, ms) { return talkAt(T, ms); },
+    __cf: function () { return {key: cfKey, file: cfNow ? cfNow.l.file : null, playing: !!(cf && !cf.el.paused), at: cf ? +cf.el.currentTime.toFixed(2) : null,
+      gain: cf ? +cf.g.gain.value.toFixed(3) : null, srvNow: serverNow(), off: clk.off}; },
+    __setPos: function (p) { pos = p; posAt = Date.now(); update(); },
     cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
     // У296: в каком помещении-зоне ты сейчас (клуб) — voice.js: в клубе музыка «съедает» голоса, слышно только стоящих рядом
     room: function () {
