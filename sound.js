@@ -221,7 +221,7 @@
         // внутри: на танцполе (z.peak) — 100%, за колоннами — z.offPeak (переход за 2 блока)
         if (de === 0 && z.peak && pos) {
           var pe = Math.hypot(Math.max(z.peak.x1 - pos.x, 0, pos.x - z.peak.x2), Math.max(z.peak.z1 - pos.z, 0, pos.z - z.peak.z2));
-          k *= 1 - (1 - (z.offPeak || 0.8)) * Math.min(1, pe / 2);
+          k *= 1 - (1 - (z.offPeak || 0.8)) * Math.min(1, pe / 5);   // 2026-10-25: переход танцпол → за колоннами за 5 бл. (было 2)
         }
         // 2026-10-22 владелец: «3D-стерео в клубе» — внутри звук идёт со сцены (z.stage): повернул голову — сцена слева/справа
         // (не больше ±0.55, чтобы не уходило в одно ухо), + отзвук зала; снаружи — как было (со стороны клуба, глухо)
@@ -380,7 +380,7 @@
     cfG = (cfMusic ? 0.75 : 0.9) * Math.pow(k, cfMusic ? 1.4 : 1.6) * (1 - Math.min(1, zoneK));
     if (cf) {
       var t = ctx.currentTime;
-      cf.g.gain.setTargetAtTime(cfNow || playing ? cfG : 0, t, 0.15);
+      cf.g.gain.setTargetAtTime(cfNow || playing ? cfG : 0, t, 0.6);
       cf.lp.frequency.setTargetAtTime(16000 - (cfMusic ? 10000 : 13000) * (1 - k), t, 0.2);
       if (cf.pn) cf.pn.pan.setTargetAtTime(d < 1.5 ? 0 : pan(sx, sz) * (cfMusic ? 0.5 : 0.7), t, 0.2);
     }
@@ -403,7 +403,7 @@
       ck = {ctx: ctx, g: ctx.createGain()}; ck.g.gain.value = 0;
       src.connect(f); f.connect(ck.g); ck.g.connect(master); src.start();
     }
-    ck.g.gain.setTargetAtTime(0.22 * k, ctx.currentTime, 0.4);
+    ck.g.gain.setTargetAtTime(0.22 * k, ctx.currentTime, 1.5);
   }
 
   // ---------------------------------------------------------------- генератор: пэд-аккорды, бас, перебор/колокольчики, «флейта», ударные, ветер
@@ -508,7 +508,7 @@
     var muff = ctx.createBiquadFilter(); muff.type = "lowpass"; muff.frequency.value = 20000;   // «за стеной» — глуше
     if (pn) { out.disconnect(); out.connect(muff); muff.connect(pn); } else { out.disconnect(); out.connect(muff); muff.connect(master); }
     this.set = function (g, pv, cut, tc) {   // tc — плавность громкости, с (по умолчанию 0.8; музыка спавна «smooth» — 2)
-      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, tc || 0.8); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
+      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, tc || 2.0);   // 2026-10-25 владелец: «переходы громкости плавнее» — 0.8 → 2 с if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
       muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
     };
     // ушёл из зоны / в портал — плавно гаснет ~3–4 с (владелец 2026-10-20: «не резко, а плавно потухает»)
@@ -779,11 +779,11 @@
     // tn (У373) — туннель {wet, bass}: пещерное эхо и бас; нет — обычный звук (эха туннеля нет, бас ровный, «сухая» доля 1)
     self.set = function (g, pv, cut, wv, tn) {
       if (!ctx || P.owner !== self) return;
-      var t = ctx.currentTime, sw = !!tn !== P.tun, ft = sw ? 0.12 : tn ? 0.35 : 0.5;   // смена «туннель ↔ клуб» — фильтр и эхо за ~0.4 с, плавно, без щелчка
+      var t = ctx.currentTime, sw = !!tn !== P.tun, ft = sw ? 0.6 : tn ? 0.8 : 1.0;   // 2026-10-25: плавнее (было 0.12/0.35/0.5)   // смена «туннель ↔ клуб» — фильтр и эхо за ~0.4 с, плавно, без щелчка
       P.tun = !!tn;
-      P.out.gain.setTargetAtTime(g, t, 0.8); if (P.pn) P.pn.pan.setTargetAtTime(pv, t, 0.6);
+      P.out.gain.setTargetAtTime(g, t, 2.0); if (P.pn) P.pn.pan.setTargetAtTime(pv, t, 0.6);
       P.muff.frequency.setTargetAtTime(cut || 20000, t, ft);
-      if (P.wet) P.wet.gain.setTargetAtTime(wv || 0, t, sw ? 0.12 : 0.8);   // вход свёртки уже после громкости out
+      if (P.wet) P.wet.gain.setTargetAtTime(wv || 0, t, sw ? 0.6 : 1.5);   // вход свёртки уже после громкости out
       P.shelf.gain.setTargetAtTime(tn ? tn.bass : 0, t, ft);
       P.dry.gain.setTargetAtTime(tn ? 1 - tn.wet : 1, t, ft);
       P.cwet.gain.setTargetAtTime(tn ? tn.wet : 0, t, ft);
