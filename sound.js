@@ -291,7 +291,7 @@
   // только от часов: (часы сервера − epoch) mod круг. Сервер (VPNpc 0.4.19 CampfireTalk.at) тем же расчётом показывает пузырь над говорящим,
   // сайт — играет его mp3 со стороны говорящего (часы сервера — t из /api/players, как у плейлиста клуба). Слышно в радиусе fire.radius (16 бл.):
   // громкость и «глухость» — по расстоянию до говорящего, сторона — по повороту головы. Пришёл посреди реплики — с того же места.
-  var CF = null, cfAt = 0, cf = null, cfKey = null, cfTo = null, cfNow = null;
+  var CF = null, cfAt = 0, cf = null, cfKey = null, cfTo = null, cfNow = null, cfG = 0, cfPre = null;
   function talkAt(T, ms) {   // ТО ЖЕ, что CampfireTalk.at (Java): целые мс, реплика → тишина gapMs, сцена → пауза pauseMs
     if (!T || !T.scenes) return null;
     if (T.cyc == null) { T.cyc = 0; T.scenes.forEach(function (s) { s.lines.forEach(function (l) { T.cyc += l.ms + T.gapMs; }); T.cyc += s.pauseMs; }); }
@@ -329,14 +329,21 @@
     var g = cfGraph(), at = (serverNow() - w.start) / 1000 + outLat();
     if (at > w.l.ms / 1000 - 0.6) return;
     cfKey = w.key; cfNow = w;
+    // Б48: громкость — сразу, а не с ближайшего обновления позиции (раньше первое слово звучало на нуле). Пропуск вперёд — только если
+    // пришли посреди реплики; опоздание на загрузку mp3 (< 0.6 с) не догоняем перемоткой — иначе съедалось первое слово.
+    var join = at > 0.6;
+    try { g.g.gain.cancelScheduledValues(ctx.currentTime); g.g.gain.setValueAtTime(cfG, ctx.currentTime); } catch (e) { }
     g.el.src = (CF.dir || "voice/campfire/") + w.l.file;
-    var seek = function () { try { if (at > 0.15) g.el.currentTime = (serverNow() - w.start) / 1000 + outLat(); } catch (e) { } };
+    var seek = function () { try { if (join) g.el.currentTime = (serverNow() - w.start) / 1000 + outLat(); } catch (e) { } };
     g.el.onloadedmetadata = seek; playEl(g.el);
   }
   function campfire(zoneK, txt) {
-    if (!CF && Date.now() - cfAt > 60000) {
+    // нет расписания — пробуем раз в минуту; есть — перечитываем раз в 10 мин (новые сцены приходят без перезагрузки страницы; на сервере — /npc reload)
+    if (Date.now() - cfAt > (CF ? 600000 : 60000)) {
       cfAt = Date.now();
-      fetch("campfire-talk.json?t=" + Math.floor(Date.now() / 600000), {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) { CF = j; }).catch(function () { });
+      fetch("campfire-talk.json?t=" + Math.floor(Date.now() / 600000), {cache: "no-cache"}).then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.scenes && (!CF || JSON.stringify(j.scenes) !== JSON.stringify(CF.scenes) || j.epoch !== CF.epoch)) { CF = j; cfKey = null; }
+      }).catch(function () { });
     }
     var F = CF && CF.fire;
     var far = !F || !pos || pos.w !== F.world || !enabled || zoneK > 0.3 || Math.hypot(pos.x - F.x, pos.z - F.z) > F.radius + 2;
@@ -347,12 +354,18 @@
     // следующая реплика — ровно в её начало (обновление позиции — раз в секунду, ждать его — опоздать до секунды)
     var nx = talkAt(CF, now + 1000);
     if (!cfTo && nx && nx.key !== cfKey && nx.start > now) cfTo = setTimeout(function () { cfTo = null; if (on && CF) cfPlay(talkAt(CF, serverNow() + 30)); }, nx.start - now);
+    // следующую реплику — в кэш браузера заранее (за ~4 с), чтобы она стартовала без задержки загрузки
+    var pre = talkAt(CF, now + 4000);
+    if (pre && pre.l.file && pre.l.file !== cfPre) { cfPre = pre.l.file; try { var pa = new Audio(); pa.preload = "auto"; pa.src = (CF.dir || "voice/campfire/") + pre.l.file; } catch (e) { } }
+    // Б48: хвост реплики доигрывает до конца mp3 (раньше громкость гасла по расписанию — последнее слово обрезалось раньше времени)
+    var playing = cf && !cf.el.paused && !cf.el.ended;
     var who = cfNow && CF.speakers[cfNow.l.who], sx = who ? who.x : F.x, sz = who ? who.z : F.z;
     var d = Math.hypot(pos.x - sx, pos.z - sz, pos.y != null && F.y != null ? (pos.y - F.y) * 0.7 : 0);
     var k = d < 3 ? 1 : Math.max(0, 1 - (d - 3) / (F.radius - 3));
+    cfG = 0.9 * Math.pow(k, 1.6) * (1 - Math.min(1, zoneK));
     if (cf) {
       var t = ctx.currentTime;
-      cf.g.gain.setTargetAtTime(cfNow ? 0.9 * Math.pow(k, 1.6) * (1 - Math.min(1, zoneK)) : 0, t, 0.15);
+      cf.g.gain.setTargetAtTime(cfNow || playing ? cfG : 0, t, 0.15);
       cf.lp.frequency.setTargetAtTime(16000 - 13000 * (1 - k), t, 0.2);
       if (cf.pn) cf.pn.pan.setTargetAtTime(d < 1.5 ? 0 : pan(sx, sz) * 0.7, t, 0.2);
     }
