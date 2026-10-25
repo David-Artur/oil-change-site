@@ -87,7 +87,8 @@
     // У313 (VPLand 0.9.33): сервер сам ведёт расписание (club.now/next/queue — заказы у DJ) → плейлист «own» читает его на каждом шаге;
     // нет расписания (старый сервер) — как раньше: выбранные треки вперемешку по серверным часам
     var list = genre === "own" ? (club && club.now ? "own" : "own:" + (club && club.tracks && club.tracks.length ? club.tracks.join(",") : "")) : genre;
-    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, preset: "list_" + list,
+    // У373: y1/y2 — высота зала (клуб в горе: кто ходит по поверхности над ним — не «внутри»); нет полей (старый сервер) — без высоты
+    if (club) cfg.zones.push({id: "club", world: club.world, x1: club.x1, z1: club.z1, x2: club.x2, z2: club.z2, y1: club.y1, y2: club.y2, preset: "list_" + list,
       // треки сведены громко — 0.32 ≈ громкость остальной музыки
       // 2026-10-22 владелец: «самое громкое — между 4 колонн (танцпол); за колоннами — 65% громкости (владелец: «давай до 65 процентов»)»: танцпол — центр клуба ±5.5 бл.
       peak: {x1: (club.x1 + club.x2) / 2 - 5.5, x2: (club.x1 + club.x2) / 2 + 5.5, z1: (club.z1 + club.z2) / 2 - 5.5, z2: (club.z1 + club.z2) / 2 + 5.5}, offPeak: 0.65,
@@ -149,9 +150,40 @@
     uw.frequency.setTargetAtTime(w ? 350 : Math.min(20000, ctx.sampleRate / 2 - 200), t, w ? 0.08 : 0.15);
     uwG.gain.setTargetAtTime(w ? 0.45 : 1, t, 0.12);
   }
+  // расстояние от игрока до помещения-зоны: 0 — внутри; У373: если сервер дал высоту зала (y1..y2, ±1 блок) — считается и по высоте
+  function zoneDist(z, p) {
+    if (!p || p.w !== z.world) return Infinity;
+    var ex = Math.max(z.x1 - p.x, 0, p.x - z.x2), ez = Math.max(z.z1 - p.z, 0, p.z - z.z2);
+    var ey = z.y1 != null && z.y2 != null && p.y != null ? Math.max(z.y1 - 1 - p.y, 0, p.y - z.y2 - 1) : 0;
+    return Math.hypot(ex, ey, ez);
+  }
+  // ---------------------------------------------------------------- У373 (владелец 2026-10-25): туннель к клубу
+  // «Идём по туннелю к клубу — слышно клуб большим длинным эхом и басом, ближе — громче; у двери почти громко, но с пещерным эхом;
+  // зашли — нормально и чётко». Туннель — sounds.json → tunnels (коробка x/y/z, вход from → дверь to по оси z, pre — «чуть слышно» перед
+  // коробкой). Срабатывает, только если клуб (из /api/players) в том же мире, что и туннель. p — путь от входа (0) до двери (1):
+  // громкость и фильтр — по экспоненте (ровно «на слух»: каждый шаг — одинаковая прибавка в дБ), эхо и бас — линейно.
+  function tunnelAt(z) {
+    if (!pos || !cfg || !cfg.tunnels || pos.y == null) return null;
+    for (var i = 0; i < cfg.tunnels.length; i++) {
+      var t = cfg.tunnels[i];
+      if (t.zone !== z.id || t.world !== z.world || t.world !== pos.w) continue;
+      var lo = Math.min(t.z1, t.z2), hi = Math.max(t.z1, t.z2), pre = t.pre || 0, dir = t.to >= t.from ? 1 : -1;
+      var edge = dir > 0 ? lo - pre : hi + 1 + pre;   // где «чуть слышно» кончается (со стороны входа)
+      if (pos.x < t.x1 || pos.x > t.x2 + 1 || pos.y < t.y1 || pos.y > t.y2 + 1) continue;
+      if (pos.z < Math.min(edge, lo) || pos.z > Math.max(edge, hi + 1)) continue;
+      var V = t.vol || [0.15, 0.7], C = t.cut || [300, 1800], W = t.wet || [0.6, 0.4], B = t.bass || [6, 3];
+      var p = Math.max(0, Math.min(1, (pos.z - t.from) / (t.to - t.from)));
+      var k = V[0] * Math.pow(V[1] / V[0], p), near = 1;
+      var before = (t.from - pos.z) * dir;   // ещё не дошёл до входа (луг у портала) — чуть слышно, к краю — тишина
+      if (before > 0) { near = Math.max(0, 1 - before / (Math.abs(t.from - edge) || 1)); k = V[0] * near * near; }
+      return {p: p, k: k, cut: C[0] * Math.pow(C[1] / C[0], p), wet: W[0] + (W[1] - W[0]) * p, bass: B[0] + (B[1] - B[0]) * p,
+        zk: near * (0.7 + 0.3 * p), dx: (t.x1 + t.x2 + 1) / 2, dz: t.to + 0.5};
+    }
+    return null;
+  }
   function caveCheck() {
     var c = 0;
-    var inRoom = pos && cfg && (cfg.zones || []).some(function (z) { return z.world === pos.w && pos.x >= z.x1 && pos.x <= z.x2 && pos.z >= z.z1 && pos.z <= z.z2; });
+    var inRoom = pos && cfg && (cfg.zones || []).some(function (z) { return zoneDist(z, pos) === 0; });
     if (pos && pos.y != null && !inRoom) {   // в клубе крыша высокая — это не пещера
       if (pos.w === "vp_nether") c = 0.7;
       else if (pos.w !== "world_lobby" && pos.w !== "world_the_end") {
@@ -170,14 +202,10 @@
     var txt = [], zoneK = 0;
     // У291: зоны-помещения (клуб): внутри — своя музыка в полную силу и только она; снаружи у стен — тише и глуше (за 10 бл. — тишина)
     (cfg.zones || []).forEach(function (z) {
-      var de = Infinity;
-      if (pos && pos.w === z.world) {
-        var ex = Math.max(z.x1 - pos.x, 0, pos.x - z.x2), ez = Math.max(z.z1 - pos.z, 0, pos.z - z.z2);
-        de = Math.hypot(ex, ez);
-      }
+      var de = zoneDist(z, pos), tn = de > 0 ? tunnelAt(z) : null;   // У373: в туннеле к клубу — своя «пещерная» подача
       // владелец 2026-10-20: «снаружи клуба слышно дальше, но не сильно; зашёл — включается нормальная музыка»: у стены 30% и глухо,
       // дальше — тише и ещё глуше, за z.fade блоков (30) — тишина
-      var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
+      var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : tn ? tn.k : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
       if (k > 0.002 && enabled) {
         if (g && g.preset !== z.preset) { if (g.retire) g.retire(); else g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
         if (!g) {
@@ -192,9 +220,12 @@
         // 2026-10-22 владелец: «3D-стерео в клубе» — внутри звук идёт со сцены (z.stage): повернул голову — сцена слева/справа
         // (не больше ±0.55, чтобы не уходило в одно ухо), + отзвук зала; снаружи — как было (со стороны клуба, глухо)
         var inPan = de === 0 && z.stage && pos ? pan(z.stage.x, z.stage.z) * 0.65 : 0;
-        g.set(z.vol * k, de === 0 ? inPan : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25), de === 0 ? (z.wet || 0) : 0);
-        if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : Math.min(0.8, k * 2.5));
-        txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id) + (de === 0 && g.preset && g.preset.indexOf("list_") === 0 && nowTrack ? " · " + nowTrack : ""));
+        // У373: в туннеле — звук со стороны двери клуба (не больше ±0.43 — гул туннеля в обоих ушах), глухо, с басом и пещерным эхом
+        if (tn) g.set(z.vol * k, pan(tn.dx, tn.dz) * 0.5, tn.cut, 0, tn);
+        else g.set(z.vol * k, de === 0 ? inPan : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25), de === 0 ? (z.wet || 0) : 0);
+        // в туннеле музыка спавна Пограничья почти не слышна (гора), жители молчат
+        if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : tn ? tn.zk : Math.min(0.8, k * 2.5));
+        if (tn) txt.push("🎵 музыка клуба из туннеля"); else txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id) + (de === 0 && g.preset && g.preset.indexOf("list_") === 0 && nowTrack ? " · " + nowTrack : ""));
       } else if (g && g.usesZone && enabled && Date.now() - (g.zeroAt || (g.zeroAt = Date.now())) < 8000) {
         g.set(0, 0, 20000);   // плейлист: вышел на миг (телепорт, сбой позиции) — тишина, но трек не сбрасываем 8 с
       } else if (g) { g.fade(); delete gens["z:" + z.id]; }
@@ -371,16 +402,32 @@
     if (Z && Z.ctx === ctx && Z.master === master) return Z;
     if (Z) Z.decks.forEach(function (d) { try { d.el.pause(); d.el.removeAttribute("src"); d.el.load(); } catch (e) { } });
     var out = ctx.createGain(), muff = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;   // громкость по расстоянию → «за стеной» → лево/право → master
-    out.connect(muff); if (pn) { muff.connect(pn); pn.connect(master); } else muff.connect(master);
+    // У373: shelf — подъём баса в туннеле (вне туннеля 0 дБ — звук не меняется); dry — доля «прямого» звука (в туннеле меньше — больше эха)
+    var shelf = ctx.createBiquadFilter(), dry = ctx.createGain();
+    out.gain.value = 0; muff.type = "lowpass"; muff.frequency.value = 20000;   // громкость по расстоянию → «за стеной» → бас → лево/право → master
+    shelf.type = "lowshelf"; shelf.frequency.value = 160; shelf.gain.value = 0; dry.gain.value = 1;
+    out.connect(muff); muff.connect(shelf); if (pn) { shelf.connect(pn); pn.connect(dry); } else shelf.connect(dry); dry.connect(master);
     // 2026-10-22 владелец («в клубе иное звучание… 3D-стерео»): внутри — отзвук зала (свёртка со сгенерированным хвостом ~1.8 с), доля — wet
     var wet = ctx.createGain(); wet.gain.value = 0;
     try {
       var conv = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 1.8), ir = ctx.createBuffer(2, len, ctx.sampleRate);
       for (var c = 0; c < 2; c++) { var ch = ir.getChannelData(c); for (var s = 0; s < len; s++) ch[s] = (Math.random() * 2 - 1) * Math.pow(1 - s / len, 3); }
-      conv.buffer = ir; (pn || muff).connect(conv); conv.connect(wet); wet.connect(master);
+      conv.buffer = ir; (pn || shelf).connect(conv); conv.connect(wet); wet.connect(master);
     } catch (e) { }
-    Z = {ctx: ctx, master: master, out: out, muff: muff, pn: pn, wet: wet, owner: null, decks: []};
+    // У373: пещерное эхо туннеля — длинный тёмный хвост (свёртка 2.8 с, слышно ~2–2.5 с) + отражения от стен 0.29 и 0.47 с с повтором; доля — cwet
+    var cwet = ctx.createGain(); cwet.gain.value = 0;
+    try {
+      var cin = ctx.createBiquadFilter(), cconv = ctx.createConvolver(), clen = Math.floor(ctx.sampleRate * 2.8), cir = ctx.createBuffer(2, clen, ctx.sampleRate);
+      cin.type = "lowpass"; cin.frequency.value = 1400;
+      for (var c2 = 0; c2 < 2; c2++) { var cc = cir.getChannelData(c2); for (var s2 = 0; s2 < clen; s2++) cc[s2] = (Math.random() * 2 - 1) * Math.pow(1 - s2 / clen, 2.2) * (s2 < ctx.sampleRate * 0.02 ? 0 : 1); }
+      cconv.buffer = cir;
+      var e1 = ctx.createDelay(1), e2 = ctx.createDelay(1), efb = ctx.createGain(), eg = ctx.createGain();
+      e1.delayTime.value = 0.29; e2.delayTime.value = 0.47; efb.gain.value = 0.38; eg.gain.value = 0.5;
+      (pn || shelf).connect(cin); cin.connect(cconv); cconv.connect(cwet);
+      cin.connect(e1); e1.connect(eg); e1.connect(efb); efb.connect(e2); e2.connect(eg); e2.connect(efb); eg.connect(cwet);
+      cwet.connect(master);
+    } catch (e) { }
+    Z = {ctx: ctx, master: master, out: out, muff: muff, pn: pn, wet: wet, shelf: shelf, dry: dry, cwet: cwet, tun: false, owner: null, decks: []};
     for (var i = 0; i < 2; i++) {
       var el = new Audio(); el.crossOrigin = "anonymous"; el.setAttribute("playsinline", ""); el.preload = "auto"; el.preservesPitch = true;
       var g = ctx.createGain(); g.gain.value = 0; g.connect(out);
@@ -604,11 +651,17 @@
             gain: +d.g.gain.value.toFixed(3), paused: d.el.paused, rate: d.el.playbackRate, src: d.el.src ? d.el.src.slice(-30) : ""};
         })};
     };
-    self.set = function (g, pv, cut, wv) {
+    // tn (У373) — туннель {wet, bass}: пещерное эхо и бас; нет — обычный звук (эха туннеля нет, бас ровный, «сухая» доля 1)
+    self.set = function (g, pv, cut, wv, tn) {
       if (!ctx || P.owner !== self) return;
-      P.out.gain.setTargetAtTime(g, ctx.currentTime, 0.8); if (P.pn) P.pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.6);
-      P.muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
-      if (P.wet) P.wet.gain.setTargetAtTime(wv || 0, ctx.currentTime, 0.8);   // вход свёртки уже после громкости out
+      var t = ctx.currentTime, sw = !!tn !== P.tun, ft = sw ? 0.12 : tn ? 0.35 : 0.5;   // смена «туннель ↔ клуб» — фильтр и эхо за ~0.4 с, плавно, без щелчка
+      P.tun = !!tn;
+      P.out.gain.setTargetAtTime(g, t, 0.8); if (P.pn) P.pn.pan.setTargetAtTime(pv, t, 0.6);
+      P.muff.frequency.setTargetAtTime(cut || 20000, t, ft);
+      if (P.wet) P.wet.gain.setTargetAtTime(wv || 0, t, sw ? 0.12 : 0.8);   // вход свёртки уже после громкости out
+      P.shelf.gain.setTargetAtTime(tn ? tn.bass : 0, t, ft);
+      P.dry.gain.setTargetAtTime(tn ? 1 - tn.wet : 1, t, ft);
+      P.cwet.gain.setTargetAtTime(tn ? tn.wet : 0, t, ft);
     };
     // ушёл из клуба / портал — плавно гаснет ~3–4 с (владелец 2026-10-20)
     self.fade = function () { if (!ctx || P.owner !== self) return; P.out.gain.cancelScheduledValues(ctx.currentTime); P.out.gain.setTargetAtTime(0, ctx.currentTime, 1.1); setTimeout(self.kill, 6500); };
@@ -640,12 +693,17 @@
     enabled: function () { return enabled; },
     __setCfg: function (j) { cfg = j; },   // для тестовой страницы
     __el: function () { return Z ? Z.decks[0].el : null; },   // для теста восстановления после паузы
+    __fx: function () {   // У373, для теста: параметры графа музыки клуба сейчас
+      if (!Z || !ctx) return null; var r = function (v) { return Math.round(v * 1000) / 1000; };
+      return {out: r(Z.out.gain.value), cut: Math.round(Z.muff.frequency.value), bass: r(Z.shelf.gain.value), dry: r(Z.dry.gain.value), cave: r(Z.cwet.gain.value),
+        hall: r(Z.wet.gain.value), pan: Z.pn ? r(Z.pn.pan.value) : 0, room: window.VPSound.room(), now: nowTxt};
+    },
     __zone: function () { var g = gens["z:club"]; return g && g.__state ? g.__state() : null; },   // для теста синхронизации
     cave: function () { return on ? cave : 0; },   // 0..1 — насколько ты в пещере (voice.js — эхо голосов)
     // У296: в каком помещении-зоне ты сейчас (клуб) — voice.js: в клубе музыка «съедает» голоса, слышно только стоящих рядом
     room: function () {
       if (!on || !pos || !cfg) return null;
-      var z = (cfg.zones || []).filter(function (z) { return z.world === pos.w && pos.x >= z.x1 && pos.x <= z.x2 && pos.z >= z.z1 && pos.z <= z.z2; })[0];
+      var z = (cfg.zones || []).filter(function (z) { return zoneDist(z, pos) === 0; })[0];
       return z && enabled ? z.id : null;
     },
 
