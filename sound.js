@@ -651,7 +651,8 @@
     var muff = ctx.createBiquadFilter(); muff.type = "lowpass"; muff.frequency.value = 20000;   // «за стеной» — глуше
     if (pn) { out.disconnect(); out.connect(muff); muff.connect(pn); } else { out.disconnect(); out.connect(muff); muff.connect(master); }
     this.set = function (g, pv, cut, tc) {   // tc — плавность громкости, с (по умолчанию 0.8; музыка спавна «smooth» — 2)
-      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, tc || 2.0);   // 2026-10-25 владелец: «переходы громкости плавнее» — 0.8 → 2 с if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
+      // 2026-10-25 владелец: «переходы громкости плавнее» — 0.8 → 2 с
+      if (!ctx) return; out.gain.setTargetAtTime(g, ctx.currentTime, tc || 2.0); if (pn) pn.pan.setTargetAtTime(pv, ctx.currentTime, 0.3);
       muff.frequency.setTargetAtTime(cut || 20000, ctx.currentTime, 0.5);
     };
     // ушёл из зоны / в портал — плавно гаснет ~3–4 с (владелец 2026-10-20: «не резко, а плавно потухает»)
