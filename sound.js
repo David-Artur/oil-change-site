@@ -208,7 +208,8 @@
       var de = zoneDist(z, pos), tn = de > 0 ? tunnelAt(z) : null;   // У373: в туннеле к клубу — своя «пещерная» подача
       // владелец 2026-10-20: «снаружи клуба слышно дальше, но не сильно; зашёл — включается нормальная музыка»: у стены 30% и глухо,
       // дальше — тише и ещё глуше, за z.fade блоков (30) — тишина
-      var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : tn ? tn.k : 0.3 * Math.pow(fo, 1.5), g = gens["z:" + z.id];
+      // У380: z.near (изба Бабы Яги) — у стен почти в полную силу и не глухо, к z.fade (10–15 бл.) — тишина
+      var fo = Math.max(0, 1 - de / (z.fade || 30)), k = de === 0 ? 1 : tn ? tn.k : (z.near ? 1 : 0.3) * Math.pow(fo, z.near ? 1.3 : 1.5), g = gens["z:" + z.id];
       if (k > 0.002 && enabled) {
         if (g && g.preset !== z.preset) { if (g.retire) g.retire(); else g.fade(); g = null; }   // DJ сменил жанр — старое плавно уходит, новое входит
         if (!g) {
@@ -225,7 +226,7 @@
         var inPan = de === 0 && z.stage && pos ? pan(z.stage.x, z.stage.z) * 0.65 : 0;
         // У373: в туннеле — звук со стороны двери клуба (не больше ±0.43 — гул туннеля в обоих ушах), глухо, с басом и пещерным эхом
         if (tn) g.set(z.vol * k, pan(tn.dx, tn.dz) * 0.5, tn.cut, 0, tn);
-        else g.set(z.vol * k, de === 0 ? inPan : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : Math.max(350, 1100 - de * 25), de === 0 ? (z.wet || 0) : 0);
+        else g.set(z.vol * k, de === 0 ? inPan : pan((z.x1 + z.x2) / 2, (z.z1 + z.z2) / 2), de === 0 ? 20000 : z.near ? Math.max(2500, 16000 - de * 1000) : Math.max(350, 1100 - de * 25), de === 0 || z.near ? (z.wet || 0) : 0);
         // в туннеле музыка спавна Пограничья почти не слышна (гора), жители молчат
         if (z.exclusive) zoneK = Math.max(zoneK, de === 0 ? 1 : tn ? tn.zk : Math.min(0.8, k * 2.5));
         if (tn) txt.push("🎵 музыка клуба из туннеля"); else txt.push((de === 0 ? "🪩 " : "🔉 ") + (z.title || z.id) + (de === 0 && g.preset && g.preset.indexOf("list_") === 0 && nowTrack ? " · " + nowTrack : ""));
@@ -325,10 +326,15 @@
     cf = null; cfKey = null; cfNow = null;
   }
   function cfPlay(w) {   // реплика w — с того места, где она сейчас у всех (по часам сервера; + задержка вывода звука)
-    if (!w || !w.l.file || !ctx) return;
-    var g = cfGraph(), at = (serverNow() - w.start) / 1000 + outLat();
-    if (at > w.l.ms / 1000 - 0.6) return;
-    cfKey = w.key; cfNow = w;
+    // У378: музыка (l.music) — один mp3 на всю пьесу; у песни строчки текста — отдельные реплики расписания с cont (тот же файл) и at (мс от начала):
+    // файл уже играет — просто следующая строчка; пришли посреди песни — тот же файл с нужного места
+    var file = w && (w.l.file || w.l.cont);
+    if (!file || !ctx) return;
+    var g = cfGraph(), off = (w.l.at || 0) / 1000, at = off + (serverNow() - w.start) / 1000 + outLat();
+    if (w.l.music && g.file === file && !g.el.paused && !g.el.ended) { cfKey = w.key; cfNow = w; return; }
+    if (!w.l.music && at > w.l.ms / 1000 - 0.6) return;
+    cfKey = w.key; cfNow = w; g.file = file; cfMusic = !!w.l.music;
+    w = {l: {file: file, ms: w.l.ms}, start: w.start - off * 1000, key: w.key};
     // Б48: громкость — сразу, а не с ближайшего обновления позиции (раньше первое слово звучало на нуле). Пропуск вперёд — только если
     // пришли посреди реплики; опоздание на загрузку mp3 (< 0.6 с) не догоняем перемоткой — иначе съедалось первое слово.
     var join = at > 0.6;
@@ -345,8 +351,10 @@
         if (j && j.scenes && (!CF || JSON.stringify(j.scenes) !== JSON.stringify(CF.scenes) || j.epoch !== CF.epoch)) { CF = j; cfKey = null; }
       }).catch(function () { });
     }
-    var F = CF && CF.fire;
-    var far = !F || !pos || pos.w !== F.world || !enabled || zoneK > 0.3 || Math.hypot(pos.x - F.x, pos.z - F.z) > F.radius + 2;
+    var F = CF && CF.fire, MR = Math.max(F ? F.radius : 0, (CF && CF.musicRadius) || 0);   // У378: музыка слышна дальше голосов (~40 бл.)
+    var df = F && pos && pos.w === F.world ? Math.hypot(pos.x - F.x, pos.z - F.z) : Infinity;
+    crackle(enabled && zoneK <= 0.3 ? df : Infinity);   // У378: треск костра — всегда, громче вблизи
+    var far = !F || !pos || pos.w !== F.world || !enabled || zoneK > 0.3 || df > MR + 2;
     if (far) { if (cf && !cf.el.paused) { cf.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3); setTimeout(function () { if (cf && cfNow === null) cf.el.pause(); }, 1200); } cfKey = null; cfNow = null; return; }
     var now = serverNow(), w = talkAt(CF, now);
     if (w && w.key !== cfKey) cfPlay(w);
@@ -356,20 +364,41 @@
     if (!cfTo && nx && nx.key !== cfKey && nx.start > now) cfTo = setTimeout(function () { cfTo = null; if (on && CF) cfPlay(talkAt(CF, serverNow() + 30)); }, nx.start - now);
     // следующую реплику — в кэш браузера заранее (за ~4 с), чтобы она стартовала без задержки загрузки
     var pre = talkAt(CF, now + 4000);
-    if (pre && pre.l.file && pre.l.file !== cfPre) { cfPre = pre.l.file; try { var pa = new Audio(); pa.preload = "auto"; pa.src = (CF.dir || "voice/campfire/") + pre.l.file; } catch (e) { } }
+    if (pre && pre.l.file && pre.l.file !== cfPre && (!pre.l.music || df < MR)) { cfPre = pre.l.file; try { var pa = new Audio(); pa.preload = "auto"; pa.src = (CF.dir || "voice/campfire/") + pre.l.file; } catch (e) { } }
     // Б48: хвост реплики доигрывает до конца mp3 (раньше громкость гасла по расписанию — последнее слово обрезалось раньше времени)
     var playing = cf && !cf.el.paused && !cf.el.ended;
-    var who = cfNow && CF.speakers[cfNow.l.who], sx = who ? who.x : F.x, sz = who ? who.z : F.z;
+    if (w && !w.l.music && !playing) cfMusic = false;
+    var who = cfNow && CF.speakers[cfNow.l.who], sx = who && !cfMusic ? who.x : F.x, sz = who && !cfMusic ? who.z : F.z;
     var d = Math.hypot(pos.x - sx, pos.z - sz, pos.y != null && F.y != null ? (pos.y - F.y) * 0.7 : 0);
-    var k = d < 3 ? 1 : Math.max(0, 1 - (d - 3) / (F.radius - 3));
-    cfG = 0.9 * Math.pow(k, 1.6) * (1 - Math.min(1, zoneK));
+    // голос — до fire.radius (16 бл.); музыка — из точки костра до musicRadius: вблизи (≤ 6 бл.) полная, к краю тихо
+    var k = cfMusic ? (d < 6 ? 1 : Math.max(0, 1 - (d - 6) / (MR - 6))) : (d < 3 ? 1 : Math.max(0, 1 - (d - 3) / (F.radius - 3)));
+    cfG = (cfMusic ? 0.75 : 0.9) * Math.pow(k, cfMusic ? 1.4 : 1.6) * (1 - Math.min(1, zoneK));
     if (cf) {
       var t = ctx.currentTime;
       cf.g.gain.setTargetAtTime(cfNow || playing ? cfG : 0, t, 0.15);
-      cf.lp.frequency.setTargetAtTime(16000 - 13000 * (1 - k), t, 0.2);
-      if (cf.pn) cf.pn.pan.setTargetAtTime(d < 1.5 ? 0 : pan(sx, sz) * 0.7, t, 0.2);
+      cf.lp.frequency.setTargetAtTime(16000 - (cfMusic ? 10000 : 13000) * (1 - k), t, 0.2);
+      if (cf.pn) cf.pn.pan.setTargetAtTime(d < 1.5 ? 0 : pan(sx, sz) * (cfMusic ? 0.5 : 0.7), t, 0.2);
     }
-    txt.push("🔥 Костёр бродяг" + (who && k > 0 ? " · 🗣 " + who.name : ""));
+    txt.push("🔥 Костёр бродяг" + (cfMusic && (cfNow || playing) && k > 0 ? " · 🎸 музыка" : who && k > 0 ? " · 🗣 " + who.name : ""));
+  }
+  // У378: треск костра — шум с щелчками и «хлопками» углей (буфер 6 с по кругу, генерируется в браузере), громкость — по расстоянию до огня
+  var ck = null, cfMusic = false;
+  function crackle(d) {
+    var R = 22, k = d < R ? Math.pow(1 - Math.max(0, d - 2) / (R - 2), 2) : 0;
+    if (k <= 0) { if (ck && ck.ctx === ctx) ck.g.gain.setTargetAtTime(0, ctx.currentTime, 0.5); return; }
+    if (!ck || ck.ctx !== ctx) {
+      var sr = ctx.sampleRate, n = sr * 6, b = ctx.createBuffer(1, n, sr), x = b.getChannelData(0), br = 0;
+      for (var i = 0; i < n; i++) { br = br * 0.985 + (Math.random() * 2 - 1) * 0.015; x[i] = br * 0.9; }   // низкий гул пламени
+      for (var p = 0; p < 160; p++) {   // щелчки и хлопки
+        var at = Math.floor(Math.random() * (n - sr * 0.05)), big = Math.random() < 0.12, len = Math.floor(sr * (big ? 0.03 : 0.006)), a = big ? 0.55 : 0.25 + Math.random() * 0.2;
+        for (var j = 0; j < len; j++) x[at + j] += (Math.random() * 2 - 1) * a * Math.exp(-j / (len / 4));
+      }
+      var src = ctx.createBufferSource(); src.buffer = b; src.loop = true;
+      var f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 120;
+      ck = {ctx: ctx, g: ctx.createGain()}; ck.g.gain.value = 0;
+      src.connect(f); f.connect(ck.g); ck.g.connect(master); src.start();
+    }
+    ck.g.gain.setTargetAtTime(0.22 * k, ctx.currentTime, 0.4);
   }
 
   // ---------------------------------------------------------------- генератор: пэд-аккорды, бас, перебор/колокольчики, «флейта», ударные, ветер
