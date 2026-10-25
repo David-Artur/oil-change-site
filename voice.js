@@ -5,6 +5,7 @@
  * У399 (владелец 2026-10-25: «включаются музыка и звук, и отдельная кнопка „Включить микрофон“»): подключение — сразу «только слушать»
  * (без запроса микрофона): собеседникам уходит тихая дорожка, а по кнопке микрофона она подменяется настоящей (replaceTrack — без
  * переподключения). Сервер получает mic: true/false — значок 🎤 над головой только с микрофоном; «в голосе» (дверь клуба) — и слушатель.
+ * У401 (владелец 2026-10-25): шумоподавление авто — нейросеть RNNoise (vendor/rnnoise/) + авто-гейт по вероятности голоса; без режимов.
  * Для мастера кабинета: VPVoice.prime() — в обработчике нажатия (разрешить звук), listen(), enableMic(), disableMic(), state(), onChange(fn). */
 (function () {
   "use strict";
@@ -40,7 +41,7 @@
   function mount(el, o) {
     box = el; opt = o;
     ptt = store("ptt") === "1";
-    var nm = Number(store("nr")); nrMode = nm >= 0 && nm <= 3 && store("nr") !== null ? nm : 2;   // У254: по умолчанию «обычно»
+    nrOff = store("nroff") === "1";   // У401: шумоподавление авто; «Без шумоподавления» — под спойлером «Подробности»
     draw();
   }
 
@@ -68,7 +69,10 @@
         '<button class="vc-chip" type="button" id="vc-leave" title="Отключиться от голоса">Выйти</button></div>' +
         '<button class="btn gold vc-ptt" type="button" id="vc-ptt"' + (ptt ? "" : " hidden") + '>Держи — и говори</button>' +
         '<button class="btn green vc-ptt" type="button" id="vc-fix" hidden>🔊 Нажми — вернуть звук</button>' +   // 2026-10-21: iPhone после фона
-        '<div class="vc-nr"><button class="vc-chip" type="button" id="vc-nr"></button><span class="vc-nr-hint">🎧 лучше в наушниках — не будет эха</span></div>' +
+        '<div class="vc-nr"><span class="vc-nr-on" id="vc-nr">🎙 Шумоподавление: авто</span><span class="vc-nr-hint">🎧 лучше в наушниках — не будет эха</span>' +
+        '<details class="vc-nrd"><summary>Подробности</summary><label class="vc-nrl"><input type="checkbox" id="vc-nroff"' + (nrOff ? " checked" : "") + '> Без шумоподавления</label>' +
+        '<p class="vc-nr-hint">Нейросеть сама подстраивается под шум: убирает гул кулера, клики клавиатуры и мыши, шум комнаты — собеседники слышат только голос. ' +
+        'Включи «Без шумоподавления», если голос обрывается или звучит странно (останется обычное шумоподавление браузера).</p></details></div>' +   // У401
         (window.VPSound ? '<div class="vc-snd"><button class="vc-chip" type="button" id="vc-snd"></button><input type="range" id="vc-sndvol" min="0" max="100" aria-label="Громкость звуков мира">' +
           '<span class="vc-nr-hint" id="vc-sndnow"></span></div>' : "") +   // У290: звучащие точки
         '<div id="vc-peers" class="vc-peers"></div>' +
@@ -85,10 +89,11 @@
     if ($("vc-micon")) $("vc-micon").onclick = function () { enableMic(); };
     $("vc-mode").onclick = function () { ptt = !ptt; store("ptt", ptt ? "1" : "0"); applyMic(); ctl(); };
     $("vc-leave").onclick = function () { leave(true); };
-    $("vc-nr").onclick = function () {   // У254: выкл → тихо → обычно → шумно; новый режим — заново послушать тишину 2 с
-      nrMode = (nrMode + 1) % 4; store("nr", String(nrMode));
-      if (gate) gate.port.postMessage({mode: nrMode, recal: true});
+    $("vc-nroff").onchange = function () {   // У401: «Без шумоподавления» — микрофон берётся заново с новыми настройками (без переподключения)
+      nrOff = this.checked; store("nroff", nrOff ? "1" : "0");
+      if (nrOff) { nrRnn = false; } else nrBroken = false;
       ctl();
+      if (local) reacquireMic(true);
     };
     if (window.VPSound && $("vc-snd")) {   // У290: «🎵 Звуки мира» — музыка мест и фразы жителей
       var sb = $("vc-snd"), sv = $("vc-sndvol");
@@ -127,12 +132,12 @@
       mm.classList.toggle("vc-bad", !!MIC_HELP[micState]);
     }
     var nr = $("vc-nr");
-    if (nr) {
-      nr.textContent = gate ? "🔇 Шумодав: " + NR_NAMES[nrMode] : "Шумодав недоступен";
-      nr.disabled = !gate;
-      nr.classList.toggle("off", !gate || nrMode === 0);
-      nr.title = gate ? "Срезает гул и шум между фразами; эхо — тише, пока говорит собеседник. Нажми: выкл → тихо → обычно → шумно (в шумной комнате — «шумно»)"
-        : "Этот браузер не умеет шумодав — работает обычное шумоподавление браузера";
+    if (nr) {   // У401: одна строка; «упрощённое» — RNNoise не загрузился / телефон не тянет (гейт по уровню + шумоподавление браузера)
+      var nt = nrOff ? "🎙 Шумоподавление: выкл" : local && !nrRnn ? "🎙 Шумоподавление: авто (упрощённое)" : "🎙 Шумоподавление: авто";
+      if (nr.textContent !== nt) nr.textContent = nt;
+      nr.classList.toggle("off", nrOff);
+      nr.title = nrOff ? "Выключено — работает только обычное шумоподавление браузера" : nrRnn ? "Нейросеть RNNoise убирает шум, клики и гул — уходит только голос"
+        : "Шум срезается между фразами + обычное шумоподавление браузера";
     }
   }
 
@@ -204,6 +209,7 @@
     local = null; analyser = null; gate = null; gateOpen = false;
     sendStream = silentStream();   // собеседникам — тишина, пока нет микрофона
     micState = "off";
+    nrLoad();   // У401: нейросеть шумоподавления скачивается заранее — к нажатию «Включить микрофон» уже готова
     on = true; lastState = null;
     joinedAt = Date.now(); lastOk = 0; rtts = []; badAt = 0; reportHtml = "";
     try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () { }); } catch (e) { }
@@ -230,11 +236,9 @@
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micState = "unsupported"; ctl(); emit(); return Promise.resolve({ok: false, reason: micState}); }
     micState = "asking"; ctl(); emit();
     if (ctx) { try { ctx.resume(); } catch (e) { } }
-    return navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
+    return nrLoad(3000).then(function () { return navigator.mediaDevices.getUserMedia({audio: micAudio()}); }).then(function (s) {
       if (!on) { s.getTracks().forEach(function (t) { t.stop(); }); micState = "off"; return {ok: false, reason: "off"}; }
-      local = s; sendStream = local;
-      if (ctx) { analyser = ctx.createAnalyser(); analyser.fftSize = 512; ctx.createMediaStreamSource(local).connect(analyser); }
-      return buildGate().catch(function () { sendStream = local; gate = null; }).then(function () {   // не вышло — голос без шумодава
+      return useMic(s).then(function () {
         if (!on || !local) return {ok: false, reason: "off"};
         micOn = true; micState = "on"; store("mic", "1");
         applyMic();
@@ -269,35 +273,67 @@
     });
   }
 
-  // ---------------------------------------------------------------- У254: шумодав
-  // Цепочка: микрофон → срез гула ниже 120 Гц (вентилятор, стол) → шумовой порог (AudioWorklet, работает и в свёрнутой вкладке) → собеседникам.
-  // Первые 2 с порог слушает тишину и запоминает уровень шума, дальше медленно подстраивается; пропускает звук, только когда ты говоришь
-  // громче шума (открытие ~5 мс, закрытие через 0,4 с — слова не обрезаются). Пока собеседник говорит — твой микрофон тише (×0,35), чтобы его
-  // голос из твоих динамиков не возвращался ему эхом. Режимы: выкл / тихо / обычно / шумно (во сколько раз громче шума надо говорить).
-  var NR_NAMES = ["выкл", "тихо", "обычно", "шумно"];
-  var nrMode = 2, gate = null, gateOpen = false, sendStream = null, ducked = false;
-  var GATE_SRC = "class G extends AudioWorkletProcessor{constructor(){super();this.mode=2;this.duck=false;this.t0=currentTime;this.cal=[];this.floor=0.003;this.g=0;this.open=-9;this.last=0;" +
-    "this.port.onmessage=e=>{const d=e.data;if('mode' in d)this.mode=d.mode;if('duck' in d)this.duck=d.duck;if(d.recal){this.t0=currentTime;this.cal=[];}}}" +
-    "process(i,o){const a=i[0]&&i[0][0],out=o[0];if(!a||!out||!out[0])return true;let s=0;for(let k=0;k<a.length;k++)s+=a[k]*a[k];const r=Math.sqrt(s/a.length);" +
-    "if(currentTime-this.t0<2){this.cal.push(r);if(this.cal.length%16==0){const c=this.cal.slice().sort((x,y)=>x-y);this.floor=Math.max(0.0005,c[Math.floor(c.length*0.6)])}}" +
-    "const K=[0,2,3,4.5][this.mode],MIN=[0,0.006,0.01,0.018][this.mode],th=Math.max(this.floor*K,MIN);" +
-    "if(this.mode===0||r>th)this.open=currentTime;else if(currentTime-this.t0>=2)this.floor=this.floor*0.9995+r*0.0005;" +
-    "const want=(this.mode===0||currentTime-this.open<0.4)?(this.duck?0.35:1):0;this.g+=(want-this.g)*(want>this.g?0.5:0.03);" +
-    "for(let c=0;c<out.length;c++){const b=out[c];for(let k=0;k<b.length;k++)b[k]=a[k]*this.g}" +
-    "if(currentTime-this.last>0.08){this.last=currentTime;this.port.postMessage({open:want>0.5,lvl:r,th:th})}return true}}registerProcessor('vp-gate',G)";
+  // ---------------------------------------------------------------- У401 (было У254): автошумоподавление — «изоляция голоса»
+  // Цепочка: микрофон → срез гула ниже 90 Гц → AudioWorklet vendor/rnnoise/vp-nr-worklet.js (нейросеть RNNoise + авто-гейт,
+  // работает и в свёрнутой вкладке) → собеседникам. Режимов нет: порог сам подстраивается под фон, гейт открывается только на речь
+  // (вероятность голоса от RNNoise), держится 350 мс после слова; клики клавиатуры/мыши, стуки, кулер — не проходят.
+  // Пока собеседник говорит — твой микрофон тише (×0,35), чтобы его голос из твоих динамиков не возвращался ему эхом.
+  // Шумоподавление браузера: выкл, когда работает RNNoise (двойное портит голос); вкл — если RNNoise не загрузился, телефон не тянет
+  // или игрок включил «Без шумоподавления» (тогда ни нейросети, ни гейта — голос как есть после браузера).
+  var NR_URL = "vendor/rnnoise/", NR_VER = "1";
+  var nrCpu = 0, nrOff = false, nrRnn = false, nrBroken = false, nrBytes = null, nrPr = null;
+  var gate = null, gateOpen = false, sendStream = null, ducked = false;
+  function nrLoad(wait) {   // скачать wasm RNNoise (SIMD, если браузер умеет); всегда успешно — null, если не вышло
+    if (!nrPr) {
+      nrPr = !window.WebAssembly || !window.fetch || !window.AudioWorkletNode ? Promise.resolve(null)
+        : fetch(NR_URL + "rnnoise_simd.wasm?v=" + NR_VER).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); })
+          .then(function (b) { if (WebAssembly.validate(b)) return b; throw 0; })
+          .catch(function () { return fetch(NR_URL + "rnnoise.wasm?v=" + NR_VER).then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); }); })
+          .then(function (b) { nrBytes = b && WebAssembly.validate(b) ? b : null; return nrBytes; }, function () { return null; });
+    }
+    return wait ? Promise.race([nrPr, new Promise(function (r) { setTimeout(function () { r(null); }, wait); })]) : nrPr;
+  }
+  function nrWanted() { return !nrOff && !nrBroken && !!nrBytes; }
+  function micAudio() { return {echoCancellation: true, autoGainControl: true, noiseSuppression: !nrWanted()}; }
+
+  // новый поток микрофона → цепочка шумоподавления → sendStream (то, что уходит собеседникам)
+  function useMic(s) {
+    local = s; sendStream = local; gate = null; gateOpen = false; ducked = false; nrRnn = false;
+    analyser = null;
+    if (!ctx || nrOff) {   // «Без шумоподавления» — голос как есть (браузерное шумоподавление включено)
+      if (ctx) { analyser = ctx.createAnalyser(); analyser.fftSize = 512; ctx.createMediaStreamSource(local).connect(analyser); }
+      return Promise.resolve();
+    }
+    return buildGate().catch(function () {   // нет AudioWorklet — голос без шумодава
+      sendStream = local; gate = null;
+      analyser = ctx.createAnalyser(); analyser.fftSize = 512; ctx.createMediaStreamSource(local).connect(analyser);
+    });
+  }
 
   function buildGate() {
     if (!ctx || !ctx.audioWorklet || !window.AudioWorkletNode) return Promise.reject(new Error("no worklet"));
-    var c0 = ctx, url = URL.createObjectURL(new Blob([GATE_SRC], {type: "text/javascript"}));
-    var ready = ctx.__vpGate ? Promise.resolve() : ctx.audioWorklet.addModule(url).then(function () { c0.__vpGate = true; });   // второй раз (новый микрофон) — модуль уже есть
+    var c0 = ctx, s0 = local;
+    var ready = ctx.__vpNr || (ctx.__vpNr = ctx.audioWorklet.addModule(NR_URL + "vp-nr-worklet.js?v=" + NR_VER));   // второй раз (новый микрофон) — модуль уже есть
+    ready.catch(function () { if (c0.__vpNr === ready) c0.__vpNr = null; });
     return ready.then(function () {
+      if (ctx !== c0 || local !== s0) return;   // пока грузилось — вышли или микрофон сменился
       var src = ctx.createMediaStreamSource(local);
-      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 120; hp.Q.value = 0.7;
-      gate = new AudioWorkletNode(ctx, "vp-gate", {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1]});
+      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 90; hp.Q.value = 0.7;
+      var withNr = nrWanted();
+      var node = new AudioWorkletNode(ctx, "vp-nr", {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1],
+        processorOptions: withNr ? {wasm: nrBytes.slice(0)} : {}});
       var dest = ctx.createMediaStreamDestination();
-      src.connect(hp); hp.connect(gate); gate.connect(dest);
-      gate.port.onmessage = function (e) { gateOpen = !!e.data.open; };
-      gate.port.postMessage({mode: nrMode});
+      src.connect(hp); hp.connect(node); node.connect(dest);
+      analyser = ctx.createAnalyser(); analyser.fftSize = 512; node.connect(analyser);   // полоска и «говорю» — уровень ПОСЛЕ шумоподавления
+      gate = node;
+      node.port.onmessage = function (e) {
+        if (gate !== node) return;
+        var d = e.data || {};
+        if ("open" in d) { gateOpen = !!d.open; nrCpu = d.cpu || 0; }
+        if ("rnn" in d && !!d.rnn !== nrRnn) { nrRnn = !!d.rnn; ctl(); }
+        // RNNoise не запустился или телефон не тянет — взять микрофон заново со встроенным шумоподавлением браузера
+        if ((d.ready && withNr && !d.rnn) || d.overload) { if (!nrBroken) { nrBroken = true; nrRnn = false; ctl(); if (local) reacquireMic(true); } }
+      };
       sendStream = dest.stream;
     });
   }
@@ -432,7 +468,7 @@
       lvl = Math.sqrt(sum / a.length);
     }
     var live = micOn && (!ptt || pttDown);
-    speaking = live && (gate && nrMode > 0 ? gateOpen : lvl > 0.035);   // с шумодавом «говорю» = звук реально уходит
+    speaking = live && (gate ? gateOpen : lvl > 0.035);   // с шумоподавлением «говорю» = гейт открыт на речь (клик/кулер — нет)
     if (micPeak >= 0 && live) micPeak = Math.max(micPeak, lvl);   // идёт проверка микрофона
     var bar = $("vc-level"), mt = $("vc-meter");
     // 2026-10-21 (владелец: «кабинет грузит процессор»): полоска перерисовывалась 20 раз/с с плавным переходом — ~5% CPU.
@@ -537,7 +573,7 @@
         });
         // У254: собеседник рядом говорит и слышен — свой микрофон приглушаем (без наушников его голос не вернётся ему эхом)
         var talking = Object.keys(peers).some(function (n) { var q = peers[n]; return q.speaking && q.d != null && q.pc && q.pc.connectionState === "connected"; });
-        setDuck(nrMode > 0 && talking);
+        setDuck(talking);   // У401: гейт есть только с шумоподавлением
         // У290 → Б37 (2026-10-24): музыка тише, когда говорят тебе ИЛИ говоришь сам; решение — в duckTick() (живой звук + этот флаг сервера как запасной)
         peerTalkSrv = talking;
         caveLevel();   // У292: эхо в пещере
@@ -789,14 +825,18 @@
   var hiddenAt = 0, reMic = false, lastFixToast = 0;
   function micTrack() { return local && local.getAudioTracks()[0]; }
   function needTap(show) { var b = $("vc-fix"); if (b) b.hidden = !show; }
-  function reacquireMic() {   // iPhone/Safari в фоне останавливает микрофон (track «ended») — взять заново и подменить у всех без разрыва связи
-    if (reMic || !on || !local) return; reMic = true;   // У399: слушатель без микрофона — брать нечего
-    navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
-      if (!on) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
-      if (local) local.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } });
-      local = s; sendStream = local;
-      if (ctx) { analyser = ctx.createAnalyser(); analyser.fftSize = 512; ctx.createMediaStreamSource(local).connect(analyser); }
-      return buildGate().catch(function () { sendStream = local; gate = null; });
+  // iPhone/Safari в фоне останавливает микрофон (track «ended») — взять заново и подменить у всех без разрыва связи.
+  // У401: и при смене шумоподавления (again — уже идёт взятие: повторить после него с новыми настройками)
+  var reMicAgain = false;
+  function reacquireMic(again) {
+    if (!on || !local) return;   // У399: слушатель без микрофона — брать нечего
+    if (reMic) { if (again) reMicAgain = true; return; }
+    reMic = true;
+    navigator.mediaDevices.getUserMedia({audio: micAudio()}).then(function (s) {
+      if (!on || !local) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      var old = local;
+      old.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { } });
+      return useMic(s);
     }).then(function () {
       if (!on || !local) return;
       applyMic();
@@ -805,7 +845,8 @@
         var p = peers[n]; if (!p.pc) return;
         p.pc.getSenders().forEach(function (sd) { if (!sd.track || sd.track.kind === "audio") sd.replaceTrack(tr).catch(function () { }); });
       });
-    }).catch(function () { needTap(true); }).then(function () { reMic = false; });
+      ctl();
+    }).catch(function () { needTap(true); }).then(function () { reMic = false; if (reMicAgain) { reMicAgain = false; reacquireMic(); } });
   }
   function resetPeer(n, tell) {   // соединение «живое», а звука нет — заново (звонит «меньший» ник, как обычно)
     var p = peers[n]; if (!p) return;
@@ -881,7 +922,7 @@
         r.forEach(function (s) { if (s.type === "inbound-rtp" && (s.kind === "audio" || s.mediaType === "audio")) bytes += s.bytesReceived || 0; });
         return [n, {state: p.pc.connectionState, d: p.d, bytes: bytes, gain: p.gain ? p.gain.gain.value : (p.el ? p.el.volume : null)}];
       });
-    })).then(function (l) { var o = {}; l.forEach(function (x) { o[x[0]] = x[1]; }); return {on: on, me: myName, inGame: lastState && lastState.inGame, peers: o, nr: NR_NAMES[nrMode], gate: !!gate, open: gateOpen, duck: ducked}; });
+    })).then(function (l) { var o = {}; l.forEach(function (x) { o[x[0]] = x[1]; }); return {on: on, me: myName, inGame: lastState && lastState.inGame, peers: o, nr: nrOff ? "off" : nrRnn ? "rnnoise" : gate ? "level" : "none", gate: !!gate, open: gateOpen, duck: ducked}; });
   }
   // У399: короткое состояние для мастера «Подключиться к голосу и звуку»
   function state() {
@@ -894,7 +935,9 @@
   window.VPVoice = {mount: mount, active: function () { return on; }, stats: stats, range: function () { return range; },
     prime: prime, listen: join, enableMic: enableMic, disableMic: disableMic, state: state, micHelp: function (k) { return MIC_HELP[k] || ""; },
     onChange: function (f) { if (typeof f === "function") subs.push(f); }, leave: function () { if (on) leave(true); }, fix: fixTap,
-    __dbg: function () { var t = micTrack(); return {ctx: ctx && ctx.state, mic: t ? t.readyState : null, micId: t ? t.id : null, gate: !!gate, on: on}; },   // для теста
+    __dbg: function () { var t = micTrack(); return {ctx: ctx && ctx.state, sr: ctx && ctx.sampleRate, mic: t ? t.readyState : null, micId: t ? t.id : null, gate: !!gate, on: on,
+      nr: nrOff ? "off" : nrRnn ? "rnnoise" : gate ? "level" : "none", open: gateOpen, speaking: speaking, cpu: nrCpu, ns: t && t.getSettings ? t.getSettings().noiseSuppression : null}; },   // для теста
+    __tap: function () { return {ctx: ctx, send: sendStream, raw: local, gate: gate}; },   // У401: тест шумоподавления (записать сырой и отправляемый звук)
     __stopMic: function () { var t = micTrack(); if (t) { t.stop(); t.dispatchEvent(new Event("ended")); } },
     __suspend: function () { return ctx ? ctx.suspend() : null; }};
 })();
