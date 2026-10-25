@@ -233,7 +233,7 @@
   function caveLevel() {
     if (!ctx || !cave || cave.ctx !== ctx) return;
     var c = window.VPSound && VPSound.cave ? VPSound.cave() : 0;
-    cave.wet.gain.setTargetAtTime(c * 0.15, ctx.currentTime, 1.2);   // владелец: «небольшое эхо»; 2026-10-25: «слегонца» — 0.35 → 0.15
+    cave.wet.gain.setTargetAtTime(c * 0.05, ctx.currentTime, 1.2);   /* владелец: «ещё в три раза меньше» — 0.15 → 0.05 */   // владелец: «небольшое эхо»; 2026-10-25: «слегонца» — 0.35 → 0.15
   }
 
   // ---------------------------------------------------------------- У323 (владелец 2026-10-23): под водой — глухо и с бульканьем
