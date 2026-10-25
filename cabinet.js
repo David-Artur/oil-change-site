@@ -1064,7 +1064,7 @@
       var st = STATE[it.state] || STATE.todo, act = "";
       if (it.action === "account" && it.state === "todo") act = '<button class="btn small" type="button" data-bn="account">Открыть «Аккаунт»</button>';
       if (it.action === "discord" && (it.state === "todo" || it.state === "join")) act = '<button class="btn small blue" type="button" data-bn="discord">' + (it.state === "join" ? "Проверить ещё раз" : "Привязать Discord") + "</button>" +
-        (it.state === "join" ? ' <a class="btn small" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Наш Discord-сервер</a>' : "");
+        (it.state === "join" ? ' <a class="btn small" href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Наш Discord-сервер</a>' : "");
       if (it.action === "donate") act = '<button class="btn small" type="button" data-bn="donate">Голосовать</button>';
       h += '<div class="card bn-item ' + st[1] + '"><div class="bn-main"><b>' + esc(it.title) + '</b><span class="bn-amt">' + esc(it.amount) + "</span></div>" +
         (st[0] ? '<p class="bn-st">' + esc(st[0]) + "</p>" : "") + (it.note ? '<p class="cab-meta">' + esc(it.note) + "</p>" : "") + (act ? '<div class="bn-act">' + act + "</div>" : "") + "</div>";
@@ -1124,7 +1124,7 @@
     h += '<div class="card cab-card"><h2>Discord</h2>';
     if (dcu) {
       h += '<p>✔ Привязан: <b>' + esc(dcu) + '</b></p>' +
-        (dci && dci.state === "join" ? '<p class="cab-meta">Зайди на наш Discord-сервер — и придут $250 и роль.</p><div class="cab-row"><a class="btn small" href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Наш Discord-сервер</a>' +
+        (dci && dci.state === "join" ? '<p class="cab-meta">Зайди на наш Discord-сервер — и придут $250 и роль.</p><div class="cab-row"><a class="btn small" href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Наш Discord-сервер</a>' +
           '<button class="btn small blue" type="button" data-acc="dc-link">Проверить ещё раз</button></div>'
           : '<p class="cab-meta">Роль в Discord показывает твой уровень и обновляется сама. Через этот Discord администрация свяжется с тобой.</p>' +
             (dci && dci.state === "used" ? '<p class="cab-meta">Этот Discord уже давал бонус другому игроку — роль есть, $250 повторно не начисляются.</p>' : ""));

@@ -824,7 +824,7 @@
     el.innerHTML = (w ? o.mapLink(w.worldId, live.me.x, live.me.y, live.me.z, "🗺 Открыть карту — где я")
       : '<a class="btn small" target="_blank" rel="noopener" href="map.html">🗺 Открыть карту мира</a>') +
       // 2026-10-18 (владелец): рядом с картой — сразу Discord
-      ' <a class="btn small hm-discord" target="_blank" rel="noopener" href="https://discord.gg/sTgZM8Kh">💬 Discord</a>';
+      ' <a class="btn small hm-discord" target="_blank" rel="noopener" href="https://discord.gg/sQR9A7RH">💬 Discord</a>';
   }
 
   // ---------------------------------------------------------------- чат

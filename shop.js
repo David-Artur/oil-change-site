@@ -51,7 +51,7 @@
     function ms() { return (data.methods || []).filter(function (m) { return m.currency === cur; }); }
     function priceOf(p) { return cur === "RUB" ? fmt(p.rub) + " ₽" : cur === "EUR" ? "€" + Number(p.eur || 0).toFixed(2) : "$" + Number(p.usd).toFixed(2); }
     json(PAY + "/packs").then(function (d) { data = d; draw(); }).catch(function () {
-      el.innerHTML = '<p class="empty">Оплата сейчас недоступна — сервер не отвечает. Попробуй позже или напиши в <a href="https://discord.gg/sTgZM8Kh" target="_blank" rel="noopener">Discord</a>.</p>';
+      el.innerHTML = '<p class="empty">Оплата сейчас недоступна — сервер не отвечает. Попробуй позже или напиши в <a href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Discord</a>.</p>';
     });
     function draw() {
       if (!data || !data.packs || !data.packs.length) { el.innerHTML = '<p class="empty">Пакеты не загрузились.</p>'; return; }
