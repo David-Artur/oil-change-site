@@ -1,0 +1,49 @@
+{
+    "name":  "yaga",
+    "tracks":  [
+                   {
+                       "id":  "yaga-kotel",
+                       "title":  "Котёл",
+                       "file":  "yaga/yaga-kotel.mp3",
+                       "length":  105,
+                       "author":  "DaviArt Craft",
+                       "source":  "ACE-Step 1.5 (MIT), ПК",
+                       "kbps":  320,
+                       "src":  "yaga-kotel-t0.mp3",
+                       "place":  "Изба Бабы Яги"
+                   },
+                   {
+                       "id":  "yaga-proklyatie",
+                       "title":  "Проклятие",
+                       "file":  "yaga/yaga-proklyatie.mp3",
+                       "length":  110,
+                       "author":  "DaviArt Craft",
+                       "source":  "ACE-Step 1.5 (MIT), ПК",
+                       "kbps":  320,
+                       "src":  "yaga-proklyatie-t0.mp3",
+                       "place":  "Изба Бабы Яги"
+                   },
+                   {
+                       "id":  "yaga-kosti",
+                       "title":  "Пляска костей",
+                       "file":  "yaga/yaga-kosti.mp3",
+                       "length":  100,
+                       "author":  "DaviArt Craft",
+                       "source":  "ACE-Step 1.5 (MIT), ПК",
+                       "kbps":  320,
+                       "src":  "yaga-kosti-t0.mp3",
+                       "place":  "Изба Бабы Яги"
+                   },
+                   {
+                       "id":  "yaga-shepot",
+                       "title":  "Шёпот за спиной",
+                       "file":  "yaga/yaga-shepot.mp3",
+                       "length":  115,
+                       "author":  "DaviArt Craft",
+                       "source":  "ACE-Step 1.5 (MIT), ПК",
+                       "kbps":  320,
+                       "src":  "yaga-shepot-t0.mp3",
+                       "place":  "Изба Бабы Яги"
+                   }
+               ]
+}
