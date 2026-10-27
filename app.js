@@ -34,7 +34,9 @@
   var MON = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   var dayMon = function (d) { var p = String(d).split("-"); return +p[2] + " " + (MON[+p[1] - 1] || ""); };
   if (nl && window.NEWS) nl.innerHTML = NEWS.map(function (n, i) {
-    return '<li class="card news-item' + (i === 0 ? " fresh" : "") + '"><time datetime="' + esc(n.d) + '">' + esc(dayMon(n.d)) + "</time><div><h3>" + rich(n.t) + "</h3><p>" + rich(n.p) + "</p>" +
+    // img — скриншот к новости (2026-10-27: «Настройки персонажа»)
+    var pic = n.img ? '<img class="news-pic" src="' + esc(n.img) + '" alt="' + esc(n.imgAlt || "") + '" loading="lazy" width="' + (n.w || 960) + '" height="' + (n.h || 700) + '">' : "";
+    return '<li class="card news-item' + (i === 0 ? " fresh" : "") + '"><time datetime="' + esc(n.d) + '">' + esc(dayMon(n.d)) + "</time><div><h3>" + rich(n.t) + "</h3><p>" + rich(n.p) + "</p>" + pic +
       (n.a ? '<a class="news-more" href="' + esc(n.a) + '">Подробнее →</a>' : "") + "</div></li>";
   }).join("");
 
@@ -105,7 +107,7 @@
   /* ---------- особенности ---------- */
   var fl = $("features-list");
   if (fl && window.FEATURES) fl.innerHTML = FEATURES.map(function (f) {
-    var fig = f.img ? '<figure><img src="' + f.img + '" alt="' + esc(f.imgAlt || "") + '" loading="lazy" width="960" height="791"><figcaption>' + esc(f.imgAlt || "") + "</figcaption></figure>" : "";
+    var fig = f.img ? '<figure><img src="' + f.img + '" alt="' + esc(f.imgAlt || "") + '" loading="lazy" width="' + (f.w || 960) + '" height="' + (f.h || 791) + '"><figcaption>' + esc(f.imgAlt || "") + "</figcaption></figure>" : "";
     return '<details class="card feature" id="f-' + f.id + '"><summary><span class="ico" aria-hidden="true">' + f.icon + "</span><div><h3>" + esc(f.title) +
       "</h3><p>" + rich(f.lead) + '</p></div><span class="chev" aria-hidden="true"></span></summary><ul>' +
       f.list.map(function (x) { return "<li>" + rich(x) + "</li>"; }).join("") + "</ul>" + fig + "</details>";
