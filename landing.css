@@ -77,7 +77,7 @@
 .l-quote { margin: 0; padding: 20px 18px 16px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .l-quote p { margin: 0; font-size: 17px; line-height: 1.45; }
 .l-quote p::before { content: "«"; color: var(--glow); } .l-quote p::after { content: "»"; color: var(--glow); }
-.l-quote footer { margin-top: auto; font-size: 13px; color: var(--soft); }
+.l-quote footer { margin: auto 0 0; padding: 0; border: 0; background: none; font-size: 13px; color: var(--soft); }
 .l-duo { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; align-items: stretch; }
 .l-duo .l-shot { grid-column: auto; min-height: 280px; }
 @media (max-width: 860px) { .l-duo { grid-template-columns: 1fr; } }
