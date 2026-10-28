@@ -1,0 +1,125 @@
+/* 2026-10-28: главная-витрина (владелец: «на главной — фотографии и истории, красиво, дорого-богато, как настоящий крутой Майнкрафт-сайт»).
+   Справочник переехал в guide.html. Главная — одна тёмная «кинотеатральная» тема: скриншоты почти все вечерние/ночные.
+   Layout: полноэкранный кадр-шапка → главы-истории с мозаикой кадров → отзывы → как зайти → новости → справочник плитками. */
+:root.home:not(#x) {
+  --bg: #0f0d0b; --bg2: #16130f; --card: #1c1814; --card2: #241f19; --line: #2f2821; --line2: #40362c;
+  --text: #f1eadf; --muted: #b9ab95; --soft: #8c7f6c;
+  --grass: #8fd25a; --grass-bg: #1d2c16; --gold: #f6c945; --gold-bg: #33290f;
+  --red: #f07a62; --red-bg: #3a1c17; --warn: #f0b14c; --warn-bg: #352713;
+  --code-bg: #2a231c; --code: #ffd98a; --btn: #3a3129; --btn-hi: #4c4136; --btn-lo: #1d1813;
+  --night: #0a0908; --glow: #f6c945; --club: #e35dd8; --holy: #8fd25a; --sky: #f2a65e; --end: #b98cff;
+  --display: "Unbounded", "Rubik", system-ui, sans-serif;
+  color-scheme: dark;
+}
+.home body { background: var(--bg); }
+
+/* ---------- шапка-кадр ---------- */
+.l-hero { position: relative; min-height: min(88vh, 860px); display: grid; align-items: end; color: #fff; overflow: hidden; isolation: isolate; background: var(--night); }
+.l-hero__img { position: absolute; inset: 0; z-index: -2; background: url("img/shots/lobby-sunset.jpg") center 38% / cover no-repeat; transform-origin: 60% 40%; }
+@media (prefers-reduced-motion: no-preference) { .l-hero__img { animation: l-drift 38s ease-in-out infinite alternate; } }
+@keyframes l-drift { from { transform: scale(1.04) translate(0, 0); } to { transform: scale(1.14) translate(-2%, 1.5%); } }
+.l-hero::after { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgba(10,9,8,.15) 0%, rgba(10,9,8,0) 30%, rgba(10,9,8,.55) 66%, var(--bg) 100%),
+              radial-gradient(120% 70% at 15% 100%, rgba(10,9,8,.75), transparent 60%); }
+.l-hero__in { width: 100%; max-width: 1280px; margin: 0 auto; padding-block: 120px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 22px; }
+.l-brand { display: flex; align-items: center; gap: 18px; }
+.l-brand img { width: clamp(76px, 12vw, 128px); height: auto; image-rendering: pixelated; filter: drop-shadow(0 8px 24px rgba(0,0,0,.6)); }
+.l-brand h1 { margin: 0; font: 700 clamp(34px, 7.5vw, 84px)/.98 var(--display); letter-spacing: -.01em; text-wrap: balance; text-shadow: 0 4px 30px rgba(0,0,0,.55); }
+.l-brand h1 small { display: block; font: 500 clamp(13px, 1.6vw, 16px)/1.3 var(--font); letter-spacing: .22em; text-transform: uppercase; color: var(--glow); margin-bottom: 8px; text-shadow: none; }
+.l-lead { max-width: 60ch; margin: 0; font-size: clamp(16px, 2vw, 20px); line-height: 1.5; color: #efe6d8; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+.l-hero .ip { margin: 0; max-width: 620px; }
+.l-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.l-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.l-chips li { font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(6px); }
+
+/* ---------- полоса навигации ---------- */
+.l-nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.home body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 31; background: var(--bg); }
+.l-nav__in { max-width: 1280px; margin: 0 auto; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.l-nav__in::-webkit-scrollbar { display: none; }
+.l-nav a { flex: none; text-decoration: none; color: var(--text); font-weight: 600; font-size: 14px; padding: 7px 12px; border-radius: 8px; border: 1px solid transparent; }
+.l-nav a:hover { border-color: var(--line2); }
+.l-nav a.l-nav__guide { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 45%, transparent); }
+.l-nav a.l-nav__cab { background: #3fae1c; color: #fff; }
+
+/* ---------- главы ---------- */
+.l-main { max-width: 1280px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 40px; display: grid; gap: clamp(64px, 9vw, 120px); }
+.l-ch { display: grid; gap: 22px; scroll-margin-top: 70px; }
+.l-ch__head { display: grid; gap: 10px; max-width: 760px; }
+.l-eyebrow { font: 600 12px/1 var(--font); letter-spacing: .2em; text-transform: uppercase; color: var(--accent, var(--glow)); }
+.l-ch h2 { margin: 0; font: 700 clamp(28px, 4.6vw, 52px)/1.05 var(--display); text-wrap: balance; }
+.l-ch__lead { margin: 0; color: var(--muted); font-size: clamp(16px, 1.6vw, 18px); max-width: 64ch; }
+.l-ch--lobby { --accent: var(--sky); } .l-ch--holy { --accent: var(--holy); } .l-ch--club { --accent: var(--club); } .l-ch--end { --accent: var(--end); } .l-ch--play { --accent: var(--gold); }
+
+/* мозаика: первый кадр крупный */
+.l-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: clamp(150px, 15vw, 210px); gap: 10px; }
+.l-shot { position: relative; margin: 0; overflow: hidden; border-radius: 12px; background: var(--card); grid-column: span 2; cursor: zoom-in; min-width: 0; }
+.l-shot.big { grid-column: span 4; grid-row: span 2; }
+.l-shot.wide { grid-column: span 3; }
+.l-shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.l-shot::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(8,7,6,.88)); pointer-events: none; }
+.l-shot figcaption { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 14px 16px; display: grid; gap: 4px; }
+.l-shot figcaption b { font: 600 clamp(15px, 1.4vw, 18px)/1.2 var(--font); color: #fff; }
+.l-shot figcaption span { font-size: 14px; line-height: 1.4; color: #e2d8c7; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.l-shot.big figcaption span { -webkit-line-clamp: 3; font-size: 15px; }
+.l-shot:focus-visible { outline: 3px solid var(--glow); outline-offset: 3px; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) { .l-shot:hover img { transform: scale(1.05); } }
+@media (max-width: 860px) {
+  .l-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 160px; }
+  .l-shot, .l-shot.wide { grid-column: span 1; }
+  .l-shot.big { grid-column: span 2; grid-row: span 2; }
+  .l-shot figcaption span { display: none; }
+  .l-shot.big figcaption span { display: -webkit-box; }
+}
+
+/* ---------- отзывы ---------- */
+.l-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.l-quote { margin: 0; padding: 20px 18px 16px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.l-quote p { margin: 0; font-size: 17px; line-height: 1.45; }
+.l-quote p::before { content: "«"; color: var(--glow); } .l-quote p::after { content: "»"; color: var(--glow); }
+.l-quote footer { margin-top: auto; font-size: 13px; color: var(--soft); }
+.l-duo { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; align-items: stretch; }
+.l-duo .l-shot { grid-column: auto; min-height: 280px; }
+@media (max-width: 860px) { .l-duo { grid-template-columns: 1fr; } }
+
+/* ---------- справочник плитками ---------- */
+.l-guide { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.l-guide a { display: grid; gap: 4px; padding: 14px 16px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); text-decoration: none; color: var(--text); min-width: 0; }
+.l-guide a b { font-weight: 600; }
+.l-guide a span { font-size: 13px; color: var(--muted); }
+.l-guide a:hover { border-color: var(--gold); }
+.l-more { justify-self: start; }
+
+/* главные блоки старого сайта на тёмной главной */
+.home #join-steps, .home #news-list { margin-top: 0; }
+.home .news li:nth-child(n+5) { display: none; }
+
+/* ---------- просмотр фото ---------- */
+.l-lb { position: fixed; inset: 0; z-index: 100; background: rgba(6,5,4,.94); display: grid; grid-template-rows: 1fr auto; padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
+.l-lb[hidden] { display: none !important; }
+.l-lb__img { width: 100%; height: 100%; object-fit: contain; min-height: 0; }
+.l-lb__cap { max-width: 900px; margin: 10px auto 0; text-align: center; color: #efe6d8; display: grid; gap: 4px; }
+.l-lb__cap b { font: 600 18px/1.3 var(--font); }
+.l-lb__cap span { color: #c9bda9; }
+.l-lb button { position: absolute; background: rgba(0,0,0,.5); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; width: 46px; height: 46px; font-size: 22px; cursor: pointer; display: grid; place-items: center; }
+.l-lb button:focus-visible { outline: 3px solid var(--glow); }
+.l-lb__x { top: max(12px, env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
+.l-lb__prev { left: max(12px, env(safe-area-inset-left, 0px)); top: 45%; }
+.l-lb__next { right: max(12px, env(safe-area-inset-right, 0px)); top: 45%; }
+
+/* правки после первого просмотра */
+.l-ch h2::before, .l-ch h2::after { content: none !important; display: none !important; }
+.l-hero .addr { white-space: nowrap; }
+/* мобильный: grid-дорожки не растягиваются по самому широкому ребёнку */
+.l-hero__in, .l-main, .l-ch, .l-ch__head { grid-template-columns: minmax(0, 1fr); }
+.l-hero__in > *, .l-main > *, .l-ch > * { min-width: 0; }
+.l-hero .ip { flex-wrap: wrap; max-width: 760px; }
+.l-hero .ip-box { flex: 1 1 380px; }
+@media (max-width: 640px) {
+  .l-brand { gap: 12px; }
+  .l-brand img { width: 64px; }
+  .l-brand h1 { font-size: clamp(28px, 8.6vw, 40px); }
+  .l-hero .ip > * { flex: 1 1 100%; }
+  .l-hero .addr { font-size: 22px; }
+  .l-hero__in { padding-top: 80px; }
+}

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Справочник DaviArt Craft</title>
+<meta name="description" content="DaviArt Craft — Minecraft-сервер: хардкорное выживание с прокачкой, ванильное выживание с элементами хардкора. Java 1.21.10, без модов, можно с TLauncher. Прокачка 39 навыков, 4 мира, приваты компасом. Адрес daviart.com">
+<meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://daviart.com/guide.html">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DaviArt Craft">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://daviart.com/guide.html">
+<meta property="og:title" content="DaviArt Craft — хардкорное выживание с прокачкой">
+<meta property="og:description" content="Выживание почти ваниль с дополнениями. Java 1.21.10, без модов, можно с TLauncher. Адрес: daviart.com">
+<meta property="og:image" content="https://daviart.com/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css?v=23">
+</head>
+<body>
+
+<header class="hero hero-guide">
+  <div class="wrap">
+    <a class="brand" href="./" style="text-decoration:none;color:inherit">
+      <img src="img/icon-256.png" alt="" width="56" height="56">
+      <h1>Справочник DaviArt Craft</h1>
+    </a>
+    <p class="tagline">Всё об игре на одной странице: как зайти, миры, прокачка, тело, экономика, клуб, команды и правила. <a href="./">← На главную</a></p>
+    <div class="ip">
+      <div class="ip-box">
+        <div><span class="lbl">Адрес сервера</span><span class="addr" id="addr">daviart.com</span></div>
+        <button class="btn gold" type="button" data-copy="daviart.com" data-msg="Адрес скопирован">Копировать</button>
+      </div>
+      <div class="status" id="status" aria-live="polite">
+        <div class="line"><span class="dot"></span><span id="st-text">Проверяю статус…</span></div>
+        <div class="sub" id="st-sub"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav" id="nav" aria-label="Разделы">
+  <div class="wrap">
+    <a href="./" class="nav-home">← Главная</a>
+    <a href="cabinet.html" class="nav-cab" data-cab>🔑 Кабинет</a>
+    <a href="#join">Как играть</a>
+    <a href="#news">Что нового</a>
+    <a href="map.html" class="nav-map">🗺 Карта мира</a>
+    <a href="#claims">Приваты</a>
+    <a href="#worlds">Миры</a>
+    <a href="#npc">Жители</a>
+    <a href="#teleport">Телепорт</a>
+    <a href="#economy">Экономика</a>
+    <a href="#market">Рынок</a>
+    <a href="#emerald">💚 Изумрудная лавка</a>
+    <a href="#potions">Зелья</a>
+    <a href="#clans">Кланы</a>
+    <a href="#leaders">Лидеры</a>
+    <a href="#voice" data-cab>Голос</a>
+    <a href="#club">🪩 Клуб</a>
+    <a href="#music">🎵 Музыка</a>
+    <a href="#ach">Ачивки</a>
+    <a href="#bloodmoon">Кровавая луна</a>
+    <a href="#elytra">Элитры</a>
+    <a href="#skills">Прокачка</a>
+<a href="#craft">Крафт</a>
+    <a href="#body">Тело</a>
+    <a href="#stamina">Стамина</a>
+    <a href="#climate">Температура</a>
+    <a href="#pvp">PvP</a>
+    <a href="#features">Особенности</a>
+    <a href="#commands">Команды</a>
+    <a href="#rules">Правила</a>
+    <a href="#soon">Скоро</a>
+    <a href="#faq">Вопросы</a>
+    <a href="#donate" class="nav-don">💛 Донат</a>
+    <a href="referral.html">Реферальная программа</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section id="join">
+    <h2>Как начать играть</h2>
+    <p class="lead">5 шагов — и ты в игре. Команды и адрес копируются нажатием.</p>
+    <ol class="steps join5" id="join-steps"></ol>
+  </section>
+
+  <section id="news">
+    <h2>Что нового</h2>
+    <p class="lead">Последние обновления сервера — свежие сверху. Все новости и обсуждение — в <a href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Discord</a>.</p>
+    <ol class="news" id="news-list"></ol>
+  </section>
+
+  <section id="claims" class="guide" data-guide="claims"></section>
+
+  <section id="worlds">
+    <h2>Миры</h2>
+    <p class="lead">Новичок стартует в <b>Святых землях</b>, а все миры связывает <b>лобби</b> — парящий остров с шестью порталами (карточка в конце). Чем дальше мир, тем он опаснее, богаче и тем больше отнимает смерть. Рекомендуемый уровень — уровень персонажа.</p>
+    <div class="worlds" id="worlds-list"></div>
+    <h3 style="margin:26px 0 0;font-size:1.2rem">Общее для всех миров</h3>
+    <ul class="card common" id="worlds-common"></ul>
+    <div class="card mapcard" id="map">
+      <div><h3>🗺 Веб-карта всех миров</h3><p>Карта прямо на сайте: 2D и 3D (крути и наклоняй), приваты, зоны у точки прибытия, игроки онлайн, твои метки и дом. Открой нужный мир:</p></div>
+      <div class="mapbtns" id="map-buttons"></div>
+    </div>
+  </section>
+
+  <section id="npc" class="guide" data-guide="npc"></section>
+
+  <section id="teleport" class="guide" data-guide="teleport"></section>
+  <section id="economy" class="guide" data-guide="economy"></section>
+  <section id="market" class="guide" data-guide="market"></section>
+  <section id="emerald" class="guide" data-guide="emerald"></section>
+  <section id="potions" class="guide" data-guide="potions"></section>
+  <section id="clans" class="guide" data-guide="clans"></section>
+  <section id="leaders">
+    <h2>Лидеры</h2>
+    <p class="lead">Живая таблица с сервера — обновляется раз в 10 минут. В игре — <code>/top</code> и табло в лобби.</p>
+    <div class="chips" id="lead-chips" role="group" aria-label="Категории"></div>
+    <div class="card tablewrap" id="lead-box"><p class="empty" style="padding:16px">Загружаю…</p></div>
+    <p class="lead" id="lead-upd" style="font-size:.85rem;margin-top:8px"></p>
+  </section>
+  <section id="cabinet" data-cab>
+    <h2>Личный кабинет</h2>
+    <p class="lead">Привяжи игровой ник к сайту — и управляй приватами и кланом прямо отсюда. Вход — <b>твоим ником и тем же паролем, что в игре</b>. Там же — смена пароля, почта для восстановления и доверенные адреса (в игру без <code>/login</code>).</p>
+    <div class="gblocks">
+      <div class="card gblock"><h3>👤 Персонаж</h3><p>Где ты сейчас, здоровье, снаряжение и инвентарь, дома по мирам, места в рейтингах, все навыки, тело, статистика, ачивки.</p></div>
+      <div class="card gblock"><h3>🧭 Приваты</h3><p>Переименовать, добавить и убрать друзей, права каждого, двери для гостей, взрывы, видимость на веб-карте. Размер и удаление — в игре.</p></div>
+      <div class="card gblock"><h3>⚑ Клан</h3><p>Создать клан, пригласить игрока (даже не в сети), клан-чат с сайта, назначить заместителя, исключить, передать лидерство, банк и налог.</p></div>
+      <div class="card gblock"><h3>⚖ Рынок</h3><p>Витрина с поиском, покупка прямо с сайта (предмет — на Склад), продажа из инвентаря, когда ты в лобби, снять свой лот. В игре — <code>/market</code> из любого мира.</p></div>
+      <div class="card gblock"><h3>🔒 Безопасно</h3><p>Пароль проверяет сервер, сайт его не хранит; 5 ошибок — вход для ника закрыт на 15 мин. Забыл пароль — код на привязанную почту.</p></div>
+      <div class="card gblock"><h3>🎤 Голос рядом</h3><p>Голосовой чат с игроками до 100 блоков в том же мире: чем дальше — тем тише. Подробно — раздел <a href="#voice">«Голос»</a>.</p></div>
+      <div class="card gblock"><h3>🧭 Телепорты и друзья</h3><p>Телепорт в лобби, домой или на спавн мира прямо с сайта — с той же ценой и отсчётом, что в игре. Друзья: кто в игре и в каком мире.</p></div>
+    </div>
+    <p style="margin-top:14px"><a class="btn gold" href="cabinet.html">Открыть личный кабинет</a></p>
+  </section>
+  <section id="voice" class="guide" data-guide="voice" data-cab></section>
+  <section id="club" class="guide" data-guide="club"></section>
+  <section id="music">
+    <h2>🎵 Музыка</h2>
+    <p class="lead">Все треки, которые играют в нашем клубе DaviArt Holy Club, — слушай прямо здесь. Песни сделаны для сервера: про миры, прокачку, кланы и Кровавую луну. <span id="music-count"></span></p>
+    <div class="chips" id="music-chips" role="group" aria-label="Стиль"></div>
+    <div id="music-list"><p class="empty">Загружаю…</p></div>
+    <div class="card" style="padding:12px 14px;margin-top:16px"><b>🎥 Стримерам и блогерам</b><p style="margin:6px 0 0;color:var(--muted)">Вся музыка DaviArt Holy Club — наша. Её можно свободно использовать в стримах (YouTube, Twitch и др.) и видео: заходи в клуб и стримь. Указывать автора не обязательно — будем рады ссылке на <a href="https://daviart.com">daviart.com</a>. Если вдруг пришла претензия на трек — напиши нам в <a href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Discord</a>, разберёмся.</p></div>
+  </section>
+  <section id="ach" class="guide" data-guide="ach"></section>
+  <section id="bloodmoon" class="guide" data-guide="bloodmoon"></section>
+  <section id="elytra" class="guide" data-guide="elytra"></section>
+  <section id="skills" class="guide" data-guide="skills"></section>
+<section id="craft" class="guide" data-guide="craft"></section>
+  <section id="body" class="guide" data-guide="body"></section>
+  <section id="stamina" class="guide" data-guide="stamina"></section>
+  <section id="climate" class="guide" data-guide="climate"></section>
+  <section id="pvp" class="guide" data-guide="pvp"></section>
+
+  <section id="features">
+    <h2>Особенности сервера</h2>
+    <p class="lead">Привычный Minecraft плюс то, чего нет в ванилле. Всё работает на обычном клиенте — нажми на карточку, чтобы раскрыть.</p>
+    <div class="features" id="features-list"></div>
+  </section>
+
+  <section id="commands">
+    <h2>Команды</h2>
+    <p class="lead">Нажми «Копировать» — команда скопируется, останется вставить в чат игры (клавиша <code>T</code> или <code>/</code>).</p>
+    <div class="cmdbar">
+      <label class="search">
+        <span aria-hidden="true">🔍</span>
+        <span class="sr">Поиск команды</span>
+        <input id="q" type="search" placeholder="Найти: дом, приват, деньги, пароль…" autocomplete="off" enterkeyhint="search">
+        <span class="count" id="qcount"></span>
+      </label>
+      <div class="chips" id="cmd-chips" role="group" aria-label="Группы команд"></div>
+    </div>
+    <div id="cmd-list"></div>
+    <p class="empty" id="cmd-empty" hidden>Ничего не нашлось. Попробуй другое слово — или спроси в <a href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Discord</a>.</p>
+  </section>
+
+  <section id="rules">
+    <h2>Правила сервера</h2>
+    <p class="lead">Коротко: играй честно и не порть игру другим. Заходя на сервер, ты соглашаешься с правилами.</p>
+    <ol class="rules" id="rules-list"></ol>
+  </section>
+
+  <section id="soon">
+    <h2>Скоро</h2>
+    <p class="lead">Над этим сейчас работаем. Следи за новостями в Discord.</p>
+    <div class="soon" id="soon-list"></div>
+  </section>
+
+  <section id="donate">
+    <h2>💛 Донат</h2>
+    <p class="lead">Игровая валюта $ — та же, что зарабатывается в игре: на зелья Бабы Яги, у Торговца, на Рынке. Её можно получить <b>бесплатно</b> за голоса за сервер — или купить пакетом.</p>
+    <h3 style="margin:18px 0 8px;font-size:1.2rem">🎁 Подарок дня: голосуй за сервер — $25 за каждый голос</h3>
+    <div class="don-nick"><label for="don-nick">Твой ник</label><input id="don-nick" maxlength="16" autocomplete="username" placeholder="Например, Steve"></div>
+    <div id="vote-cards"><p class="empty">Загружаю площадки…</p></div>
+    <h3 style="margin:26px 0 8px;font-size:1.2rem">💰 Пакеты игровой валюты</h3>
+    <div id="pack-cards"><p class="empty">Загружаю пакеты…</p></div>
+    <p class="lead" style="font-size:.88rem;margin-top:12px">Оплата — картой, через СБП, зарубежной картой или PayPal (платёжная платформа lava.top). <a href="oferta.html">Условия покупки и возврата</a>.</p>
+  </section>
+
+  <section id="faq">
+    <h2>Частые вопросы</h2>
+    <div class="faq" id="faq-list"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><img src="img/favicon-32.png" alt="">© DaviArt Craft · сайт обновлён <span id="updated">18.10.2026</span></div>
+    <nav aria-label="Ссылки">
+      <a href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Discord</a>
+      <a href="map.html">Карта мира</a>
+      <a href="recover.html">Забыл пароль</a>
+      <a href="referral.html">Реферальная программа</a>
+      <a href="partners.html">Блогерам и площадкам</a>
+      <a href="#" data-copy="daviart.com" data-msg="Ник скопирован — добавь daviart.com в друзья в Discord">Связь: Discord daviart.com</a>
+      <a href="privacy.html">Конфиденциальность</a>
+      <a href="oferta.html">Условия покупки</a>
+      <a href="#rules">Правила</a>
+    </nav>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<a class="dot-admin" href="admin.html" aria-label="Служебная страница" title=""></a>
+
+<script src="data.js?v=48"></script>
+<script src="viz.js?v=8"></script>
+<script src="app.js?v=15"></script><script src="music.js?v=1" defer></script>
+<script src="shop.js?v=3"></script>
+<script src="pages.js?v=7"></script>
+<script src="ui.js?v=2"></script>
+<script src="consent.js?v=1"></script>
+</body>
+</html>
