@@ -1,0 +1,112 @@
+/* 2026-10-29 (владелец: «главная — живая, современная, сногсшибательная»): анимации главной (fx.js добавляет html.fx).
+   Без JS страница остаётся статичной; при prefers-reduced-motion (или ?fx=0) — html.fx-still, движения нет. */
+@property --fx-a { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes fx-spin { to { --fx-a: 360deg; } }
+
+/* полоса прогресса прокрутки */
+.fx-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60; transform-origin: 0 50%; transform: scaleX(0); pointer-events: none;
+  background: linear-gradient(90deg, var(--holy), var(--glow), var(--club), var(--end)); box-shadow: 0 0 12px rgba(246, 201, 69, .55); }
+
+/* фоновые «облака света» */
+.fx-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.fx-bg i { position: absolute; width: 46vmax; height: 46vmax; border-radius: 50%; filter: blur(80px); opacity: .10; }
+.fx-bg i:nth-child(1) { background: var(--holy); left: -12vmax; top: 60vh; animation: fx-blob1 34s ease-in-out infinite alternate; }
+.fx-bg i:nth-child(2) { background: var(--club); right: -14vmax; top: 140vh; animation: fx-blob2 40s ease-in-out infinite alternate; }
+.fx-bg i:nth-child(3) { background: var(--end); left: 30vw; top: 260vh; animation: fx-blob1 46s ease-in-out infinite alternate-reverse; }
+@keyframes fx-blob1 { to { transform: translate(18vw, -30vh) scale(1.2); } }
+@keyframes fx-blob2 { to { transform: translate(-22vw, 25vh) scale(.85); } }
+
+/* ---------- шапка ---------- */
+.fx .l-hero__in { position: relative; z-index: 2; }
+.fx .l-hero__img { translate: calc(var(--mx, 0) * -16px) calc(var(--my, 0) * -10px + var(--sy, 0) * .3px); }
+.fx-petals { position: absolute; inset: 0; z-index: 1; pointer-events: none; width: 100%; height: 100%; }
+.fx .l-hero::before { content: ""; position: absolute; inset: -25%; z-index: -1; pointer-events: none; mix-blend-mode: screen; transform-origin: 80% 0;
+  background: conic-gradient(from 196deg at 80% -6%, transparent 0 8deg, rgba(255, 214, 140, .11) 10deg 14deg, transparent 16deg 25deg,
+    rgba(255, 214, 140, .08) 27deg 30deg, transparent 32deg 43deg, rgba(255, 196, 120, .10) 45deg 50deg, transparent 52deg 64deg, rgba(255, 220, 160, .06) 66deg 68deg, transparent 70deg);
+  animation: fx-rays 16s ease-in-out infinite alternate; }
+@keyframes fx-rays { from { transform: rotate(-3deg); opacity: .7; } to { transform: rotate(5deg); opacity: 1; } }
+.fx-spot { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .6s; mix-blend-mode: soft-light;
+  background: radial-gradient(520px circle at var(--cx, 50%) var(--cy, 40%), rgba(255, 225, 160, .55), transparent 60%); }
+.l-hero:hover .fx-spot { opacity: 1; }
+.fx .l-brand h1 { text-shadow: none; filter: drop-shadow(0 4px 22px rgba(0, 0, 0, .55)); color: transparent; -webkit-background-clip: text; background-clip: text;
+  background-image: linear-gradient(100deg, #fff 0%, #fff 38%, #ffe39a 46%, #fffaf0 50%, #ffcf5c 54%, #fff 62%, #fff 100%); background-size: 260% 100%;
+  animation: fx-shine 7s ease-in-out infinite; }
+.fx .l-brand h1 small { -webkit-text-fill-color: var(--glow); }
+@keyframes fx-shine { 0% { background-position: 115% 0; } 55%, 100% { background-position: -40% 0; } }
+.fx .l-brand img { animation: fx-bob 5.5s ease-in-out infinite; }
+@keyframes fx-bob { 50% { transform: translateY(-7px) rotate(-1.5deg); filter: drop-shadow(0 12px 30px rgba(246, 201, 69, .45)); } }
+.fx-hint { position: absolute; left: 50%; bottom: 14px; z-index: 2; width: 26px; height: 40px; margin-left: -13px; border: 2px solid rgba(255, 255, 255, .55); border-radius: 14px; opacity: .8; }
+.fx-hint::after { content: ""; position: absolute; left: 50%; top: 7px; width: 4px; height: 8px; margin-left: -2px; border-radius: 2px; background: #fff; animation: fx-wheel 1.8s ease-in-out infinite; }
+@keyframes fx-wheel { 0% { transform: translateY(0); opacity: 1; } 80% { transform: translateY(14px); opacity: 0; } 100% { opacity: 0; } }
+@media (max-width: 640px) { .fx-hint { display: none; } }
+
+/* большая кнопка кабинета: бегущая радужная рамка + блик */
+.fx .l-bigcab { position: relative; isolation: isolate; overflow: hidden; }
+.fx .l-bigcab::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; padding: 3px; pointer-events: none;
+  background: conic-gradient(from var(--fx-a), #8fd25a, #f6c945, #ff8a5c, #e35dd8, #b98cff, #5cc8ff, #8fd25a);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: fx-spin 4s linear infinite; }
+.fx .l-bigcab::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .32) 50%, transparent 65%); background-size: 260% 100%; animation: fx-sheen 5.5s ease-in-out infinite; }
+@keyframes fx-sheen { 0%, 55% { background-position: 130% 0; } 100% { background-position: -40% 0; } }
+.fx .l-bigcab:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25), 0 14px 44px rgba(106, 63, 192, .55), 0 0 60px rgba(63, 174, 28, .35); }
+
+/* бегущая строка */
+.fx-ticker { overflow: hidden; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, rgba(143, 210, 90, .09), rgba(246, 201, 69, .07), rgba(227, 93, 216, .09), rgba(185, 140, 255, .09));
+  -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.fx-ticker__run { display: flex; width: max-content; gap: 40px; padding: 10px 0; font-weight: 600; font-size: 14px; white-space: nowrap; animation: fx-marq 48s linear infinite; }
+.fx-ticker__run span { color: var(--muted); }
+.fx-ticker__run b { color: var(--text); }
+.fx-ticker:hover .fx-ticker__run { animation-play-state: paused; }
+@keyframes fx-marq { to { transform: translateX(-50%); } }
+
+/* меню: подсветка текущего раздела */
+.fx .l-nav a.fx-on { border-color: var(--line2); background: rgba(255, 255, 255, .06); }
+
+/* ---------- появление при прокрутке ---------- */
+.fx:not(.fx-still) .fx-r { opacity: 0; transform: translateY(28px) scale(.985);
+  transition: opacity .7s ease var(--fx-d, 0ms), transform .85s cubic-bezier(.2, .7, .2, 1) var(--fx-d, 0ms); }
+.fx .fx-r.fx-in { opacity: 1; transform: none; }
+
+/* заголовки глав: акцентный перелив и растущая линия */
+.fx .l-ch h2 { background-image: linear-gradient(90deg, var(--text) 0%, var(--text) 50%, var(--accent, var(--glow)) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.fx .l-eyebrow::after { content: ""; display: inline-block; width: 0; height: 2px; margin-left: 10px; vertical-align: middle; background: currentColor; transition: width 1s cubic-bezier(.2, .7, .2, 1) .25s; }
+.fx .fx-in .l-eyebrow::after { width: 56px; }
+
+/* фото: 3D-наклон с бликом, «наезд камеры» на крупных */
+.fx .l-shot::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 50%), rgba(255, 255, 255, .22), transparent 55%); }
+.fx .l-shot figcaption { z-index: 2; }
+.fx .l-shot.fx-in { transition: transform .55s cubic-bezier(.2, .7, .2, 1), box-shadow .4s; }
+.fx .l-shot.fx-in.fx-tilt { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.02); transition: transform .1s linear, box-shadow .3s;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, .55), 0 0 0 1px color-mix(in srgb, var(--accent, var(--glow)) 50%, transparent); }
+.fx .l-shot.fx-tilt::before { opacity: 1; }
+.fx:not(.fx-still) .l-shot.big.fx-in img { animation: fx-kb 24s ease-in-out infinite alternate; }
+@keyframes fx-kb { to { transform: scale(1.09) translate(-1.6%, -1.2%); } }
+
+/* цитаты и плитки — подъём и свечение */
+.fx .l-quote.fx-in, .fx .l-guide a.fx-in { transition: transform .35s cubic-bezier(.2, .7, .2, 1), border-color .3s, box-shadow .3s; }
+.fx .l-quote.fx-in:hover, .fx .l-guide a.fx-in:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--accent, var(--glow)) 60%, transparent);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .45), 0 0 24px color-mix(in srgb, var(--accent, var(--glow)) 22%, transparent); }
+.fx .l-quote p::before, .fx .l-quote p::after { text-shadow: 0 0 12px rgba(246, 201, 69, .7); }
+
+/* атмосфера глав: клуб — неоновые лучи, дальние миры — звёзды и сияние */
+.fx .l-ch--club, .fx .l-ch--end { position: relative; isolation: isolate; }
+.fx .l-ch--club::before { content: ""; position: absolute; inset: -48px -24px; z-index: -1; border-radius: 28px; pointer-events: none;
+  background: radial-gradient(55% 45% at 15% 8%, rgba(227, 93, 216, .20), transparent 70%), radial-gradient(45% 40% at 88% 30%, rgba(80, 170, 255, .15), transparent 70%),
+    conic-gradient(from var(--fx-a) at 50% -10%, transparent 0 18deg, rgba(227, 93, 216, .13) 20deg 23deg, transparent 25deg 58deg, rgba(110, 200, 255, .10) 60deg 62deg,
+      transparent 64deg 108deg, rgba(246, 201, 69, .10) 110deg 112deg, transparent 114deg 160deg, rgba(227, 93, 216, .09) 162deg 165deg, transparent 167deg);
+  animation: fx-spin 16s linear infinite; }
+.fx .l-ch--end::before { content: ""; position: absolute; inset: -48px -24px; z-index: -1; border-radius: 28px; pointer-events: none;
+  background: radial-gradient(60% 55% at 70% 20%, rgba(185, 140, 255, .22), transparent 70%), radial-gradient(40% 40% at 10% 80%, rgba(90, 60, 200, .18), transparent 70%); }
+.fx .l-ch--end::after { content: ""; position: absolute; inset: -48px -24px; z-index: -1; pointer-events: none; opacity: .65;
+  background-image: radial-gradient(1.6px 1.6px at 8% 18%, #fff, transparent), radial-gradient(1.2px 1.2px at 22% 64%, #e9dcff, transparent),
+    radial-gradient(1.8px 1.8px at 37% 12%, #fff, transparent), radial-gradient(1.2px 1.2px at 51% 80%, #fff, transparent), radial-gradient(1.6px 1.6px at 63% 35%, #d9c4ff, transparent),
+    radial-gradient(1.2px 1.2px at 77% 70%, #fff, transparent), radial-gradient(1.8px 1.8px at 89% 15%, #fff, transparent), radial-gradient(1.2px 1.2px at 95% 55%, #e9dcff, transparent),
+    radial-gradient(1.4px 1.4px at 30% 40%, #fff, transparent), radial-gradient(1.4px 1.4px at 70% 92%, #fff, transparent);
+  animation: fx-twinkle 3.8s ease-in-out infinite alternate; }
+@keyframes fx-twinkle { from { opacity: .25; } to { opacity: .8; } }
+
+/* уменьшить движение — всё стоит */
+.fx-still *, .fx-still *::before, .fx-still *::after { animation: none !important; transition: none !important; }
+.fx-still .fx-ticker__run { flex-wrap: wrap; width: auto; justify-content: center; padding: 10px 16px; gap: 10px 28px; }
+.fx-still .fx-ticker__run .fx-dup { display: none; }
