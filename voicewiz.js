@@ -1,4 +1,6 @@
-/* У399 + У404 (владелец 2026-10-25): «Подключиться к голосу и звуку» — мастер живёт на cabinet.html#voice (кнопка на главной ведёт сюда).
+/* У426 (владелец 2026-10-28): это ЕДИНСТВЕННЫЙ вход в кабинет (cabinet.html и cabinet.html#voice) — «Личный кабинет · Голос и звук · Карта»;
+ * галочка «Сразу включить звук и голос» (#vw-auto, по умолч. вкл.): выключена — «Войти» без звука, на «Главной» кнопка «Включить звук и голос».
+ * У399 + У404 (владелец 2026-10-25): «Подключиться к голосу и звуку» — мастер живёт на cabinet.html#voice (кнопка на главной ведёт сюда).
  * Шаг 1 — ник (запомненный на устройстве ник → сразу шаг 2 со ссылкой «другой ник»), шаг 2 — пароль от игры (тот же /api/login).
  * У404: нажатие «Войти» — это жест на ЭТОЙ странице: прямо в обработчике (до любых await/fetch) создаётся и возобновляется AudioContext
  * (VPVoice.prime → resume), включаются звуки мира. После ответа сервера — БЕЗ перезагрузки страницы открывается «Главная» кабинета,
@@ -17,6 +19,10 @@
   function V() { return window.VPVoice; }
   function savedNick() { try { var n = localStorage.getItem(NICK_KEY) || ""; return /^[A-Za-z0-9_]{3,16}$/.test(n) ? n : ""; } catch (e) { return ""; } }
   function saveNick(n) { try { localStorage.setItem(NICK_KEY, n); } catch (e) { } }
+  // У426: галочка «Сразу включить звук и голос» — по умолчанию вкл., выбор запоминается на устройстве
+  var AUTO_KEY = "daviart.voice.auto";
+  function autoOn() { var c = $("vw-auto"); return !c || c.checked; }
+  function autoLabel() { var b = $("vw-login"); if (b) b.textContent = autoOn() ? "🎧 Войти и включить звук" : "🔑 Войти"; }
 
   function go(n) {
     step = n;
@@ -109,7 +115,8 @@
       e.preventDefault();
       var m = $("vw-m2"), p = $("vw-pass").value, btn = $("vw-login");
       if (!p) { m.className = "cab-msg"; m.textContent = "Напиши пароль от игры."; return; }
-      gesture();   // ← синхронно, в этом же нажатии: после ответа сервера браузер звук уже не разрешил бы
+      var auto = autoOn();
+      if (auto) gesture();   // ← синхронно, в этом же нажатии: после ответа сервера браузер звук уже не разрешил бы
       m.className = "cab-msg"; m.textContent = "Проверяю…"; btn.disabled = true;
       cab.login(nick, p).then(function (j) {
         btn.disabled = false;
@@ -118,9 +125,15 @@
         saveNick(nick);
         $("vw-top").hidden = false;
         cab.openCabinet();   // та же страница, без перезагрузки — AudioContext остаётся «running»
-        startAudio();
+        if (auto) startAudio(); else render();   // У426: без галочки — кабинет, звук потом кнопкой на карточке
       });
     });
+    var ac = $("vw-auto");
+    if (ac) {
+      try { if (localStorage.getItem(AUTO_KEY) === "0") ac.checked = false; } catch (e) { }
+      ac.addEventListener("change", function () { try { localStorage.setItem(AUTO_KEY, ac.checked ? "1" : "0"); } catch (e) { } autoLabel(); });
+      autoLabel();
+    }
     $("vw-go").onclick = function () { gesture(); startAudio(); };
     $("vw-mic").onclick = function () {
       var v = V(); if (!v) return;

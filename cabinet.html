@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Личный кабинет · DaviArt Craft</title>
-<meta name="description" content="Личный кабинет игрока DaviArt Craft: профиль и навыки, приваты, клан, ачивки — прямо с сайта. Вход кодом из игры.">
+<meta name="description" content="Личный кабинет DaviArt Craft: голос и звуки мира, карта мира в реальном времени, персонаж, приваты, клан и Рынок. Вход — ник и пароль из игры.">
 <meta name="theme-color" content="#3d8a1e" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14110e" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <script>/* тема до отрисовки — без вспышки белого */ try { var th = localStorage.getItem("daviart.theme"); if (th === "light" || th === "dark") document.documentElement.setAttribute("data-theme", th); } catch (e) { }</script>
 <link rel="stylesheet" href="style.css?v=22">
-<link rel="stylesheet" href="cabinet.css?v=48">
+<link rel="stylesheet" href="cabinet.css?v=49">
 </head>
 <body>
 <header class="cab-top">
@@ -26,78 +26,88 @@
 </header>
 
 <main class="wrap cab">
-  <!-- вход -->
-  <section id="login-view" hidden>
-    <h1>Личный кабинет</h1>
-    <p class="lead">Управляй персонажем, приватами, кланом и Рынком прямо с сайта. Вход — <b>твоим ником и тем же паролем, что в игре</b> (как в <code>/login</code>).</p>
-    <div class="cab-grid2">
-      <div>
-        <form class="card cab-login" id="login-form">
-          <h2>Войти</h2>
-          <label>Ник в игре<input id="f-nick" name="username" required maxlength="16" autocapitalize="off" spellcheck="false" autocomplete="username" placeholder="Steve"></label>
-          <label>Пароль от сервера<input id="f-pass" name="password" type="password" required maxlength="30" autocomplete="current-password" placeholder="тот же, что в /login"></label>
-          <button class="btn green" type="submit">Войти</button>
-          <p class="cab-msg" id="login-msg" role="alert"></p>
-          <p class="cab-note"><a href="#" id="forgot-link">Забыл пароль?</a> · Ещё не играл? Зайди на сервер <b>daviart.com</b> и зарегистрируйся (<code>/register</code>).</p>
-        </form>
-        <form class="card cab-login" id="recover-form" hidden style="margin-top:14px">
-          <h2>Восстановить пароль</h2>
-          <p class="cab-meta" id="rec-hint">Работает, если к аккаунту привязана почта (в кабинете → «Аккаунт»). Иначе — <a href="recover.html">заявка администрации</a>.</p>
-          <div id="rec-step1">
-            <label>Ник<input id="r-nick" maxlength="16" autocapitalize="off" spellcheck="false" autocomplete="username"></label>
-            <label>Привязанная почта<input id="r-email" type="email" maxlength="80" autocomplete="email"></label>
-            <button class="btn" type="button" id="r-send">Прислать код на почту</button>
-          </div>
-          <div id="rec-step2" hidden>
-            <label>Код из письма<input id="r-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></label>
-            <label>Новый пароль<input id="r-pass" type="password" maxlength="30" autocomplete="new-password"></label>
-            <label>Ещё раз<input id="r-pass2" type="password" maxlength="30" autocomplete="new-password"></label>
-            <button class="btn green" type="button" id="r-reset">Сменить пароль и войти</button>
-          </div>
-          <p class="cab-msg" id="rec-msg" role="alert"></p>
-          <p class="cab-note"><a href="#" id="back-login">← ко входу</a></p>
-        </form>
-      </div>
-      <div class="card cab-why">
-        <h2>Что даёт аккаунт</h2>
-        <ul>
-          <li><b>Персонаж:</b> где ты сейчас, здоровье и сытость, снаряжение и инвентарь, дома по мирам (со ссылкой на карту), места в рейтингах, все 39 навыков, тело, статистика.</li>
-          <li><b>Приваты:</b> переименовать, добавить и убрать друзей, права каждого (строить, сундуки, двери, управление), двери для гостей, взрывы, видимость на веб-карте, «показать на карте».</li>
-          <li><b>Клан:</b> создать, пригласить игрока (даже если он не в сети), принять приглашение, <b>клан-чат с сайта</b>, исключить, назначить заместителя, передать лидерство, налог, банк, список всех кланов.</li>
-          <li><b>Рынок:</b> витрина с поиском, <b>покупка с сайта</b> (предмет — на Склад), <b>продажа из инвентаря</b>, когда ты в лобби, снять свой лот, Склад, что продалось, пока тебя не было.</li>
-          <li><b>Аккаунт:</b> сменить пароль (и в игре тоже), привязать почту для восстановления пароля, Discord для связи, <b>доверенные адреса</b> — с них в игру без <code>/login</code>.</li>
-          <li><b>Синхронизация:</b> данные — прямо с сервера, обновляются сами каждые 20 секунд; изменения отсюда сразу в игре.</li>
-          <li><b>Ачивки:</b> прогресс по каждой — забрать награду можно у Гида в лобби.</li>
-        </ul>
-        <p class="cab-note">Безопасно: пароль проверяет сам сервер (AuthMe), сайт его не хранит, связь — по https. 5 неверных паролей — вход для ника закрывается на 15 минут. Выйти на всех устройствах — <code>/account logout</code> в игре или кнопка во вкладке «Аккаунт».</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- У399/У404: мастер «Голос и звук» (cabinet.html#voice): ник → пароль → «Войти» (этим же нажатием включается звук) → сразу «Главная» кабинета со звуком (#vw-top) -->
+  <!-- У426 (владелец 2026-10-28): ОДИН вход в кабинет, голос и карту — пошаговый мастер (voicewiz.js): ник → пароль → «Войти».
+       Галочка «Сразу включить звук и голос» (по умолч. вкл.) — тем же нажатием включает звук. «Забыл пароль?» — окно: написать в Discord.
+       Старая форма «ник + пароль сразу» (#login-form) убрана; #login-view оставлен пустым для совместимости. -->
+  <section id="login-view" hidden></section>
   <section id="voice-view" class="vw" hidden>
     <div class="card vw-box">
-      <div class="vw-head"><span class="vw-ico" aria-hidden="true">🎧</span><div><h1>Голос и звук</h1><p class="cab-meta">Слышь игроков рядом, музыку клуба, костёр и жителей — прямо в браузере, пока играешь.</p></div></div>
-      <ol class="vw-dots" id="vw-dots" aria-hidden="true"><li data-d="1"><b>1</b>Ник</li><li data-d="2"><b>2</b>Пароль</li><li data-d="3"><b>3</b>Слушаешь</li></ol>
-      <form id="vw-s1" class="vw-step" hidden novalidate>
-        <label for="vw-nick">Твой ник в игре</label>
-        <input id="vw-nick" class="vw-in" maxlength="16" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username" placeholder="Steve" enterkeyhint="next">
-        <button class="btn green vw-btn" type="submit">Далее →</button>
-        <p class="cab-msg" id="vw-m1" role="alert"></p>
-        <p class="cab-note">Ещё не играл? Зайди на сервер <b>daviart.com</b> и зарегистрируйся в игре (<code>/register</code>).</p>
+      <div class="vw-head"><span class="vw-ico" aria-hidden="true">🔑</span><div><h1>Личный кабинет · Голос и звук</h1><p class="cab-meta">Один вход — <b>ник и пароль из игры</b>. Внутри: голос и звуки мира, карта мира в реальном времени, персонаж, приваты, клан и Рынок.</p></div></div>
+      <ol class="vw-dots" id="vw-dots" aria-hidden="true"><li data-d="1"><b>1</b>Ник</li><li data-d="2"><b>2</b>Пароль</li><li data-d="3"><b>3</b>Готово</li></ol>
+      <div id="vw-steps">
+        <form id="vw-s1" class="vw-step" hidden novalidate>
+          <label for="vw-nick">Твой ник в игре</label>
+          <input id="vw-nick" class="vw-in" maxlength="16" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username" placeholder="Steve" enterkeyhint="next">
+          <button class="btn green vw-btn" type="submit">Далее →</button>
+          <p class="cab-msg" id="vw-m1" role="alert"></p>
+          <button class="btn vw-forgot vw-fgbtn" type="button">🔐 Забыл пароль?</button>
+          <p class="cab-note">Ещё не играл? Зайди на сервер <b>daviart.com</b> и зарегистрируйся в игре (<code>/register</code>).</p>
+        </form>
+        <form id="vw-s2" class="vw-step" hidden novalidate>
+          <p class="vw-who">Ник: <b id="vw-nickshow"></b> · <a href="#" id="vw-back">другой ник</a></p>
+          <input id="vw-user" type="text" autocomplete="username" tabindex="-1" aria-hidden="true" class="vw-hide">
+          <label for="vw-pass">Пароль от игры</label>
+          <input id="vw-pass" class="vw-in" type="password" maxlength="30" autocomplete="current-password" placeholder="тот же, что в /login" enterkeyhint="go">
+          <label class="vw-auto"><input type="checkbox" id="vw-auto" checked> 🎧 Сразу включить звук и голос</label>
+          <button class="btn green vw-btn" type="submit" id="vw-login">🎧 Войти и включить звук</button>
+          <p class="cab-msg" id="vw-m2" role="alert"></p>
+          <button class="btn vw-forgot vw-fgbtn" type="button">🔐 Забыл пароль?</button>
+          <p class="cab-note">Сайт пароль не хранит — его проверяет сам сервер.</p>
+        </form>
+      </div>
+      <form class="cab-login" id="recover-form" hidden>
+        <h2>Восстановить пароль по почте</h2>
+        <p class="cab-meta" id="rec-hint">Работает, если к аккаунту привязана почта (в кабинете → «Аккаунт»). Нет почты — <a href="#" class="vw-forgot">напиши нам в Discord</a>.</p>
+        <div id="rec-step1">
+          <label>Ник<input id="r-nick" maxlength="16" autocapitalize="off" spellcheck="false" autocomplete="username"></label>
+          <label>Привязанная почта<input id="r-email" type="email" maxlength="80" autocomplete="email"></label>
+          <button class="btn" type="button" id="r-send">Прислать код на почту</button>
+        </div>
+        <div id="rec-step2" hidden>
+          <label>Код из письма<input id="r-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code"></label>
+          <label>Новый пароль<input id="r-pass" type="password" maxlength="30" autocomplete="new-password"></label>
+          <label>Ещё раз<input id="r-pass2" type="password" maxlength="30" autocomplete="new-password"></label>
+          <button class="btn green" type="button" id="r-reset">Сменить пароль и войти</button>
+        </div>
+        <p class="cab-msg" id="rec-msg" role="alert"></p>
+        <p class="cab-note"><a href="#" id="back-login">← ко входу</a></p>
       </form>
-      <form id="vw-s2" class="vw-step" hidden novalidate>
-        <p class="vw-who">Ник: <b id="vw-nickshow"></b> · <a href="#" id="vw-back">другой ник</a></p>
-        <input id="vw-user" type="text" autocomplete="username" tabindex="-1" aria-hidden="true" class="vw-hide">
-        <label for="vw-pass">Пароль от игры</label>
-        <input id="vw-pass" class="vw-in" type="password" maxlength="30" autocomplete="current-password" placeholder="тот же, что в /login" enterkeyhint="go">
-        <button class="btn green vw-btn" type="submit" id="vw-login">🎧 Войти и включить звук</button>
-        <p class="cab-msg" id="vw-m2" role="alert"></p>
-        <p class="cab-note"><a href="recover.html">Забыл пароль?</a> · сайт пароль не хранит</p>
-      </form>
+    </div>
+    <div class="card cab-why vw-why">
+      <h2>Что внутри</h2>
+      <ul>
+        <li><b>🎧 Голос и звук:</b> слышишь игроков рядом, музыку клуба, костёр и жителей — прямо в браузере, пока играешь. Микрофон — отдельной кнопкой.</li>
+        <li><b>🗺 Карта мира в реальном времени:</b> все миры, приваты, точки прибытия и игроки онлайн.</li>
+        <li><b>Персонаж:</b> где ты сейчас, здоровье, снаряжение и инвентарь, дома, рейтинги, все навыки, тело, статистика.</li>
+        <li><b>Приваты и клан:</b> друзья и права, двери для гостей, клан-чат с сайта, банк и налог.</li>
+        <li><b>Рынок:</b> покупка с сайта (на Склад), продажа из инвентаря, когда ты в лобби.</li>
+        <li><b>Аккаунт:</b> сменить пароль, привязать почту, доверенные адреса — с них в игру без <code>/login</code>.</li>
+      </ul>
+      <p class="cab-note">Безопасно: пароль проверяет сам сервер, сайт его не хранит, связь — по https. 5 неверных паролей — вход для ника закрывается на 15 минут.</p>
     </div>
   </section>
 
+  <!-- У426: «Забыл пароль?» — окно: восстановление через администрацию в Discord -->
+  <div class="vw-dlg" id="forgot-dlg" role="dialog" aria-modal="true" aria-labelledby="fg-title" hidden>
+    <div class="card vw-dlg__box">
+      <h2 id="fg-title">🔐 Забыл пароль?</h2>
+      <p>Напиши администрации в <b>Discord</b> — мы сбросим пароль и пришлём новый <b>в личные сообщения</b>.</p>
+      <p>Чтобы мы убедились, что аккаунт твой, укажи как можно больше:</p>
+      <ul>
+        <li>ник в игре;</li>
+        <li>когда примерно заходил последний раз;</li>
+        <li>где твой дом или приват — мир, примерные координаты, как называется;</li>
+        <li>что лежит в инвентаре и эндер-сундуке, сколько денег;</li>
+        <li>с кем играешь, в каком клане.</li>
+      </ul>
+      <p class="cab-meta">Пароли в общих каналах не пишем — только в личку.</p>
+      <div class="vw-dlg__btns">
+        <a class="btn green" href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">💬 Написать в Discord</a>
+        <button class="btn" type="button" id="fg-close">Закрыть</button>
+      </div>
+      <p class="cab-note"><a href="#" id="fg-email">Привязана почта? Восстановить по почте</a></p>
+    </div>
+  </div>
   <!-- кабинет -->
   <section id="cab-view" hidden>
     <div class="chips cab-tabs" id="tabs" role="tablist" aria-label="Разделы кабинета">
@@ -107,10 +117,11 @@
       <button class="chip chip-bonus" data-tab="rewards" role="tab"><span class="gift-glow" aria-hidden="true">🎁</span> Награды<span class="bn-ext" id="bonusbar" aria-live="polite"></span></button>
       <button class="chip" data-tab="acct" role="tab">⚙ Аккаунт</button>
       <button class="chip chip-don" data-tab="donate" role="tab"><span class="don-main">💛 Донат</span></button>
+      <a class="chip chip-map" href="map.html" title="Карта мира в реальном времени">🗺 Карта мира</a>
     </div>
     <!-- 2026-10-18 (владелец): меньше вкладок — Главная = живой экран + профиль; Земли = приваты + клан; Награды = бонусы + «Приведи друга» + ачивки; Аккаунт = аккаунт + справка -->
     <div id="tab-home" class="cab-tab">
-    <!-- У404: карточка голоса наверху «Главной» — только при входе через cabinet.html#voice (voicewiz.js) -->
+    <!-- У404/У426: карточка голоса наверху «Главной» — всегда (voicewiz.js): «Включить звук и голос», потом микрофон -->
     <div class="card vw-top" id="vw-top" hidden>
       <div id="vw-start" hidden>
         <button class="btn green vw-btn vw-pulse" type="button" id="vw-go">🎧 Включить звук и голос</button>
@@ -205,8 +216,8 @@
 <script src="sound.js?v=38"></script><script src="voice.js?v=29"></script>
 <script src="holo.js?v=10"></script>
 <script src="home.js?v=28"></script>
-<script src="voicewiz.js?v=2"></script>
-<script src="cabinet.js?v=45"></script>
+<script src="voicewiz.js?v=3"></script>
+<script src="cabinet.js?v=46"></script>
 <script src="ui.js?v=2"></script>
 <script src="consent.js?v=1"></script>
 </body>

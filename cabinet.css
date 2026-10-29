@@ -621,3 +621,23 @@ body.hm-noscroll { overflow: hidden; }
 .vc-micoff[hidden] { display: none; }
 .vc-micoff .cab-meta { margin: 6px 0 4px; }
 .vc-micoff .vc-bad { color: var(--text); background: var(--red-bg); border-radius: 8px; padding: 8px 10px; }
+
+/* У426: один вход (мастер) + «Что внутри» рядом; галочка звука; окно «Забыл пароль»; вкладка «Карта мира» */
+.vw { flex-wrap: wrap; align-items: flex-start; gap: 16px; }
+.vw-why { width: 100%; max-width: 460px; }
+.vw-why ul { padding-left: 18px; margin: 8px 0; display: grid; gap: 6px; }
+.vw-step label.vw-auto { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 600; margin: 14px 0 0; cursor: pointer; }
+.vw-auto input { width: 22px; height: 22px; accent-color: var(--grass); flex: none; }
+#vw-steps[hidden], #recover-form[hidden] { display: none; }
+#recover-form { margin-top: 6px; }
+#recover-form label { display: block; margin: 8px 0; }
+#recover-form input { display: block; width: 100%; margin-top: 4px; }
+.vw-dlg { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .62); }
+.vw-dlg[hidden] { display: none; }
+.vw-dlg__box { width: 100%; max-width: 480px; max-height: calc(100dvh - 32px); overflow: auto; padding: 20px 18px 16px; }
+.vw-dlg__box h2 { margin: 0 0 10px; }
+.vw-dlg__box ul { padding-left: 18px; margin: 6px 0 10px; display: grid; gap: 4px; }
+.vw-dlg__btns { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 6px; }
+.vw-dlg__btns .btn { flex: 1 1 180px; min-height: 48px; font-weight: 800; }
+a.chip.chip-map { text-decoration: none; display: inline-flex; align-items: center; background: linear-gradient(135deg, #2f8fc4, #1f6a99); color: #fff; border-color: #1f6a99; white-space: nowrap; }
+a.chip.chip-map:hover { filter: brightness(1.1); }.btn.vw-fgbtn { display: block; width: 100%; margin-top: 10px; min-height: 46px; font-weight: 700; }

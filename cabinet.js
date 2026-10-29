@@ -26,7 +26,8 @@
   var homeMounted = false;   // У237: «Главная» — второй экран (home.js; голос — voice.js внутри неё)
   // У399: cabinet.html#voice — мастер «Голос и звук» (voicewiz.js) вместо обычного входа и вкладок, пока не нажмут «Открыть весь кабинет»
   // У404: вход через #voice (vwArm) — наверху «Главной» карточка голоса (voicewiz.js); шаги мастера (wiz) — только если нет входа
-  var vwArm = /^#voice$/.test(location.hash || "") && !!window.VPVoiceWiz && !!document.getElementById("voice-view");
+  // У426 (владелец 2026-10-28): мастер — ЕДИНСТВЕННЫЙ вход (и cabinet.html, и #voice); карточка голоса на «Главной» — всегда
+  var vwArm = !!window.VPVoiceWiz && !!document.getElementById("voice-view");
   var wiz = false;
   var donTiers = null, donLoading = false;
 
@@ -144,7 +145,7 @@
   }
 
   function show(v) {
-    if (vwArm && v === "login" && !homeMounted) wiz = true;   // У404: нет входа (или сессия истекла) — шаги мастера вместо обычной формы
+    if (vwArm && v === "login") wiz = true;   // У404/У426: нет входа (или сессия истекла, вышел) — шаги мастера; другой формы входа нет
     if (wiz && v === "login") { window.VPVoiceWiz.view(v); v = "voice"; }   // У399: мастер голоса
     else if (wiz && v === "cab") wiz = false;
     var vv = $("voice-view"); if (vv) vv.hidden = v !== "voice";
@@ -153,26 +154,21 @@
     $("load-view").hidden = v !== "load";
   }
 
-  // ---------------------------------------------------------------- вход
-  $("login-form").addEventListener("submit", function (e) {
-    e.preventDefault();
-    var m = $("login-msg");
-    m.className = "cab-msg";
-    m.textContent = "Проверяю…";
-    api("/login", {nick: $("f-nick").value.trim(), password: $("f-pass").value}).then(function (j) {
-      if (!j.ok) { m.textContent = j.message || "Не получилось."; return; }
-      $("f-pass").value = "";
-      memTok = j.token;
-      setTok(j.token);
-      m.className = "cab-msg ok";
-      m.textContent = j.message;
-      load(true);
-    });
-  });
+  // ---------------------------------------------------------------- вход — мастер voicewiz.js (У426: старая форма «ник + пароль сразу» убрана)
 
   // ---------------------------------------------------------------- забыл пароль (код на привязанную почту)
-  function recMode(on) { $("login-form").hidden = on; $("recover-form").hidden = !on; $("rec-msg").textContent = ""; }
-  $("forgot-link").onclick = function (e) { e.preventDefault(); $("r-nick").value = $("f-nick").value; recMode(true); };
+  function recMode(on) { $("vw-steps").hidden = on; $("recover-form").hidden = !on; $("rec-msg").textContent = ""; }
+  // У426: «Забыл пароль?» — окно «напиши в Discord»; оттуда же — восстановление по привязанной почте
+  function forgot(on) {
+    $("forgot-dlg").hidden = !on;
+    document.body.classList.toggle("hm-noscroll", on);
+    if (on) try { $("fg-close").focus(); } catch (e) { }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".vw-forgot"), function (a) { a.onclick = function (e) { e.preventDefault(); forgot(true); }; });
+  $("fg-close").onclick = function () { forgot(false); };
+  $("forgot-dlg").addEventListener("click", function (e) { if (e.target.id === "forgot-dlg") forgot(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("forgot-dlg").hidden) forgot(false); });
+  $("fg-email").onclick = function (e) { e.preventDefault(); forgot(false); $("r-nick").value = $("vw-nick").value; recMode(true); };
   $("back-login").onclick = function (e) { e.preventDefault(); recMode(false); $("rec-step1").hidden = false; $("rec-step2").hidden = true; };
   $("r-send").onclick = function () {
     var m = $("rec-msg"); m.className = "cab-msg"; m.textContent = "Отправляю…";
@@ -251,7 +247,7 @@
     return api("/me").then(function (j) {
       if (!j.ok) {
         if (j.offline && me) { $("sync").textContent = "сервер не отвечает — показаны последние данные"; return; }
-        if (j.status !== 401) { show("login"); $("login-msg").textContent = j.message || ""; }
+        if (j.status !== 401) { show("login"); ["vw-m1", "vw-m2"].forEach(function (id) { var m = $(id); if (m) m.textContent = j.message || ""; }); }   // У426: сообщение — в шагах мастера
         return;
       }
       me = j;

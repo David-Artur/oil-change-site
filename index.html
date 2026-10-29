@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Unbounded:wght@600;700&display=swap">
 <link rel="stylesheet" href="style.css?v=23">
-<link rel="stylesheet" href="landing.css?v=4">
+<link rel="stylesheet" href="landing.css?v=5">
 <link rel="preload" as="image" href="img/shots/lobby-sunset.jpg">
 </head>
 <body>
@@ -46,12 +46,15 @@
         <div class="sub" id="st-sub"></div>
       </div>
     </div>
+    <!-- У426 (владелец 2026-10-28): кабинет, голос и карта — одной большой кнопкой, один вход (ник → пароль) -->
+    <a class="l-bigcab" href="cabinet.html" data-cab>
+      <span class="l-bigcab__t">🔑 Личный кабинет</span>
+      <span class="l-bigcab__s"><b>🎧 Голос и звук</b> · <b>🗺 Карта мира в реальном времени</b> · персонаж, приваты, Рынок</span>
+      <span class="l-bigcab__n">Вход — ник и пароль из игры →</span>
+    </a>
     <div class="l-cta">
       <a class="btn green" href="#start">▶ Начать играть</a>
-      <a class="btn" href="cabinet.html" data-cab style="--b:#3fae1c;--bh:#8ff060;--bl:#22680c;color:#fff">🔑 Личный кабинет</a>
-      <a class="btn" href="cabinet.html#voice" data-cab style="--b:#7a3fc4;--bh:#b98cff;--bl:#46207a;color:#fff">🎧 Голос и звук</a>
-      <a class="btn blue" href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">Discord</a>
-      <a class="btn map" href="map.html">🗺 Карта <span class="live">2D · 3D</span></a>
+      <a class="btn blue" href="https://discord.gg/sQR9A7RH" target="_blank" rel="noopener">💬 Discord</a>
     </div>
   </div>
 </header>
@@ -178,7 +181,7 @@
 <a class="dot-admin" href="admin.html" aria-label="Служебная страница" title=""></a>
 
 <script src="landing.js?v=2"></script>
-<script src="data.js?v=50"></script>
+<script src="data.js?v=51"></script>
 <script src="viz.js?v=8"></script>
 <script src="app.js?v=15"></script>
 <script src="pages.js?v=7"></script>
